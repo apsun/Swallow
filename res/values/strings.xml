@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Swallow</string>
+    <string name="username">Username</string>
+    <string name="password">Password</string>
+    <string name="login">Login</string>
+    <string name="autologin_enabled">Auto-login enabled</string>
+    <string name="autologin_disabled">Auto-login disabled</string>
+    <string name="profile_manager">Profile manager</string>
+    <string name="network_scanner">Network scanner</string>
+    <string name="add_bssid">Add BSSID</string>
+    <string name="scan">Scan</string>
+    <string name="action_new">New</string>
+</resources>
