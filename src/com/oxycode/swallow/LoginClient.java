@@ -12,21 +12,17 @@ import java.util.Map;
 public class LoginClient {
     private static final String TAG = "SWAL";
     private static final String LOGIN_PAGE_URL = "http://192.255.255.94/";
-    private final Proxy _proxy;
 
-    public LoginClient() {
-        this(null);
+    private LoginClient() {
+
     }
 
-    public LoginClient(Proxy proxy) {
-        _proxy = proxy;
-    }
-
-    public boolean isLoggedIn() throws IOException {
+    public static boolean isLoggedIn() throws IOException {
+        // TODO: Complete
         return false;
     }
 
-    public boolean login(String username, String password) throws IOException {
+    public static LoginResult login(String username, String password) throws IOException {
         HttpURLConnection urlConnection = createConnection("POST");
         String encryptedPassword = encryptPassword(password);
         Map<String, String> params = getPostData(username, encryptedPassword);
@@ -48,7 +44,7 @@ public class LoginClient {
             inputReader = new InputStreamReader(inputStream, "GB2312");
         } catch (UnsupportedEncodingException e) {
             Log.wtf(TAG, "Unsupported encoding: GB2312", e);
-            return false;
+            return LoginResult.UNKNOWN_ERROR;
         }
         BufferedReader bufferedReader = new BufferedReader(inputReader);
         String line;
@@ -56,11 +52,11 @@ public class LoginClient {
             Log.d(TAG, line);
         }
 
-        return false;
+        return LoginResult.SUCCESS;
     }
 
-    public void logout() throws IOException {
-
+    public static void logout() throws IOException {
+        // TODO: Complete
     }
 
     private static Map<String, String> getPostHeaders(byte[] content) {
@@ -100,7 +96,7 @@ public class LoginClient {
         return md5("1" + plainTextPassword + "12345678") + "123456781";
     }
 
-    private HttpURLConnection createConnection(String method) throws IOException {
+    private static HttpURLConnection createConnection(String method) throws IOException {
         URL url;
         try {
             url = new URL(LOGIN_PAGE_URL);
@@ -109,14 +105,7 @@ public class LoginClient {
             return null;
         }
 
-        Proxy proxy = _proxy;
-        HttpURLConnection connection;
-        if (proxy != null) {
-            connection = (HttpURLConnection)url.openConnection(proxy);
-        } else {
-            connection = (HttpURLConnection)url.openConnection();
-        }
-
+        HttpURLConnection connection = (HttpURLConnection)url.openConnection();
         try {
             connection.setRequestMethod(method);
         } catch (ProtocolException e) {

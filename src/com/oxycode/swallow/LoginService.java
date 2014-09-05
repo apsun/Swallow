@@ -18,14 +18,12 @@ public class LoginService extends IntentService {
 
     @Override
     protected void onHandleIntent(Intent intent) {
-        String username = intent.getStringExtra("username");
-        String password = intent.getStringExtra("password");
+        final String username = intent.getStringExtra("username");
+        final String password = intent.getStringExtra("password");
 
-        LoginClient client = new LoginClient();
-
-        final boolean result;
+        final LoginResult result;
         try {
-            result = client.login(username, password);
+            result = LoginClient.login(username, password);
         } catch (IOException e) {
             // Probably disconnected from the network
             // TODO: Should retry a few times before showing a notification
@@ -38,12 +36,17 @@ public class LoginService extends IntentService {
             @Override
             public void run() {
                 String message;
-                if (result) {
-                    message = "Logged in to shs network!";
-                } else {
-                    // TODO: Should this be a notification or a toast message?
-                    message = "Login to shs network failed, check your password!";
+                switch (result) {
+                    case SUCCESS:
+                        message = String.format(getResources().getString(R.string.login_success), username);
+                    case INCORRECT_CREDENTIALS:
+                        message = getResources().getString(R.string.login_fail_incorrect_credentials);
+                    case ACCOUNT_BANNED:
+                        message = getResources().getString(R.string.login_fail_account_banned);
+                    default:
+                        message = getResources().getString(R.string.login_fail_unknown_error);
                 }
+
                 Toast.makeText(LoginService.this, message, Toast.LENGTH_SHORT).show();
             }
         });

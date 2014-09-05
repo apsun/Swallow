@@ -11,4 +11,8 @@
     <string name="add_bssid">Add BSSID</string>
     <string name="scan">Scan</string>
     <string name="action_new">New</string>
+    <string name="login_success">Logged in to WiFi with username: %s</string>
+    <string name="login_fail_incorrect_credentials">WiFi login failed: incorrect login credentials</string>
+    <string name="login_fail_account_banned">WiFi login failed: account has been banned</string>
+    <string name="login_fail_unknown_error">WiFi login failed: unknown error</string>
 </resources>
