@@ -72,7 +72,7 @@ public class ProfileManagerActivity extends Activity {
                 });
 
         AlertDialog alertDialog = alertDialogBuilder.create();
-        // alertDialog.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE);
+        alertDialog.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE);
         alertDialog.show();
     }
 

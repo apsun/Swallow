@@ -2,10 +2,7 @@ package com.oxycode.swallow;
 
 import android.app.ActionBar;
 import android.app.Activity;
-import android.content.BroadcastReceiver;
-import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
+import android.content.*;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
@@ -32,6 +29,8 @@ public class NetworkScannerActivity extends Activity {
 
     private ArrayList<Bssid> _foundBssids;
     private NetworkProfile _profile;
+
+    private SharedPreferences _preferences;
 
     private class ScanResultsReceiver extends BroadcastReceiver {
         @Override
@@ -124,6 +123,10 @@ public class NetworkScannerActivity extends Activity {
         switch (item.getItemId()) {
             case android.R.id.home:
                 NavUtils.navigateUpFromSameTask(this);
+                return true;
+            case R.id.scan_settings_menu:
+                Intent intent = new Intent(this, ScannerSettingsActivity.class);
+                startActivity(intent);
                 return true;
             default:
                 return super.onOptionsItemSelected(item);

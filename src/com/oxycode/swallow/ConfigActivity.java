@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
@@ -22,6 +23,8 @@ public class ConfigActivity extends Activity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
+
+        PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
 
         final SharedPreferences preferences = getSharedPreferences("LoginCredentials", MODE_PRIVATE);
 
