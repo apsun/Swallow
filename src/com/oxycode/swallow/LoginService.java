@@ -39,12 +39,16 @@ public class LoginService extends IntentService {
                 switch (result) {
                     case SUCCESS:
                         message = String.format(getResources().getString(R.string.login_success), username);
+                        break;
                     case INCORRECT_CREDENTIALS:
                         message = getResources().getString(R.string.login_fail_incorrect_credentials);
+                        break;
                     case ACCOUNT_BANNED:
                         message = getResources().getString(R.string.login_fail_account_banned);
+                        break;
                     default:
                         message = getResources().getString(R.string.login_fail_unknown_error);
+                        break;
                 }
 
                 Toast.makeText(LoginService.this, message, Toast.LENGTH_SHORT).show();

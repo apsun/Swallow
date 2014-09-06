@@ -16,12 +16,12 @@
         <Button
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:text="@string/add_bssid"
-                android:id="@+id/add_bssid_button" android:layout_weight="0.5" style="?android:attr/borderlessButtonStyle"/>
+                android:text="@string/add_manually"
+                android:id="@+id/add_manually_button" android:layout_weight="0.5" style="?android:attr/borderlessButtonStyle"/>
         <Button
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:text="@string/scan"
-                android:id="@+id/scan_button" android:layout_weight="0.5" style="?android:attr/borderlessButtonStyle"/>
+                android:text="@string/add_all_in_range"
+                android:id="@+id/add_all_in_range_button" android:layout_weight="0.5" style="?android:attr/borderlessButtonStyle"/>
     </LinearLayout>
 </LinearLayout>

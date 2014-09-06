@@ -8,11 +8,20 @@
     <string name="autologin_disabled">Auto-login disabled</string>
     <string name="profile_manager">Profile manager</string>
     <string name="network_scanner">Network scanner</string>
-    <string name="add_bssid">Add BSSID</string>
-    <string name="scan">Scan</string>
-    <string name="action_new">New</string>
+    <string name="add_manually">Add manually</string>
+    <string name="add_all_in_range">Add all in range</string>
+    <string name="action_new_profile">New profile</string>
     <string name="login_success">Logged in to WiFi with username: %s</string>
     <string name="login_fail_incorrect_credentials">WiFi login failed: incorrect login credentials</string>
     <string name="login_fail_account_banned">WiFi login failed: account has been banned</string>
     <string name="login_fail_unknown_error">WiFi login failed: unknown error</string>
+    <string name="enter_profile_name">Enter profile name:</string>
+    <string name="ok">OK</string>
+    <string name="cancel">Cancel</string>
+    <string name="minimum_rssi">Minimum RSSI</string>
+    <string name="minimum_rssi_desc">The minimum strength for displayed WiFi networks</string>
+    <string name="scan_rate">Scan rate</string>
+    <string name="scan_rate_desc">How often to refresh the list of WiFi networks</string>
+    <string name="auto_add">Enable auto-add</string>
+    <string name="action_scan_settings">Scan settings</string>
 </resources>

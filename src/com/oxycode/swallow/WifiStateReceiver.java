@@ -32,7 +32,16 @@ public class WifiStateReceiver extends BroadcastReceiver {
 
         Set<String> activeProfileNames = preferences.getStringSet("profiles", null);
         Set<NetworkProfile> activeProfiles = ProfileManager.getProfiles(activeProfileNames);
-        if (!NetworkProfile.profilesContainBssid(activeProfiles, bssid)) {
+
+        boolean bssidInWhitelist = false;
+        for (NetworkProfile profile : activeProfiles) {
+            if (profile.contains(bssid)) {
+                bssidInWhitelist = true;
+                break;
+            }
+        }
+
+        if (!bssidInWhitelist) {
             Log.d(TAG, "Active profiles does not include BSSID, skipping login");
         }
 

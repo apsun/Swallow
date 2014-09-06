@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="pref_scan_rate_entries">
+        <item>1 second</item>
+        <item>2 seconds</item>
+        <item>5 seconds</item>
+        <item>10 seconds</item>
+        <item>15 seconds</item>
+        <item>Disable auto-scan</item>
+    </string-array>
+
+    <string-array name="pref_scan_rate_values">
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+        <item>5</item>
+        <item>10</item>
+        <item>15</item>
+        <item>-1</item>
+    </string-array>
+
+    <string-array name="pref_minimum_rssi_entries">
+        <item>No minimum</item>
+        <item>-90 dBm</item>
+        <item>-80 dBm</item>
+        <item>-70 dBm</item>
+        <item>-80 dBm</item>
+        <item>-50 dBm</item>
+    </string-array>
+
+    <string-array name="pref_minimum_rssi_values">
+        <item>-100</item>
+        <item>-90</item>
+        <item>-80</item>
+        <item>-70</item>
+        <item>-80</item>
+        <item>-50</item>
+    </string-array>
+</resources>

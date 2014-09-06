@@ -49,6 +49,7 @@ public class LoginClient {
         BufferedReader bufferedReader = new BufferedReader(inputReader);
         String line;
         while ((line = bufferedReader.readLine()) != null) {
+            // TODO: Check success flag
             Log.d(TAG, line);
         }
 

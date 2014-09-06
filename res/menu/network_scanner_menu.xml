@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:id="@+id/add_profile_button"
-          android:icon="@drawable/ic_action_new"
-          android:title="@string/action_new_profile"
+    <item android:id="@+id/scan_settings_menu"
+          android:icon="@drawable/ic_action_settings"
+          android:title="@string/action_scan_settings"
           android:showAsAction="always" />
 </menu>

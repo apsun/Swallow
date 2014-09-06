@@ -46,7 +46,7 @@ public class ConfigActivity extends Activity {
                 String username = s.toString();
                 SharedPreferences.Editor editor = preferences.edit();
                 editor.putString("username", username);
-                editor.commit();
+                editor.apply();
             }
         });
 
@@ -62,7 +62,7 @@ public class ConfigActivity extends Activity {
                 String password = s.toString();
                 SharedPreferences.Editor editor = preferences.edit();
                 editor.putString("password", password);
-                editor.commit();
+                editor.apply();
             }
         });
 
@@ -76,8 +76,8 @@ public class ConfigActivity extends Activity {
         profileManagerButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent myIntent = new Intent(ConfigActivity.this, ProfileManagerActivity.class);
-                startActivity(myIntent);
+                Intent intent = new Intent(ConfigActivity.this, ProfileManagerActivity.class);
+                startActivity(intent);
             }
         });
     }
