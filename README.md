@@ -72,6 +72,17 @@ Why, the IT department of SHSID, of course, for making the most annoying
 
 I'm a programmer, not a hacker. Ask someone else.
 
-### I'm in the SHSID staff, and I demand you to remove this app immediately! ###
+### I'm from the SHSID staff, and I demand you to remove this app immediately! ###
 
 Maybe when you fix your login system, yes yes?
+
+Alternatively, write an 800 to 1000 word essay analyzing the pros and cons of your
+login system. It must include an introduction with a complex thesis, two supporting
+body paragraphs complete with topic sentence, example, and commentary, a rebuttal
+where you consider the opposing side's viewpoint, and a conclusion. Merely
+summarizing the features of the program and/or your login system will earn you an F.
+The essay must be written in 12 pt. Times New Roman with the MLA format header and
+margins. Essays containing more than 5 grammatical and/or spelling errors will not
+be graded.
+
+Thanks, AP English Language.

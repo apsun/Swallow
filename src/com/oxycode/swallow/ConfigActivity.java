@@ -31,8 +31,6 @@ public class ConfigActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
 
-        PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
-
         _preferences = getPreferences(MODE_PRIVATE);
 
         _usernameTextBox = (EditText)findViewById(R.id.username_edittext);

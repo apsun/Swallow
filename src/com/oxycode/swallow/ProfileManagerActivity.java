@@ -4,6 +4,7 @@ import android.app.ActionBar;
 import android.app.Activity;
 import android.app.FragmentManager;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.v4.app.NavUtils;
 import android.view.Menu;
@@ -11,9 +12,17 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.widget.ListView;
 
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.TreeSet;
+
 public class ProfileManagerActivity extends Activity implements TextEntryDialog.Listener {
     private static final String TAG = "SWAL";
 
+    private TreeSet<NetworkProfile> _profiles;
+
+    private SharedPreferences _preferences;
     private ListView _profileListView;
 
     @Override
@@ -27,7 +36,21 @@ public class ProfileManagerActivity extends Activity implements TextEntryDialog.
             actionBar.setDisplayHomeAsUpEnabled(true);
         }
 
+        _preferences = getPreferences(MODE_PRIVATE);
         _profileListView = (ListView)findViewById(R.id.profile_listview);
+        _profiles = new TreeSet<NetworkProfile>(new Comparator<NetworkProfile>() {
+            @Override
+            public int compare(NetworkProfile lhs, NetworkProfile rhs) {
+                return lhs.getName().compareToIgnoreCase(rhs.getName());
+            }
+        });
+
+        for (Map.Entry<String, ?> profiles : _preferences.getAll().entrySet()) {
+            String profileName = profiles.getKey();
+            HashSet<Bssid> profileBssids = (HashSet<Bssid>)profiles.getValue();
+            NetworkProfile profile = new NetworkProfile(profileName, profileBssids);
+            _profiles.add(profile);
+        }
     }
 
     @Override

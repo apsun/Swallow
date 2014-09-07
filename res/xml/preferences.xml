@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <CheckBoxPreference
+        android:key="pref_show_shs_only"
+        android:title="@string/show_shs_only"
+        android:summary="@string/show_shs_only_desc"
+        android:defaultValue="false" />
     <ListPreference
         android:key="pref_scan_rate"
         android:title="@string/scan_rate"
@@ -9,10 +14,10 @@
         android:entryValues="@array/pref_scan_rate_values"
         android:defaultValue="2" />
     <ListPreference
-        android:key="pref_minimum_rssi"
-        android:title="@string/minimum_rssi"
-        android:summary="@string/minimum_rssi_desc"
-        android:entries="@array/pref_minimum_rssi_entries"
-        android:entryValues="@array/pref_minimum_rssi_values"
+        android:key="pref_minimum_signal_strength"
+        android:title="@string/minimum_signal_strength"
+        android:summary="@string/minimum_signal_strength_desc"
+        android:entries="@array/pref_minimum_signal_strength_entries"
+        android:entryValues="@array/pref_minimum_signal_strength_values"
         android:defaultValue="-80" />
 </PreferenceScreen>

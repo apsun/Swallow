@@ -13,13 +13,12 @@
         <item>-1</item>
         <item>1</item>
         <item>2</item>
-        <item>3</item>
         <item>5</item>
         <item>10</item>
         <item>15</item>
     </string-array>
 
-    <string-array name="pref_minimum_rssi_entries">
+    <string-array name="pref_minimum_signal_strength_entries">
         <item>No minimum</item>
         <item>-90 dBm</item>
         <item>-80 dBm</item>
@@ -28,7 +27,7 @@
         <item>-50 dBm</item>
     </string-array>
 
-    <string-array name="pref_minimum_rssi_values">
+    <string-array name="pref_minimum_signal_strength_values">
         <item>-100</item>
         <item>-90</item>
         <item>-80</item>

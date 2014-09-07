@@ -3,10 +3,7 @@ package com.oxycode.swallow;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Iterator;
+import java.util.*;
 
 public class NetworkProfile implements Parcelable, Iterable<Bssid> {
     public static final Parcelable.Creator<NetworkProfile> CREATOR = new Parcelable.Creator<NetworkProfile>() {
@@ -31,6 +28,11 @@ public class NetworkProfile implements Parcelable, Iterable<Bssid> {
     public NetworkProfile(String name) {
         _name = name;
         _bssids = new HashSet<Bssid>();
+    }
+
+    public NetworkProfile(String name, HashSet<Bssid> bssids) {
+        _name = name;
+        _bssids = bssids;
     }
 
     public NetworkProfile(String name, Collection<Bssid> bssids) {
