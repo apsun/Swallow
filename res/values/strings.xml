@@ -15,14 +15,10 @@
     <string name="login_fail_incorrect_credentials">WiFi login failed: incorrect login credentials</string>
     <string name="login_fail_account_banned">WiFi login failed: account has been banned</string>
     <string name="login_fail_unknown_error">WiFi login failed: unknown error</string>
-    <string name="enter_profile_name">Enter profile name:</string>
-    <string name="ok">OK</string>
-    <string name="cancel">Cancel</string>
     <string name="minimum_rssi">Minimum RSSI</string>
     <string name="minimum_rssi_desc">The minimum strength for displayed WiFi networks</string>
     <string name="scan_rate">Scan rate</string>
     <string name="scan_rate_desc">How often to refresh the list of WiFi networks</string>
-    <string name="auto_add">Enable auto-add</string>
     <string name="action_scan_settings">Scan settings</string>
     <string name="scanner_settings">Scan settings</string>
 </resources>

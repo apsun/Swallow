@@ -2,6 +2,8 @@ package com.oxycode.swallow;
 
 import android.app.ActionBar;
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.app.FragmentManager;
 import android.content.*;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiManager;
@@ -11,6 +13,7 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.Button;
 import android.widget.ListView;
 
@@ -19,7 +22,7 @@ import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
-public class NetworkScannerActivity extends Activity {
+public class NetworkScannerActivity extends Activity implements TextEntryDialog.Listener {
     private static final String TAG = "SWAL";
 
     private Timer _scanTimer;
@@ -69,6 +72,18 @@ public class NetworkScannerActivity extends Activity {
         ListView bssidListView = (ListView)findViewById(R.id.bssid_listview);
         Button addManuallyButton = (Button)findViewById(R.id.add_manually_button);
         Button addAllInRangeButton = (Button)findViewById(R.id.add_all_in_range_button);
+
+        addManuallyButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                TextEntryDialog dialog = new TextEntryDialog();
+                Bundle arguments = new Bundle();
+                arguments.putString("title", "Add BSSID");
+                dialog.setArguments(arguments);
+                FragmentManager fragmentManager = getFragmentManager();
+                dialog.show(fragmentManager, "add_bssid_dialog");
+            }
+        });
     }
 
     @Override
@@ -131,5 +146,34 @@ public class NetworkScannerActivity extends Activity {
             default:
                 return super.onOptionsItemSelected(item);
         }
+    }
+
+    @Override
+    public void onTextEntryDialogOk(String tag, String text) {
+        if (!tag.equals("add_bssid_dialog")) return;
+        Bssid bssid;
+        try {
+            bssid = new Bssid(text);
+        } catch (IllegalArgumentException e) {
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            builder.setTitle("Invalid BSSID");
+            builder.setMessage("BSSID must be in the format xx:xx:xx:xx:xx:xx!");
+            builder.setCancelable(false);
+            builder.setPositiveButton(getString(android.R.string.ok), new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    dialog.dismiss();
+                }
+            });
+            builder.create().show();
+            return;
+        }
+
+        addBssidToProfile(bssid);
+    }
+
+    @Override
+    public void onTextEntryDialogCancel(String tag) {
+
     }
 }

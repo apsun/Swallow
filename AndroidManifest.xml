@@ -27,7 +27,8 @@
         </activity>
         <activity
                 android:name="com.oxycode.swallow.NetworkScannerActivity"
-                android:label="@string/network_scanner">
+                android:label="@string/network_scanner"
+                android:windowSoftInputMode="adjustPan">
             <meta-data
                     android:name="android.support.PARENT_ACTIVITY"
                     android:value="com.oxycode.swallow.ProfileManagerActivity" />
