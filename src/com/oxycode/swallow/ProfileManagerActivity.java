@@ -4,17 +4,17 @@ import android.app.ActionBar;
 import android.app.Activity;
 import android.app.FragmentManager;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.v4.app.NavUtils;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.widget.ListView;
 
 public class ProfileManagerActivity extends Activity implements TextEntryDialog.Listener {
     private static final String TAG = "SWAL";
 
-    private SharedPreferences _preferences;
+    private ListView _profileListView;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -27,7 +27,7 @@ public class ProfileManagerActivity extends Activity implements TextEntryDialog.
             actionBar.setDisplayHomeAsUpEnabled(true);
         }
 
-        _preferences = getSharedPreferences("NetworkProfiles", MODE_PRIVATE);
+        _profileListView = (ListView)findViewById(R.id.profile_listview);
     }
 
     @Override

@@ -1,12 +1,11 @@
 package com.oxycode.swallow;
 
-import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
+import android.app.DialogFragment;
 import android.content.DialogInterface;
 import android.os.Bundle;
-import android.app.DialogFragment;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.EditText;
@@ -26,7 +25,6 @@ public class TextEntryDialog extends DialogFragment {
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
         Activity context = getActivity();
-        @SuppressLint("InflateParams")
         View promptView = context.getLayoutInflater().inflate(R.layout.text_entry_dialog, null);
         Bundle arguments = getArguments();
         String title = arguments.getString("title");

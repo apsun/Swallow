@@ -19,6 +19,13 @@ import android.widget.ToggleButton;
 public class ConfigActivity extends Activity {
     private static final String TAG = "SWAL";
 
+    private EditText _usernameTextBox;
+    private EditText _passwordTextBox;
+    private ToggleButton _autoLoginToggleButton;
+    private Button _profileManagerButton;
+
+    private SharedPreferences _preferences;
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -26,18 +33,18 @@ public class ConfigActivity extends Activity {
 
         PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
 
-        final SharedPreferences preferences = getSharedPreferences("LoginCredentials", MODE_PRIVATE);
+        _preferences = getPreferences(MODE_PRIVATE);
 
-        EditText usernameTextBox = (EditText)findViewById(R.id.username_edittext);
-        EditText passwordTextBox = (EditText)findViewById(R.id.password_edittext);
-        ToggleButton autoLoginToggleButton = (ToggleButton)findViewById(R.id.autologin_togglebutton);
-        Button profileManagerButton = (Button)findViewById(R.id.profile_manager_button);
+        _usernameTextBox = (EditText)findViewById(R.id.username_edittext);
+        _passwordTextBox = (EditText)findViewById(R.id.password_edittext);
+        _autoLoginToggleButton = (ToggleButton)findViewById(R.id.autologin_togglebutton);
+        _profileManagerButton = (Button)findViewById(R.id.profile_manager_button);
 
-        usernameTextBox.setText(preferences.getString("username", null));
-        passwordTextBox.setText(preferences.getString("password", null));
-        autoLoginToggleButton.setChecked(getReceiverEnabled());
+        _usernameTextBox.setText(_preferences.getString("username", null));
+        _passwordTextBox.setText(_preferences.getString("password", null));
+        _autoLoginToggleButton.setChecked(getReceiverEnabled());
 
-        usernameTextBox.addTextChangedListener(new TextWatcher() {
+        _usernameTextBox.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
 
@@ -47,13 +54,13 @@ public class ConfigActivity extends Activity {
             @Override
             public void afterTextChanged(Editable s) {
                 String username = s.toString();
-                SharedPreferences.Editor editor = preferences.edit();
+                SharedPreferences.Editor editor = _preferences.edit();
                 editor.putString("username", username);
                 editor.apply();
             }
         });
 
-        passwordTextBox.addTextChangedListener(new TextWatcher() {
+        _passwordTextBox.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
 
@@ -63,20 +70,20 @@ public class ConfigActivity extends Activity {
             @Override
             public void afterTextChanged(Editable s) {
                 String password = s.toString();
-                SharedPreferences.Editor editor = preferences.edit();
+                SharedPreferences.Editor editor = _preferences.edit();
                 editor.putString("password", password);
                 editor.apply();
             }
         });
 
-        autoLoginToggleButton.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+        _autoLoginToggleButton.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton button, boolean b) {
                 setReceiverEnabled(b);
             }
         });
 
-        profileManagerButton.setOnClickListener(new View.OnClickListener() {
+        _profileManagerButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 Intent intent = new Intent(ConfigActivity.this, ProfileManagerActivity.class);

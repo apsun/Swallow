@@ -17,10 +17,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.ListView;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.*;
 
 public class NetworkScannerActivity extends Activity implements TextEntryDialog.Listener {
     private static final String TAG = "SWAL";
@@ -30,10 +27,12 @@ public class NetworkScannerActivity extends Activity implements TextEntryDialog.
     private WifiManager _wifiManager;
     private ScanResultsReceiver _scanReceiver;
 
-    private ArrayList<Bssid> _foundBssids;
+    private HashSet<Bssid> _foundBssids;
     private NetworkProfile _profile;
 
-    private SharedPreferences _preferences;
+    private ListView _bssidListView;
+    private Button _addManuallyButton;
+    private Button _addAllInRangeButton;
 
     private class ScanResultsReceiver extends BroadcastReceiver {
         @Override
@@ -64,16 +63,23 @@ public class NetworkScannerActivity extends Activity implements TextEntryDialog.
 
         // Get the profile we're editing from the intent
         _profile = getIntent().getParcelableExtra("profile");
-        _foundBssids = new ArrayList<Bssid>();
 
+        // Initialize empty set to hold scan results
+        // Use HashSet here because order isn't important
+        // and we're going to sort by RSSI later anyways.
+        _foundBssids = new HashSet<Bssid>();
+
+        // Get the system WiFi manager for scanning
         _wifiManager = (WifiManager)getSystemService(Context.WIFI_SERVICE);
+
+        // Timer used to periodically initiate network scans
         _scanTimer = new Timer();
 
-        ListView bssidListView = (ListView)findViewById(R.id.bssid_listview);
-        Button addManuallyButton = (Button)findViewById(R.id.add_manually_button);
-        Button addAllInRangeButton = (Button)findViewById(R.id.add_all_in_range_button);
+        _bssidListView = (ListView)findViewById(R.id.bssid_listview);
+        _addManuallyButton = (Button)findViewById(R.id.add_manually_button);
+        _addAllInRangeButton = (Button)findViewById(R.id.add_all_in_range_button);
 
-        addManuallyButton.setOnClickListener(new View.OnClickListener() {
+        _addManuallyButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 TextEntryDialog dialog = new TextEntryDialog();
@@ -106,9 +112,8 @@ public class NetworkScannerActivity extends Activity implements TextEntryDialog.
     }
 
     private void onWifiScanCompleted() {
-        _foundBssids.clear();
         List<ScanResult> results = _wifiManager.getScanResults();
-        ListView bssidListView = (ListView)findViewById(R.id.bssid_listview);
+        _foundBssids.clear();
         for (ScanResult result : results) {
             _foundBssids.add(new Bssid(result.BSSID));
             Log.d(TAG, "Found BSSID: " + result.BSSID);
