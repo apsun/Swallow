@@ -7,20 +7,16 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.v4.app.NavUtils;
-import android.view.Menu;
-import android.view.MenuInflater;
-import android.view.MenuItem;
+import android.view.*;
+import android.widget.AdapterView;
 import android.widget.ListView;
 
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.TreeSet;
+import java.util.*;
 
 public class ProfileManagerActivity extends Activity implements TextEntryDialog.Listener {
     private static final String TAG = "SWAL";
 
-    private TreeSet<NetworkProfile> _profiles;
+    private ArrayList<NetworkProfile> _profiles;
 
     private SharedPreferences _preferences;
     private ListView _profileListView;
@@ -36,21 +32,20 @@ public class ProfileManagerActivity extends Activity implements TextEntryDialog.
             actionBar.setDisplayHomeAsUpEnabled(true);
         }
 
-        _preferences = getPreferences(MODE_PRIVATE);
-        _profileListView = (ListView)findViewById(R.id.profile_listview);
-        _profiles = new TreeSet<NetworkProfile>(new Comparator<NetworkProfile>() {
-            @Override
-            public int compare(NetworkProfile lhs, NetworkProfile rhs) {
-                return lhs.getName().compareToIgnoreCase(rhs.getName());
-            }
-        });
+        // Load the current list of profiles
+        _preferences = getSharedPreferences("NetworkProfiles", MODE_PRIVATE);
+        Set<? extends Map.Entry<String, ?>> profiles = _preferences.getAll().entrySet();
+        _profiles = new ArrayList<NetworkProfile>(profiles.size());
 
-        for (Map.Entry<String, ?> profiles : _preferences.getAll().entrySet()) {
-            String profileName = profiles.getKey();
-            HashSet<Bssid> profileBssids = (HashSet<Bssid>)profiles.getValue();
+        for (Map.Entry<String, ?> profileEntry : profiles) {
+            String profileName = profileEntry.getKey();
+            HashSet<Bssid> profileBssids = (HashSet<Bssid>)profileEntry.getValue();
             NetworkProfile profile = new NetworkProfile(profileName, profileBssids);
             _profiles.add(profile);
         }
+
+        _profileListView = (ListView)findViewById(R.id.profile_listview);
+        registerForContextMenu(_profileListView);
     }
 
     @Override
@@ -82,6 +77,31 @@ public class ProfileManagerActivity extends Activity implements TextEntryDialog.
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
+        }
+    }
+
+    @Override
+    public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
+        super.onCreateContextMenu(menu, v, menuInfo);
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.profile_context_menu, menu);
+    }
+
+    @Override
+    public boolean onContextItemSelected(MenuItem item) {
+        AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo)item.getMenuInfo();
+        switch (item.getItemId()) {
+            case R.id.profile_context_menu_edit:
+                // do something
+                return true;
+            case R.id.profile_context_menu_delete:
+                // do something
+                return true;
+            case R.id.profile_context_menu_rename:
+                // do something
+                return true;
+            default:
+                return super.onContextItemSelected(item);
         }
     }
 

@@ -6,7 +6,6 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
-import android.preference.PreferenceManager;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
@@ -31,7 +30,7 @@ public class ConfigActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
 
-        _preferences = getPreferences(MODE_PRIVATE);
+        _preferences = getSharedPreferences("LoginCredentials", MODE_PRIVATE);
 
         _usernameTextBox = (EditText)findViewById(R.id.username_edittext);
         _passwordTextBox = (EditText)findViewById(R.id.password_edittext);

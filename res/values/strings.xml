@@ -26,4 +26,8 @@
     <string name="add_bssid_title">Add BSSID</string>
     <string name="show_shs_only">Show \'shs\' only</string>
     <string name="show_shs_only_desc">Only display networks with the SSID \'shs\' in the scan results list</string>
+    <string name="signal_strength">Signal strength</string>
+    <string name="edit">Edit</string>
+    <string name="rename">Rename</string>
+    <string name="delete">Delete</string>
 </resources>

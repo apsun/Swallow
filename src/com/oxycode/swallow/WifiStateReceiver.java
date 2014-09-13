@@ -28,9 +28,11 @@ public class WifiStateReceiver extends BroadcastReceiver {
         Log.d(TAG, "BSSID: " + bssidStr);
         Bssid bssid = new Bssid(bssidStr);
 
-        SharedPreferences preferences = context.getSharedPreferences("LoginCredentials", Context.MODE_PRIVATE);
+        SharedPreferences loginPrefs = context.getSharedPreferences("LoginCredentials", Context.MODE_PRIVATE);
+        SharedPreferences connectPrefs = context.getSharedPreferences("ProfileConfig", Context.MODE_PRIVATE);
+        SharedPreferences profilePrefs = context.getSharedPreferences("NetworkProfiles", Context.MODE_PRIVATE);
 
-        Set<String> activeProfileNames = preferences.getStringSet("profiles", null);
+        Set<String> activeProfileNames = connectPrefs.getStringSet("profiles", null);
         Set<NetworkProfile> activeProfiles = ProfileManager.getProfiles(activeProfileNames);
 
         boolean bssidInWhitelist = false;
@@ -45,8 +47,8 @@ public class WifiStateReceiver extends BroadcastReceiver {
             Log.d(TAG, "Active profiles does not include BSSID, skipping login");
         }
 
-        String username = preferences.getString("username", null);
-        String password = preferences.getString("password", null);
+        String username = loginPrefs.getString("username", null);
+        String password = loginPrefs.getString("password", null);
 
         if (username == null || password == null) {
             Log.d(TAG, "Null login credentials, skipping login");

@@ -10,6 +10,7 @@ import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.v4.app.NavUtils;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -17,10 +18,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.ListView;
 
-import java.util.Comparator;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.TreeSet;
+import java.util.*;
 
 public class NetworkScannerActivity extends Activity implements TextEntryDialog.Listener {
     private static final String TAG = "SWAL";
@@ -37,10 +35,10 @@ public class NetworkScannerActivity extends Activity implements TextEntryDialog.
     private Button _addManuallyButton;
     private Button _addAllInRangeButton;
 
-    private boolean _isPaused;
+    // private boolean _isPaused;
 
     private SharedPreferences _preferences;
-    private SharedPreferences.OnSharedPreferenceChangeListener _preferenceChangedListener;
+    // private SharedPreferences.OnSharedPreferenceChangeListener _preferenceChangedListener;
 
     private int _minimumSignalStrength;
     private int _scanRate;
@@ -110,6 +108,7 @@ public class NetworkScannerActivity extends Activity implements TextEntryDialog.
         PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
         _preferences = PreferenceManager.getDefaultSharedPreferences(this);
 
+        /*
         // Get the relevant preferences
         _minimumSignalStrength = Integer.parseInt(_preferences.getString("pref_minimum_signal_strength", null));
         _scanRate = Integer.parseInt(_preferences.getString("pref_scan_rate", null));
@@ -133,7 +132,7 @@ public class NetworkScannerActivity extends Activity implements TextEntryDialog.
                 }
             }
         };
-        _preferences.registerOnSharedPreferenceChangeListener(_preferenceChangedListener);
+        _preferences.registerOnSharedPreferenceChangeListener(_preferenceChangedListener);*/
     }
 
     @Override
@@ -157,12 +156,24 @@ public class NetworkScannerActivity extends Activity implements TextEntryDialog.
 
     private void onWifiScanCompleted() {
         _foundNetworks.clear();
-        for (ScanResult result : _wifiManager.getScanResults()) {
+        List<ScanResult> results = _wifiManager.getScanResults();
+        Collections.sort(results, new Comparator<ScanResult>() {
+            @Override
+            public int compare(ScanResult lhs, ScanResult rhs) {
+                // Compare by subtracting lhs from rhs, since we want
+                // the higher strength networks to come first
+                return rhs.level - lhs.level;
+            }
+        });
+
+        for (ScanResult result : results) {
+            Log.d(TAG, result.BSSID + "->" + result.level);
             _foundNetworks.add(result);
         }
+        Log.d(TAG, "..");
     }
 
-    private void restartScanTimer() {
+    /*private void restartScanTimer() {
         if (_scanTask != null) {
             _scanTask.cancel();
         }
@@ -177,13 +188,15 @@ public class NetworkScannerActivity extends Activity implements TextEntryDialog.
 
             _scanTimer.scheduleAtFixedRate(_scanTask, 0, _scanRate * 1000);
         }
-    }
+    }*/
 
     @Override
     protected void onResume() {
         super.onResume();
 
-        _isPaused = false;
+        _minimumSignalStrength = Integer.parseInt(_preferences.getString("pref_minimum_signal_strength", null));
+        _scanRate = Integer.parseInt(_preferences.getString("pref_scan_rate", null));
+        _showShsOnly = _preferences.getBoolean("pref_show_shs_only", false);
 
         // Register the scan results receiver
         registerReceiver(_scanReceiver, new IntentFilter(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION));
@@ -206,8 +219,6 @@ public class NetworkScannerActivity extends Activity implements TextEntryDialog.
     @Override
     protected void onPause() {
         super.onPause();
-
-        _isPaused = true;
 
         // Unregister the scan results receiver
         // This saves battery, since we are not uselessly
