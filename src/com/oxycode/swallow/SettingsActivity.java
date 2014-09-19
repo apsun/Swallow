@@ -6,7 +6,7 @@ import android.os.Bundle;
 import android.support.v4.app.NavUtils;
 import android.view.MenuItem;
 
-public class ScannerSettingsActivity extends Activity {
+public class SettingsActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -20,7 +20,7 @@ public class ScannerSettingsActivity extends Activity {
         // Set content fragment
         getFragmentManager()
             .beginTransaction()
-            .replace(android.R.id.content, new ScannerSettingsFragment())
+            .replace(android.R.id.content, new SettingsFragment())
             .commit();
     }
 

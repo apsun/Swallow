@@ -1,23 +1,76 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
-    <CheckBoxPreference
-        android:key="pref_show_shs_only"
-        android:title="@string/show_shs_only"
-        android:summary="@string/show_shs_only_desc"
-        android:defaultValue="false" />
-    <ListPreference
-        android:key="pref_scan_rate"
-        android:title="@string/scan_rate"
-        android:summary="@string/scan_rate_desc"
-        android:entries="@array/pref_scan_rate_entries"
-        android:entryValues="@array/pref_scan_rate_values"
-        android:defaultValue="2" />
-    <ListPreference
-        android:key="pref_minimum_signal_strength"
-        android:title="@string/minimum_signal_strength"
-        android:summary="@string/minimum_signal_strength_desc"
-        android:entries="@array/pref_minimum_signal_strength_entries"
-        android:entryValues="@array/pref_minimum_signal_strength_values"
-        android:defaultValue="-80" />
+    <PreferenceCategory
+        android:title="Login"
+        android:key="pref_category_login">
+        <CheckBoxPreference
+            android:key="pref_autologin_enabled"
+            android:title="Enable auto-login"
+            android:summaryOn="Auto-login enabled"
+            android:summaryOff="Auto-login disabled"
+            android:defaultValue="true"/>
+        <ListPreference
+            android:key="pref_login_retry_count"
+            android:title="Retry count"
+            android:summary="How many times to retry a failed login"
+            android:entries="@array/pref_login_retry_count_entries"
+            android:entryValues="@array/pref_login_retry_count_values"
+            android:defaultValue="2"/>
+    </PreferenceCategory>
+    <PreferenceCategory
+        android:title="Notifications"
+        android:key="pref_category_notifications">
+        <CheckBoxPreference
+            android:key="pref_enable_status_notifications"
+            android:title="Enable status notifications"
+            android:summaryOn="Display login status notifications"
+            android:summaryOff="Do not display login status notifications"
+            android:defaultValue="true"/>
+        <CheckBoxPreference
+            android:key="pref_use_toast_messages"
+            android:title="Use toast messages"
+            android:dependency="pref_enable_status_notifications"
+            android:summaryOn="Login status will be displayed as a toast message"
+            android:summaryOff="Login status will be displayed in the notification center"
+            android:defaultValue="true"/>
+        <MultiSelectListPreference
+            android:key="pref_enabled_toast_messages"
+            android:title="Enabled toast messages"
+            android:dependency="pref_use_toast_messages"
+            android:summary="Select which toast messages to display"
+            android:entries="@array/pref_enabled_toast_messages_entries"
+            android:entryValues="@array/pref_enabled_toast_messages_values"
+            android:defaultValue="@array/pref_enabled_toast_messages_default_values"/>
+        <CheckBoxPreference
+            android:key="pref_show_retry_notification"
+            android:title="Show retry notification"
+            android:summaryOn="Show notification to retry when login fails"
+            android:summaryOff="Do not show a notification to retry when login fails"
+            android:defaultValue="true"/>
+    </PreferenceCategory>
+    <PreferenceCategory
+        android:title="Network scanner"
+        android:key="pref_category_scanner">
+        <CheckBoxPreference
+            android:key="pref_show_shs_only"
+            android:title="@string/show_shs_only"
+            android:summaryOn="Only display networks with the name 'shs'"
+            android:summaryOff="Display all networks"
+            android:defaultValue="false"/>
+        <ListPreference
+            android:key="pref_scan_rate"
+            android:title="@string/scan_rate"
+            android:summary="@string/scan_rate_desc"
+            android:entries="@array/pref_scan_rate_entries"
+            android:entryValues="@array/pref_scan_rate_values"
+            android:defaultValue="2"/>
+        <ListPreference
+            android:key="pref_minimum_signal_strength"
+            android:title="@string/minimum_signal_strength"
+            android:summary="@string/minimum_signal_strength_desc"
+            android:entries="@array/pref_minimum_signal_strength_entries"
+            android:entryValues="@array/pref_minimum_signal_strength_values"
+            android:defaultValue="-80"/>
+    </PreferenceCategory>
 </PreferenceScreen>

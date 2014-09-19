@@ -11,7 +11,7 @@ import android.util.Log;
 import java.util.Set;
 
 public class WifiStateReceiver extends BroadcastReceiver {
-    private static final String TAG = "SWAL";
+    private static final String TAG = WifiStateReceiver.class.getName();
 
     @Override
     public void onReceive(Context context, Intent intent) {

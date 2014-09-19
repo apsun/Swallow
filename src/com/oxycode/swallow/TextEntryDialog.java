@@ -25,7 +25,7 @@ public class TextEntryDialog extends DialogFragment {
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
         Activity context = getActivity();
-        View promptView = context.getLayoutInflater().inflate(R.layout.text_entry_dialog, null);
+        View promptView = context.getLayoutInflater().inflate(R.layout.textedit_dialog, null);
         Bundle arguments = getArguments();
         String title = arguments.getString("title");
         String okText = arguments.getString("okText");

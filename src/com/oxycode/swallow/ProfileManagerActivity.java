@@ -14,7 +14,7 @@ import android.widget.ListView;
 import java.util.*;
 
 public class ProfileManagerActivity extends Activity implements TextEntryDialog.Listener {
-    private static final String TAG = "SWAL";
+    private static final String TAG = ProfileManagerActivity.class.getName();
 
     private ArrayList<NetworkProfile> _profiles;
 
@@ -24,7 +24,7 @@ public class ProfileManagerActivity extends Activity implements TextEntryDialog.
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.profile_manager);
+        setContentView(R.layout.profile_manager_activity);
 
         // Add back button to the action bar
         ActionBar actionBar = getActionBar();
@@ -51,7 +51,7 @@ public class ProfileManagerActivity extends Activity implements TextEntryDialog.
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
-        inflater.inflate(R.menu.profile_manager_menu, menu);
+        inflater.inflate(R.menu.profile_manager_options_menu, menu);
         return super.onCreateOptionsMenu(menu);
     }
 

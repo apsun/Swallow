@@ -56,7 +56,7 @@ public class Bssid implements Parcelable {
     public Bssid(String bssidString) {
         Matcher matcher = BSSID_PATTERN.matcher(bssidString);
         if (!matcher.matches()) {
-            throw new IllegalArgumentException("BSSID string is in an invalid format");
+            throw new IllegalArgumentException("BSSID string is invalid: " + bssidString);
         }
 
         // Use Integer parse method because Byte.parseByte doesn't

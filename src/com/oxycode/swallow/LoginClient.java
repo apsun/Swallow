@@ -9,9 +9,10 @@ import java.security.NoSuchAlgorithmException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-public class LoginClient {
-    private static final String TAG = "SWAL";
+public final class LoginClient {
+    private static final String TAG = LoginClient.class.getName();
     private static final String LOGIN_PAGE_URL = "http://192.255.255.94/";
+    private static final String LOGIN_PAGE_ENCODING = "GB2312";
 
     private LoginClient() {
 
@@ -24,31 +25,27 @@ public class LoginClient {
 
     public static LoginResult login(String username, String password) throws IOException {
         HttpURLConnection urlConnection = createConnection("POST");
+
+        // Get request body
         String encryptedPassword = encryptPassword(password);
         Map<String, String> params = getPostData(username, encryptedPassword);
         byte[] data = convertPostParams(params);
+
+        // Set request headers
         Map<String, String> headers = getPostHeaders(data);
+        for (Map.Entry<String, String> param : headers.entrySet()) {
+            urlConnection.addRequestProperty(param.getKey(), param.getValue());
+        }
 
-        // Set headers
-        setPostHeaders(urlConnection, headers);
-
-        // Set body
+        // Write request body
         urlConnection.setDoOutput(true);
         urlConnection.getOutputStream().write(data);
 
         // Read response to see if login succeeded
-        // Note that the page is encoded in GB2312
         InputStream inputStream = urlConnection.getInputStream();
-        InputStreamReader inputReader;
-        try {
-            inputReader = new InputStreamReader(inputStream, "GB2312");
-        } catch (UnsupportedEncodingException e) {
-            Log.wtf(TAG, "Unsupported encoding: GB2312", e);
-            return LoginResult.UNKNOWN_ERROR;
-        }
-        BufferedReader bufferedReader = new BufferedReader(inputReader);
+        BufferedReader inputReader = createStreamReader(inputStream);
         String line;
-        while ((line = bufferedReader.readLine()) != null) {
+        while ((line = inputReader.readLine()) != null) {
             // TODO: Check success flag
             Log.d(TAG, line);
         }
@@ -93,6 +90,7 @@ public class LoginClient {
     private static String encryptPassword(String plainTextPassword) {
         // At least it's a minor step over storing passwords in plaintext...
         // It's just too bad they don't use SSL... FAIL!
+        // I wonder how hard it would be to sniff login packets, hm?
         // http://security.stackexchange.com/questions/66475
         return md5("1" + plainTextPassword + "12345678") + "123456781";
     }
@@ -102,7 +100,7 @@ public class LoginClient {
         try {
             url = new URL(LOGIN_PAGE_URL);
         } catch (MalformedURLException e) {
-            Log.wtf(TAG, "Login page URL is malformed", e);
+            Log.wtf(TAG, "Login page URL is malformed: " + LOGIN_PAGE_URL, e);
             return null;
         }
 
@@ -111,6 +109,7 @@ public class LoginClient {
             connection.setRequestMethod(method);
         } catch (ProtocolException e) {
             Log.wtf(TAG, "Incorrect request method: " + method, e);
+            return null;
         }
 
         return connection;
@@ -132,12 +131,6 @@ public class LoginClient {
         }
     }
 
-    private static void setPostHeaders(HttpURLConnection connection, Map<String, String> headers) {
-        for (Map.Entry<String, String> param : headers.entrySet()) {
-            connection.addRequestProperty(param.getKey(), param.getValue());
-        }
-    }
-
     private static String md5(String str) {
         MessageDigest digest;
         try {
@@ -156,9 +149,20 @@ public class LoginClient {
         }
 
         StringBuilder sb = new StringBuilder(hash.length * 2);
-        for (byte b : hash){
+        for (byte b : hash) {
             sb.append(String.format("%02x", b & 0xff));
         }
         return sb.toString();
+    }
+
+    private static BufferedReader createStreamReader(InputStream inputStream) {
+        InputStreamReader inputReader;
+        try {
+            inputReader = new InputStreamReader(inputStream, LOGIN_PAGE_ENCODING);
+        } catch (UnsupportedEncodingException e) {
+            Log.wtf(TAG, "Unsupported encoding: " + LOGIN_PAGE_ENCODING, e);
+            return null;
+        }
+        return new BufferedReader(inputReader);
     }
 }

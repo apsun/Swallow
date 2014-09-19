@@ -61,7 +61,7 @@ public class NetworkProfile implements Parcelable, Iterable<Bssid> {
         return _name;
     }
 
-    public int size() {
+    public int count() {
         return _bssids.size();
     }
 

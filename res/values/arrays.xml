@@ -35,4 +35,37 @@
         <item>-60</item>
         <item>-50</item>
     </string-array>
+
+    <string-array name="pref_enabled_toast_messages_entries">
+        <item>Starting login</item>
+        <item>Retrying login</item>
+        <item>Login failed</item>
+        <item>Login succeeded</item>
+    </string-array>
+
+    <string-array name="pref_enabled_toast_messages_values">
+        <item>login_start</item>
+        <item>login_retry</item>
+        <item>login_failed</item>
+        <item>login_succeeded</item>
+    </string-array>
+
+    <string-array name="pref_enabled_toast_messages_default_values">
+        <item>login_start</item>
+        <item>login_succeeded</item>
+    </string-array>
+
+    <string-array name="pref_login_retry_count_entries">
+        <item>Do not retry</item>
+        <item>1 time</item>
+        <item>2 times</item>
+        <item>5 times</item>
+    </string-array>
+
+    <string-array name="pref_login_retry_count_values">
+        <item>0</item>
+        <item>1</item>
+        <item>2</item>
+        <item>5</item>
+    </string-array>
 </resources>

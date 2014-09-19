@@ -65,7 +65,7 @@ public class ScanResultListAdapter extends BaseAdapter implements CompoundButton
         ScanResultListItem listItem;
         if (convertView == null) {
             LayoutInflater inflater = (LayoutInflater)_context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-            convertView = inflater.inflate(R.layout.network_scan_result_listitem, null);
+            convertView = inflater.inflate(R.layout.network_scanresult_listitem, null);
             listItem = new ScanResultListItem();
             convertView.setTag(listItem);
         } else {

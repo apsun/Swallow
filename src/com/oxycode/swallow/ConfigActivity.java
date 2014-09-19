@@ -9,14 +9,16 @@ import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
-import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.ToggleButton;
 
 public class ConfigActivity extends Activity {
-    private static final String TAG = "SWAL";
+    private static final String TAG = ConfigActivity.class.getName();
 
     private EditText _usernameTextBox;
     private EditText _passwordTextBox;
@@ -28,18 +30,18 @@ public class ConfigActivity extends Activity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.main);
+        setContentView(R.layout.config_activity);
 
         _preferences = getSharedPreferences("LoginCredentials", MODE_PRIVATE);
 
         _usernameTextBox = (EditText)findViewById(R.id.username_edittext);
         _passwordTextBox = (EditText)findViewById(R.id.password_edittext);
-        _autoLoginToggleButton = (ToggleButton)findViewById(R.id.autologin_togglebutton);
+        //_autoLoginToggleButton = (ToggleButton)findViewById(R.id.autologin_togglebutton);
         _profileManagerButton = (Button)findViewById(R.id.profile_manager_button);
 
         _usernameTextBox.setText(_preferences.getString("username", null));
         _passwordTextBox.setText(_preferences.getString("password", null));
-        _autoLoginToggleButton.setChecked(getReceiverEnabled());
+        //_autoLoginToggleButton.setChecked(getReceiverEnabled());
 
         _usernameTextBox.addTextChangedListener(new TextWatcher() {
             @Override
@@ -73,12 +75,12 @@ public class ConfigActivity extends Activity {
             }
         });
 
-        _autoLoginToggleButton.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+        /*(_autoLoginToggleButton.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton button, boolean b) {
                 setReceiverEnabled(b);
             }
-        });
+        });*/
 
         _profileManagerButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -89,6 +91,24 @@ public class ConfigActivity extends Activity {
         });
     }
 
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.config_options_menu, menu);
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.scan_settings_menu:
+                Intent intent = new Intent(this, SettingsActivity.class);
+                startActivity(intent);
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
+    }
     private void setReceiverEnabled(boolean enabled) {
         PackageManager packageManager = getPackageManager();
         ComponentName componentName = new ComponentName(this, WifiStateReceiver.class);

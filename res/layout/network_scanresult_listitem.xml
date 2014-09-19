@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                android:layout_width="fill_parent"
+                android:layout_height="?android:attr/listPreferredItemHeight"
+                android:padding="6dip">
+    <CheckBox
+        android:id="@+id/network_scan_enabled_checkbox"
+        android:layout_width="wrap_content"
+        android:layout_height="fill_parent"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentTop="true"
+        android:checked="true"/>
+
+    <TextView
+        android:id="@+id/network_scan_detail_textview"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_toRightOf="@+id/network_scan_enabled_checkbox"
+        android:layout_toLeftOf="@+id/network_scan_level_textview"
+        android:singleLine="true"
+        android:textSize="16sp"
+        android:textColor="@android:color/secondary_text_dark"/>
+    <TextView
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/network_scan_detail_textview"
+        android:layout_toRightOf="@+id/network_scan_enabled_checkbox"
+        android:layout_alignParentTop="true"
+        android:layout_toLeftOf="@+id/network_scan_level_imageview"
+        android:textSize="20sp"
+        android:gravity="center_vertical"
+        android:id="@+id/network_scan_bssid_textview"
+        android:textColor="@android:color/primary_text_dark"/>
+    <ImageView
+        android:id="@+id/network_scan_level_imageview"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentRight="true"
+        android:contentDescription="@string/signal_strength"/>
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/network_scan_level_textview"
+        android:layout_alignParentTop="false"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentRight="false"
+        android:layout_alignLeft="@+id/network_scan_level_imageview"
+        android:layout_alignRight="@+id/network_scan_level_imageview"
+        android:gravity="center_horizontal"
+        android:textAppearance="?android:attr/textAppearanceSmall"/>
+</RelativeLayout>

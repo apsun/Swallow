@@ -11,8 +11,6 @@ import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.v4.app.NavUtils;
 import android.util.Log;
-import android.view.Menu;
-import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
@@ -21,24 +19,21 @@ import android.widget.ListView;
 import java.util.*;
 
 public class NetworkScannerActivity extends Activity implements TextEntryDialog.Listener {
-    private static final String TAG = "SWAL";
+    private static final String TAG = NetworkScannerActivity.class.getName();
 
     private Timer _scanTimer;
     private TimerTask _scanTask;
     private WifiManager _wifiManager;
     private BroadcastReceiver _scanReceiver;
 
-    private TreeSet<ScanResult> _foundNetworks;
     private NetworkProfile _profile;
 
     private ListView _bssidListView;
     private Button _addManuallyButton;
     private Button _addAllInRangeButton;
 
-    // private boolean _isPaused;
-
     private SharedPreferences _preferences;
-    // private SharedPreferences.OnSharedPreferenceChangeListener _preferenceChangedListener;
+    private SharedPreferences.OnSharedPreferenceChangeListener _preferenceChangedListener;
 
     private int _minimumSignalStrength;
     private int _scanRate;
@@ -47,7 +42,7 @@ public class NetworkScannerActivity extends Activity implements TextEntryDialog.
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.network_scanner);
+        setContentView(R.layout.network_scanner_activity);
 
         // Add back button to the action bar
         ActionBar actionBar = getActionBar();
@@ -57,18 +52,6 @@ public class NetworkScannerActivity extends Activity implements TextEntryDialog.
 
         // Get the profile we're editing from the intent
         _profile = getIntent().getParcelableExtra("profile");
-
-        // Initialize empty TreeSet to hold scan results.
-        // Networks are sorted by signal strength, from
-        // strongest to weakest.
-        _foundNetworks = new TreeSet<ScanResult>(new Comparator<ScanResult>() {
-            @Override
-            public int compare(ScanResult lhs, ScanResult rhs) {
-                // Compare by subtracting lhs from rhs, since we want
-                // the higher strength networks to come first
-                return lhs.level - rhs.level;
-            }
-        });
 
         // Get the system WiFi manager for scanning
         _wifiManager = (WifiManager)getSystemService(Context.WIFI_SERVICE);
@@ -105,41 +88,24 @@ public class NetworkScannerActivity extends Activity implements TextEntryDialog.
             }
         });
 
-        PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
         _preferences = PreferenceManager.getDefaultSharedPreferences(this);
 
-        /*
-        // Get the relevant preferences
-        _minimumSignalStrength = Integer.parseInt(_preferences.getString("pref_minimum_signal_strength", null));
-        _scanRate = Integer.parseInt(_preferences.getString("pref_scan_rate", null));
-        _showShsOnly = _preferences.getBoolean("pref_show_shs_only", false);
-
-        // Attatch our preference change listener so
-        // we can update the preference fields here
-        // as soon as they are set
+        // Attatch our preference change listener so we can update
+        // the preference fields here as soon as they are set
         _preferenceChangedListener = new SharedPreferences.OnSharedPreferenceChangeListener() {
             @Override
             public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
                 if ("pref_minimum_signal_strength".equals(key)) {
-                    _minimumSignalStrength = Integer.parseInt(sharedPreferences.getString("pref_minimum_signal_strength", null));
+                    _minimumSignalStrength = readPrefMinimumStrength();
                 } else if ("pref_scan_rate".equals(key)) {
-                    _scanRate = Integer.parseInt(sharedPreferences.getString("pref_scan_rate", null));
-                    if (!_isPaused) {
-                        restartScanTimer();
-                    }
+                    _scanRate = readPrefScanRate();
+                    stopScanTmer();
+                    startScanTimer();
                 } else if ("pref_show_shs_only".equals(key)) {
-                    _showShsOnly = sharedPreferences.getBoolean("pref_show_shs_only", false);
+                    _showShsOnly = readPrefShowShsOnly();
                 }
             }
         };
-        _preferences.registerOnSharedPreferenceChangeListener(_preferenceChangedListener);*/
-    }
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        MenuInflater inflater = getMenuInflater();
-        inflater.inflate(R.menu.network_scanner_menu, menu);
-        return super.onCreateOptionsMenu(menu);
     }
 
     private void addBssidToProfile(Bssid bssid) {
@@ -155,7 +121,6 @@ public class NetworkScannerActivity extends Activity implements TextEntryDialog.
     }
 
     private void onWifiScanCompleted() {
-        _foundNetworks.clear();
         List<ScanResult> results = _wifiManager.getScanResults();
         Collections.sort(results, new Comparator<ScanResult>() {
             @Override
@@ -166,18 +131,35 @@ public class NetworkScannerActivity extends Activity implements TextEntryDialog.
             }
         });
 
+        Log.d(TAG, "--BEGIN WIFI LIST--");
         for (ScanResult result : results) {
-            Log.d(TAG, result.BSSID + "->" + result.level);
-            _foundNetworks.add(result);
+            if (_showShsOnly && !"shs".equalsIgnoreCase(result.SSID)) continue;
+            if (_minimumSignalStrength > result.level) continue;
+            Log.d(TAG, String.format("[%s] %s -> %d", result.SSID, result.BSSID, result.level));
         }
-        Log.d(TAG, "..");
+        Log.d(TAG, "--END WIFI LIST--");
     }
 
-    /*private void restartScanTimer() {
+    private int readPrefMinimumStrength() {
+        return Integer.parseInt(_preferences.getString("pref_minimum_signal_strength", null));
+    }
+
+    private int readPrefScanRate() {
+        return Integer.parseInt(_preferences.getString("pref_scan_rate", null));
+    }
+
+    private boolean readPrefShowShsOnly() {
+        return _preferences.getBoolean("pref_show_shs_only", false);
+    }
+
+    private void stopScanTmer() {
         if (_scanTask != null) {
             _scanTask.cancel();
+            _scanTask = null;
         }
+    }
 
+    private void startScanTimer() {
         if (_scanRate >= 0) {
             _scanTask = new TimerTask() {
                 @Override
@@ -188,48 +170,39 @@ public class NetworkScannerActivity extends Activity implements TextEntryDialog.
 
             _scanTimer.scheduleAtFixedRate(_scanTask, 0, _scanRate * 1000);
         }
-    }*/
+    }
 
     @Override
     protected void onResume() {
         super.onResume();
 
-        _minimumSignalStrength = Integer.parseInt(_preferences.getString("pref_minimum_signal_strength", null));
-        _scanRate = Integer.parseInt(_preferences.getString("pref_scan_rate", null));
-        _showShsOnly = _preferences.getBoolean("pref_show_shs_only", false);
+        // Reload preferences
+        // This is necessary because we don't listen for
+        // preference change events when the activity is paused.
+        _minimumSignalStrength = readPrefMinimumStrength();
+        _scanRate = readPrefScanRate();
+        _showShsOnly = readPrefShowShsOnly();
 
-        // Register the scan results receiver
+        // Start listening for preference change events
+        _preferences.registerOnSharedPreferenceChangeListener(_preferenceChangedListener);
+
+        // Begin scanning for WiFi networks
         registerReceiver(_scanReceiver, new IntentFilter(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION));
-
-        if (_scanRate >= 0) {
-            // Create a new WiFi scan task. These cannot be
-            // re-used, so we have to create a new one every time.
-            _scanTask = new TimerTask() {
-                @Override
-                public void run() {
-                    startWifiScan();
-                }
-            };
-
-            // Begin the scan timer
-            _scanTimer.scheduleAtFixedRate(_scanTask, 0, _scanRate * 1000);
-        }
+        startScanTimer();
     }
 
     @Override
     protected void onPause() {
         super.onPause();
 
-        // Unregister the scan results receiver
+        // Stop scanning for WiFi networks
         // This saves battery, since we are not uselessly
         // refreshing the WiFi list in the background.
+        stopScanTmer();
         unregisterReceiver(_scanReceiver);
 
-        // Stop the WiFi scan task
-        if (_scanTask != null) {
-            _scanTask.cancel();
-            _scanTask = null;
-        }
+        // Stop listening for preference change events
+        _preferences.unregisterOnSharedPreferenceChangeListener(_preferenceChangedListener);
     }
 
     @Override
@@ -237,10 +210,6 @@ public class NetworkScannerActivity extends Activity implements TextEntryDialog.
         switch (item.getItemId()) {
             case android.R.id.home:
                 NavUtils.navigateUpFromSameTask(this);
-                return true;
-            case R.id.scan_settings_menu:
-                Intent intent = new Intent(this, ScannerSettingsActivity.class);
-                startActivity(intent);
                 return true;
             default:
                 return super.onOptionsItemSelected(item);

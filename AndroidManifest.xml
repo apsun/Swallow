@@ -4,7 +4,7 @@
           android:versionCode="1"
           android:versionName="1.0">
     <uses-sdk android:minSdkVersion="11" android:targetSdkVersion="20"/>
-    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE"/>
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
     <uses-permission android:name="android.permission.CHANGE_WIFI_STATE"/>
@@ -23,7 +23,7 @@
                 android:label="@string/profile_manager">
             <meta-data
                     android:name="android.support.PARENT_ACTIVITY"
-                    android:value="com.oxycode.swallow.ConfigActivity" />
+                    android:value="com.oxycode.swallow.ConfigActivity"/>
         </activity>
         <activity
                 android:name="com.oxycode.swallow.NetworkScannerActivity"
@@ -31,18 +31,18 @@
                 android:windowSoftInputMode="adjustPan">
             <meta-data
                     android:name="android.support.PARENT_ACTIVITY"
-                    android:value="com.oxycode.swallow.ProfileManagerActivity" />
+                    android:value="com.oxycode.swallow.ProfileManagerActivity"/>
         </activity>
         <activity
-            android:name="com.oxycode.swallow.ScannerSettingsActivity"
-            android:label="@string/scanner_settings">
-        <meta-data
-                android:name="android.support.PARENT_ACTIVITY"
-                android:value="com.oxycode.swallow.NetworkScannerActivity" />
-    </activity>
+                android:name=".SettingsActivity"
+                android:label="@string/action_settings">
+            <meta-data
+                    android:name="android.support.PARENT_ACTIVITY"
+                    android:value="com.oxycode.swallow.ConfigActivity"/>
+        </activity>
         <receiver android:name="com.oxycode.swallow.WifiStateReceiver">
             <intent-filter>
-                <action android:name="android.net.wifi.STATE_CHANGE" />
+                <action android:name="android.net.wifi.STATE_CHANGE"/>
             </intent-filter>
         </receiver>
         <service android:name="com.oxycode.swallow.LoginService">

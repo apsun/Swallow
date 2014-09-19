@@ -8,7 +8,7 @@ import android.widget.Toast;
 import java.io.IOException;
 
 public class LoginService extends IntentService {
-    private static final String TAG = "SWAL";
+    private static final String TAG = LoginService.class.getName();
     private final Handler _handler;
 
     public LoginService() {

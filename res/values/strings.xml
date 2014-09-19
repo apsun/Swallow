@@ -3,11 +3,7 @@
     <string name="app_name">Swallow</string>
     <string name="username">Username</string>
     <string name="password">Password</string>
-    <string name="login">Login</string>
-    <string name="autologin_enabled">Auto-login enabled</string>
-    <string name="autologin_disabled">Auto-login disabled</string>
     <string name="profile_manager">Profile manager</string>
-    <string name="network_scanner">Network scanner</string>
     <string name="add_manually">Add manually</string>
     <string name="add_all_in_range">Add all in range</string>
     <string name="action_new_profile">New profile</string>
@@ -19,8 +15,7 @@
     <string name="minimum_signal_strength_desc">The minimum strength for displayed WiFi networks</string>
     <string name="scan_rate">Scan rate</string>
     <string name="scan_rate_desc">How often to refresh the list of WiFi networks</string>
-    <string name="action_scan_settings">Scan settings</string>
-    <string name="scanner_settings">Scan settings</string>
+    <string name="action_settings">Settings</string>
     <string name="invalid_bssid_title">Invalid BSSID</string>
     <string name="invalid_bssid_message">BSSID must be in the format dc:ae:ee:xx:xx:xx!</string>
     <string name="add_bssid_title">Add BSSID</string>
