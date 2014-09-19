@@ -16,12 +16,6 @@ public class TextEntryDialog extends DialogFragment {
         void onTextEntryDialogCancel(String tag);
     }
 
-    private EditText _editText;
-
-    public EditText getEditText() {
-        return _editText;
-    }
-
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
         Activity context = getActivity();
@@ -33,7 +27,7 @@ public class TextEntryDialog extends DialogFragment {
         String cancelText = arguments.getString("cancelText");
         if (cancelText == null) cancelText = getString(android.R.string.cancel);
 
-        _editText = (EditText)promptView.findViewById(R.id.text_entry_dialog_edittext);
+        final EditText editText = (EditText)promptView.findViewById(R.id.text_entry_dialog_edittext);
 
         AlertDialog alertDialog = new AlertDialog.Builder(context)
             .setView(promptView)
@@ -43,7 +37,7 @@ public class TextEntryDialog extends DialogFragment {
                 new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int id) {
                         Listener listener = (Listener)getActivity();
-                        String text = _editText.getText().toString();
+                        String text = editText.getText().toString();
                         listener.onTextEntryDialogOk(getTag(), text);
                     }
                 })

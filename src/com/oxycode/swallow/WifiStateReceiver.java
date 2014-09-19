@@ -11,11 +11,12 @@ import android.util.Log;
 
 public class WifiStateReceiver extends BroadcastReceiver {
     private static final String TAG = WifiStateReceiver.class.getName();
+    private static final String PREF_AUTO_LOGIN_ENABLED_KEY = "pref_auto_login_enabled";
 
     @Override
     public void onReceive(Context context, Intent intent) {
         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(context);
-        if (!preferences.getBoolean("pref_auto_login_enabled", false)) return;
+        if (!preferences.getBoolean(PREF_AUTO_LOGIN_ENABLED_KEY, false)) return;
 
         String action = intent.getAction();
         Log.d(TAG, "Received action: " + action);

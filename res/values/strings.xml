@@ -22,10 +22,10 @@
     <string name="signal_strength_description">Signal strength</string>
 
     <!-- Toast messages -->
-    <string name="login_success">Logged in to WiFi with username: %s</string>
-    <string name="login_fail_incorrect_credentials">WiFi login failed: incorrect login credentials</string>
-    <string name="login_fail_account_banned">WiFi login failed: account has been banned</string>
-    <string name="login_fail_unknown_error">WiFi login failed: unknown error</string>
+    <string name="login_start">Logging in to school WiFi…</string>
+    <string name="login_retry">WiFi login failed, retrying %d more time(s)…</string>
+    <string name="login_failed">WiFi login failed: %s</string>
+    <string name="login_succeeded">Logged in to school WiFi!</string>
 
     <!-- Preferences -->
     <string name="settings">Settings</string>
