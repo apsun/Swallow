@@ -18,6 +18,7 @@ public class LoginService extends IntentService {
 
     @Override
     protected void onHandleIntent(Intent intent) {
+
         final String username = intent.getStringExtra("username");
         final String password = intent.getStringExtra("password");
 

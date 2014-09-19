@@ -4,6 +4,6 @@
     <item
         android:id="@+id/add_profile_button"
         android:icon="@drawable/ic_action_new"
-        android:title="@string/action_new_profile"
+        android:title="@string/create_profile"
         android:showAsAction="always"/>
 </menu>

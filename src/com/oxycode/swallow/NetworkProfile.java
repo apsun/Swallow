@@ -17,7 +17,7 @@ public class NetworkProfile implements Parcelable, Iterable<Bssid> {
     };
 
     private final String _name;
-    private final HashSet<Bssid> _bssids;
+    private final Set<Bssid> _bssids;
 
     private NetworkProfile(Parcel in) {
         _name = in.readString();
@@ -30,7 +30,7 @@ public class NetworkProfile implements Parcelable, Iterable<Bssid> {
         _bssids = new HashSet<Bssid>();
     }
 
-    public NetworkProfile(String name, HashSet<Bssid> bssids) {
+    public NetworkProfile(String name, Set<Bssid> bssids) {
         _name = name;
         _bssids = bssids;
     }

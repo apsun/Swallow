@@ -16,13 +16,13 @@
         <Button
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:text="@string/add_manually"
+            android:text="@string/add_manually_button_text"
             android:id="@+id/add_manually_button" android:layout_weight="0.5"
             style="?android:attr/borderlessButtonStyle"/>
         <Button
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:text="@string/add_all_in_range"
+            android:text="@string/add_all_in_range_button_text"
             android:id="@+id/add_all_in_range_button" android:layout_weight="0.5"
             style="?android:attr/borderlessButtonStyle"/>
     </LinearLayout>

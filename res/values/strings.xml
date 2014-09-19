@@ -1,28 +1,64 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Activities -> Config -->
     <string name="app_name">Swallow</string>
     <string name="username">Username</string>
     <string name="password">Password</string>
+
+    <!-- Activities -> Profile manager -->
     <string name="profile_manager">Profile manager</string>
-    <string name="add_manually">Add manually</string>
-    <string name="add_all_in_range">Add all in range</string>
-    <string name="action_new_profile">New profile</string>
+    <string name="create_profile">Create profile</string>
+    <string name="edit">Edit</string>
+    <string name="rename">Rename</string>
+    <string name="delete">Delete</string>
+
+    <!-- Activities -> Network scanner -->
+    <string name="network_scanner">Network scanner</string>
+    <string name="add_manually_button_text">Add manually</string>
+    <string name="add_all_in_range_button_text">Add all in range</string>
+    <string name="add_bssid_dialog_title">Add BSSID</string>
+    <string name="invalid_bssid_title">Invalid BSSID</string>
+    <string name="invalid_bssid_message">BSSID must be in the format xx:xx:xx:xx:xx:xx!</string>
+    <string name="signal_strength_description">Signal strength</string>
+
+    <!-- Toast messages -->
     <string name="login_success">Logged in to WiFi with username: %s</string>
     <string name="login_fail_incorrect_credentials">WiFi login failed: incorrect login credentials</string>
     <string name="login_fail_account_banned">WiFi login failed: account has been banned</string>
     <string name="login_fail_unknown_error">WiFi login failed: unknown error</string>
-    <string name="minimum_signal_strength">Minimum signal strength</string>
-    <string name="minimum_signal_strength_desc">The minimum strength for displayed WiFi networks</string>
-    <string name="scan_rate">Scan rate</string>
-    <string name="scan_rate_desc">How often to refresh the list of WiFi networks</string>
-    <string name="action_settings">Settings</string>
-    <string name="invalid_bssid_title">Invalid BSSID</string>
-    <string name="invalid_bssid_message">BSSID must be in the format dc:ae:ee:xx:xx:xx!</string>
-    <string name="add_bssid_title">Add BSSID</string>
-    <string name="show_shs_only">Show \'shs\' only</string>
-    <string name="show_shs_only_desc">Only display networks with the SSID \'shs\' in the scan results list</string>
-    <string name="signal_strength">Signal strength</string>
-    <string name="edit">Edit</string>
-    <string name="rename">Rename</string>
-    <string name="delete">Delete</string>
+
+    <!-- Preferences -->
+    <string name="settings">Settings</string>
+
+    <!-- Preferences -> Login -->
+    <string name="pref_category_login">Login</string>
+    <string name="pref_auto_login_enabled_title">Enable auto-login</string>
+    <string name="pref_auto_login_enabled_summary_on">Auto-login enabled</string>
+    <string name="pref_auto_login_enabled_summary_off">Auto-login disabled</string>
+    <string name="pref_login_retry_count_title">Retry count</string>
+    <string name="pref_login_retry_count_summary">How many times to retry a failed login</string>
+
+    <!-- Preferences -> Notifications -->
+    <string name="pref_category_notifications">Notifications</string>
+    <string name="pref_enable_status_notifications_title">Enable status notifications</string>
+    <string name="pref_enable_status_notifications_summary_on">Display login status notifications</string>
+    <string name="pref_enable_status_notifications_summary_off">Do not display login status notifications</string>
+    <string name="pref_use_toast_messages_title">Use toast messages</string>
+    <string name="pref_use_toast_messages_summary_on">Login status will be displayed as a toast message</string>
+    <string name="pref_use_toast_messages_summary_off">Login status will be displayed in the notification center</string>
+    <string name="pref_enabled_toast_messages_title">Enabled toast messages</string>
+    <string name="pref_enabled_toast_messages_summary">Select which toast messages to display</string>
+    <string name="pref_show_retry_notification_title">Show retry notification</string>
+    <string name="pref_show_retry_notification_summary_on">Show notification to retry when login fails</string>
+    <string name="pref_show_retry_notification_summary_off">Do not show a notification to retry when login fails</string>
+
+    <!-- Preferences -> Network scanner -->
+    <string name="pref_category_network_scanner">Network scanner</string>
+    <string name="pref_show_shs_only_title">Show \'shs\' only</string>
+    <string name="pref_show_shs_only_summary_on">Only display networks with the name \'shs\'</string>
+    <string name="pref_show_shs_only_summary_off">Display all networks</string>
+    <string name="pref_scan_rate_title">Scan rate</string>
+    <string name="pref_scan_rate_summary">How often to refresh the list of WiFi networks</string>
+    <string name="pref_minimum_signal_strength_title">Minimum signal strength</string>
+    <string name="pref_minimum_signal_strength_summary">The minimum strength for displayed WiFi networks</string>
 </resources>

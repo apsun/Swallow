@@ -15,6 +15,7 @@ import java.util.*;
 
 public class ProfileManagerActivity extends Activity implements TextEntryDialog.Listener {
     private static final String TAG = ProfileManagerActivity.class.getName();
+    private static final String SET_PROFILE_NAME_DIALOG_TAG = "set_profile_name_dialog";
 
     private ArrayList<NetworkProfile> _profiles;
 
@@ -33,6 +34,7 @@ public class ProfileManagerActivity extends Activity implements TextEntryDialog.
         }
 
         // Load the current list of profiles
+        /*
         _preferences = getSharedPreferences("NetworkProfiles", MODE_PRIVATE);
         Set<? extends Map.Entry<String, ?>> profiles = _preferences.getAll().entrySet();
         _profiles = new ArrayList<NetworkProfile>(profiles.size());
@@ -43,6 +45,7 @@ public class ProfileManagerActivity extends Activity implements TextEntryDialog.
             NetworkProfile profile = new NetworkProfile(profileName, profileBssids);
             _profiles.add(profile);
         }
+        */
 
         _profileListView = (ListView)findViewById(R.id.profile_listview);
         registerForContextMenu(_profileListView);
@@ -70,10 +73,10 @@ public class ProfileManagerActivity extends Activity implements TextEntryDialog.
             case R.id.add_profile_button:
                 TextEntryDialog dialog = new TextEntryDialog();
                 Bundle arguments = new Bundle();
-                arguments.putString("title", "Create a new profile");
+                arguments.putString("title", getString(R.string.create_profile));
                 dialog.setArguments(arguments);
                 FragmentManager fragmentManager = getFragmentManager();
-                dialog.show(fragmentManager, "set_profile_name_dialog");
+                dialog.show(fragmentManager, SET_PROFILE_NAME_DIALOG_TAG);
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
@@ -107,7 +110,7 @@ public class ProfileManagerActivity extends Activity implements TextEntryDialog.
 
     @Override
     public void onTextEntryDialogOk(String tag, String text) {
-        if (!tag.equals("set_profile_name_dialog")) return;
+        if (!tag.equals(SET_PROFILE_NAME_DIALOG_TAG)) return;
         NetworkProfile profile = new NetworkProfile(text);
         showNetworkScanner(profile);
     }

@@ -20,6 +20,10 @@ import java.util.*;
 
 public class NetworkScannerActivity extends Activity implements TextEntryDialog.Listener {
     private static final String TAG = NetworkScannerActivity.class.getName();
+    private static final String ADD_BSSID_DIALOG_TAG = "add_bssid_dialog";
+    private static final String PREF_SHOW_SHS_ONLY_KEY = "pref_show_shs_only";
+    private static final String PREF_SCAN_RATE_KEY = "pref_scan_rate";
+    private static final String PREF_MINIMUM_SIGNAL_STRENGTH_KEY = "pref_minimum_signal_strength";
 
     private Timer _scanTimer;
     private TimerTask _scanTask;
@@ -81,10 +85,10 @@ public class NetworkScannerActivity extends Activity implements TextEntryDialog.
             public void onClick(View v) {
                 TextEntryDialog dialog = new TextEntryDialog();
                 Bundle arguments = new Bundle();
-                arguments.putString("title", getString(R.string.add_bssid_title));
+                arguments.putString("title", getString(R.string.add_bssid_dialog_title));
                 dialog.setArguments(arguments);
                 FragmentManager fragmentManager = getFragmentManager();
-                dialog.show(fragmentManager, "add_bssid_dialog");
+                dialog.show(fragmentManager, ADD_BSSID_DIALOG_TAG);
             }
         });
 
@@ -95,13 +99,13 @@ public class NetworkScannerActivity extends Activity implements TextEntryDialog.
         _preferenceChangedListener = new SharedPreferences.OnSharedPreferenceChangeListener() {
             @Override
             public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
-                if ("pref_minimum_signal_strength".equals(key)) {
+                if (PREF_MINIMUM_SIGNAL_STRENGTH_KEY.equals(key)) {
                     _minimumSignalStrength = readPrefMinimumStrength();
-                } else if ("pref_scan_rate".equals(key)) {
+                } else if (PREF_SCAN_RATE_KEY.equals(key)) {
                     _scanRate = readPrefScanRate();
                     stopScanTmer();
                     startScanTimer();
-                } else if ("pref_show_shs_only".equals(key)) {
+                } else if (PREF_SHOW_SHS_ONLY_KEY.equals(key)) {
                     _showShsOnly = readPrefShowShsOnly();
                 }
             }
@@ -141,15 +145,15 @@ public class NetworkScannerActivity extends Activity implements TextEntryDialog.
     }
 
     private int readPrefMinimumStrength() {
-        return Integer.parseInt(_preferences.getString("pref_minimum_signal_strength", null));
+        return Integer.parseInt(_preferences.getString(PREF_MINIMUM_SIGNAL_STRENGTH_KEY, null));
     }
 
     private int readPrefScanRate() {
-        return Integer.parseInt(_preferences.getString("pref_scan_rate", null));
+        return Integer.parseInt(_preferences.getString(PREF_SCAN_RATE_KEY, null));
     }
 
     private boolean readPrefShowShsOnly() {
-        return _preferences.getBoolean("pref_show_shs_only", false);
+        return _preferences.getBoolean(PREF_SHOW_SHS_ONLY_KEY, false);
     }
 
     private void stopScanTmer() {
@@ -218,7 +222,7 @@ public class NetworkScannerActivity extends Activity implements TextEntryDialog.
 
     @Override
     public void onTextEntryDialogOk(String tag, String text) {
-        if (!tag.equals("add_bssid_dialog")) return;
+        if (!tag.equals(ADD_BSSID_DIALOG_TAG)) return;
         Bssid bssid;
         try {
             bssid = new Bssid(text);

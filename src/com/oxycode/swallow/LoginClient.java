@@ -108,7 +108,7 @@ public final class LoginClient {
         try {
             connection.setRequestMethod(method);
         } catch (ProtocolException e) {
-            Log.wtf(TAG, "Incorrect request method: " + method, e);
+            Log.wtf(TAG, "Invalid request method: " + method, e);
             return null;
         }
 

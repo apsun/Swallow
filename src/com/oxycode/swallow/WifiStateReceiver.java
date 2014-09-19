@@ -6,15 +6,17 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.NetworkInfo;
 import android.net.wifi.WifiManager;
+import android.preference.PreferenceManager;
 import android.util.Log;
-
-import java.util.Set;
 
 public class WifiStateReceiver extends BroadcastReceiver {
     private static final String TAG = WifiStateReceiver.class.getName();
 
     @Override
     public void onReceive(Context context, Intent intent) {
+        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(context);
+        if (!preferences.getBoolean("pref_auto_login_enabled", false)) return;
+
         String action = intent.getAction();
         Log.d(TAG, "Received action: " + action);
         if (!action.equals(WifiManager.NETWORK_STATE_CHANGED_ACTION)) return;
@@ -28,11 +30,8 @@ public class WifiStateReceiver extends BroadcastReceiver {
         Log.d(TAG, "BSSID: " + bssidStr);
         Bssid bssid = new Bssid(bssidStr);
 
-        SharedPreferences loginPrefs = context.getSharedPreferences("LoginCredentials", Context.MODE_PRIVATE);
-        SharedPreferences connectPrefs = context.getSharedPreferences("ProfileConfig", Context.MODE_PRIVATE);
-        SharedPreferences profilePrefs = context.getSharedPreferences("NetworkProfiles", Context.MODE_PRIVATE);
 
-        Set<String> activeProfileNames = connectPrefs.getStringSet("profiles", null);
+        /*Set<String> activeProfileNames = connectPrefs.getStringSet("profiles", null);
         Set<NetworkProfile> activeProfiles = ProfileManager.getProfiles(activeProfileNames);
 
         boolean bssidInWhitelist = false;
@@ -58,6 +57,6 @@ public class WifiStateReceiver extends BroadcastReceiver {
         Intent loginIntent = new Intent(context, LoginService.class);
         loginIntent.putExtra("username", username);
         loginIntent.putExtra("password", password);
-        context.startService(loginIntent);
+        context.startService(loginIntent);*/
     }
 }

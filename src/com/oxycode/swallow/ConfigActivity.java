@@ -36,12 +36,10 @@ public class ConfigActivity extends Activity {
 
         _usernameTextBox = (EditText)findViewById(R.id.username_edittext);
         _passwordTextBox = (EditText)findViewById(R.id.password_edittext);
-        //_autoLoginToggleButton = (ToggleButton)findViewById(R.id.autologin_togglebutton);
         _profileManagerButton = (Button)findViewById(R.id.profile_manager_button);
 
         _usernameTextBox.setText(_preferences.getString("username", null));
         _passwordTextBox.setText(_preferences.getString("password", null));
-        //_autoLoginToggleButton.setChecked(getReceiverEnabled());
 
         _usernameTextBox.addTextChangedListener(new TextWatcher() {
             @Override
