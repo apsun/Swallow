@@ -2,12 +2,6 @@
 
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
     <PreferenceCategory android:title="@string/pref_category_login">
-        <CheckBoxPreference
-            android:key="pref_auto_login_enabled"
-            android:title="@string/pref_auto_login_enabled_title"
-            android:summaryOn="@string/pref_auto_login_enabled_summary_on"
-            android:summaryOff="@string/pref_auto_login_enabled_summary_off"
-            android:defaultValue="true"/>
         <ListPreference
             android:key="pref_login_retry_count"
             android:title="@string/pref_login_retry_count_title"

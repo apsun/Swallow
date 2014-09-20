@@ -1,12 +1,13 @@
 package com.oxycode.swallow;
 
 import android.app.ActionBar;
-import android.app.Activity;
 import android.os.Bundle;
+import android.preference.PreferenceActivity;
 import android.support.v4.app.NavUtils;
 import android.view.MenuItem;
 
-public class SettingsActivity extends Activity {
+
+public class SettingsActivity extends PreferenceActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);

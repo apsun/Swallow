@@ -49,12 +49,7 @@ public class NetworkProfile implements Parcelable, Iterable<Bssid> {
     }
 
     public boolean contains(Bssid bssid) {
-        for (Bssid b : _bssids) {
-            if (b.equals(bssid)) {
-                return true;
-            }
-        }
-        return false;
+        return _bssids.contains(bssid);
     }
 
     public String getName() {

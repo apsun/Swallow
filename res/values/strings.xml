@@ -6,7 +6,7 @@
     <string name="password">Password</string>
 
     <!-- Activities -> Profile manager -->
-    <string name="profile_manager">Profile manager</string>
+    <string name="profile_manager">Profiles</string>
     <string name="create_profile">Create profile</string>
     <string name="enter_profile_name">Enter profile name</string>
     <string name="edit">Edit</string>
