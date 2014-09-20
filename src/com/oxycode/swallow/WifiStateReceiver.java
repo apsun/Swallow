@@ -12,6 +12,10 @@ import android.util.Log;
 public class WifiStateReceiver extends BroadcastReceiver {
     private static final String TAG = WifiStateReceiver.class.getName();
     private static final String PREF_AUTO_LOGIN_ENABLED_KEY = "pref_auto_login_enabled";
+    private static final String PREF_LOGIN_RETRY_COUNT_KEY = "pref_login_retry_count";
+    private static final String PREF_ENABLE_STATUS_NOTIFICATIONS_KEY = "pref_enable_status_notifications";
+    private static final String PREF_USE_TOAST_MESSAGES_KEY = "pref_use_toast_messages";
+    private static final String PREF_ENABLED_TOAST_MESSAGES_KEY = "pref_enabled_toast_messages";
 
     @Override
     public void onReceive(Context context, Intent intent) {
@@ -53,11 +57,19 @@ public class WifiStateReceiver extends BroadcastReceiver {
         if (username == null || password == null) {
             Log.d(TAG, "Null login credentials, skipping login");
             return;
-        }
+        } */
+
+        /*int retryCount = Integer.parseInt(preferences.getString(PREF_LOGIN_RETRY_COUNT_KEY, null));
+        boolean showNotifications = preferences.getBoolean(PREF_ENABLE_STATUS_NOTIFICATIONS_KEY, false);
+        boolean useToast = preferences.getBoolean(PREF_USE_TOAST_MESSAGES_KEY, false);
+        Set<String> enabledToastMessages = preferences.getStringSet(PREF_ENABLED_TOAST_MESSAGES_KEY, null);
+
 
         Intent loginIntent = new Intent(context, LoginService.class);
-        loginIntent.putExtra("username", username);
-        loginIntent.putExtra("password", password);
+        loginIntent.putExtras()
+        loginIntent.putExtra(LoginService.USERNAME, username);
+        loginIntent.putExtra(LoginService.PASSWORD, password);
+        loginIntent.putExtra()
         context.startService(loginIntent);*/
     }
 }

@@ -9,6 +9,12 @@ import java.io.IOException;
 
 public class LoginService extends IntentService {
     private static final String TAG = LoginService.class.getName();
+    public static final String USERNAME = "username";
+    public static final String PASSWORD = "password";
+    public static final String RETRY_COUNT = "retry_count";
+    public static final String SHOW_NOTIFICATIONS = "show_notifications";
+    public static final String USE_TOAST = "use_toast";
+
     private final Handler _handler;
 
     public LoginService() {
@@ -56,11 +62,11 @@ public class LoginService extends IntentService {
 
     @Override
     protected void onHandleIntent(Intent intent) {
-        String username = intent.getStringExtra("username");
-        String password = intent.getStringExtra("password");
-        int retries = intent.getIntExtra("retries", 0);
-        boolean showNotification = intent.getBooleanExtra("show_notification", false);
-        boolean useToast = intent.getBooleanExtra("use_toast", false);
+        String username = intent.getStringExtra(USERNAME);
+        String password = intent.getStringExtra(PASSWORD);
+        int retries = intent.getIntExtra(RETRY_COUNT, 0);
+        boolean showNotification = intent.getBooleanExtra(SHOW_NOTIFICATIONS, false);
+        boolean useToast = intent.getBooleanExtra(USE_TOAST, false);
 
         LoginResult result = loginWithRetries(username, password, retries);
 

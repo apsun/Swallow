@@ -11,6 +11,10 @@ import android.view.WindowManager;
 import android.widget.EditText;
 
 public class TextEntryDialog extends DialogFragment {
+    public static final String TITLE = "title";
+    public static final String OK_TEXT = "okText";
+    public static final String CANCEL_TEXT = "cancelText";
+
     public static interface Listener {
         void onTextEntryDialogOk(String tag, String text);
         void onTextEntryDialogCancel(String tag);
@@ -21,10 +25,10 @@ public class TextEntryDialog extends DialogFragment {
         Activity context = getActivity();
         View promptView = context.getLayoutInflater().inflate(R.layout.textedit_dialog, null);
         Bundle arguments = getArguments();
-        String title = arguments.getString("title");
-        String okText = arguments.getString("okText");
+        String title = arguments.getString(TITLE);
+        String okText = arguments.getString(OK_TEXT);
+        String cancelText = arguments.getString(CANCEL_TEXT);
         if (okText == null) okText = getString(android.R.string.ok);
-        String cancelText = arguments.getString("cancelText");
         if (cancelText == null) cancelText = getString(android.R.string.cancel);
 
         final EditText editText = (EditText)promptView.findViewById(R.id.text_entry_dialog_edittext);

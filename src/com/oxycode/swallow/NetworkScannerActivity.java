@@ -1,9 +1,9 @@
 package com.oxycode.swallow;
 
 import android.app.ActionBar;
-import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.FragmentManager;
+import android.app.ListActivity;
 import android.content.*;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiManager;
@@ -18,7 +18,7 @@ import android.widget.ListView;
 
 import java.util.*;
 
-public class NetworkScannerActivity extends Activity implements TextEntryDialog.Listener {
+public class NetworkScannerActivity extends ListActivity implements TextEntryDialog.Listener {
     private static final String TAG = NetworkScannerActivity.class.getName();
     private static final String ADD_BSSID_DIALOG_TAG = "add_bssid_dialog";
     private static final String PREF_SHOW_SHS_ONLY_KEY = "pref_show_shs_only";
@@ -76,7 +76,7 @@ public class NetworkScannerActivity extends Activity implements TextEntryDialog.
             }
         };
 
-        _bssidListView = (ListView)findViewById(R.id.bssid_listview);
+        // _bssidListView = (ListView)findViewById(R.id.bssid_listview);
         _addManuallyButton = (Button)findViewById(R.id.add_manually_button);
         _addAllInRangeButton = (Button)findViewById(R.id.add_all_in_range_button);
 
@@ -85,7 +85,7 @@ public class NetworkScannerActivity extends Activity implements TextEntryDialog.
             public void onClick(View v) {
                 TextEntryDialog dialog = new TextEntryDialog();
                 Bundle arguments = new Bundle();
-                arguments.putString("title", getString(R.string.add_bssid_dialog_title));
+                arguments.putString(TextEntryDialog.TITLE, getString(R.string.enter_bssid));
                 dialog.setArguments(arguments);
                 FragmentManager fragmentManager = getFragmentManager();
                 dialog.show(fragmentManager, ADD_BSSID_DIALOG_TAG);

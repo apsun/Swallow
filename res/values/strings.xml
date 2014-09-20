@@ -8,6 +8,7 @@
     <!-- Activities -> Profile manager -->
     <string name="profile_manager">Profile manager</string>
     <string name="create_profile">Create profile</string>
+    <string name="enter_profile_name">Enter profile name</string>
     <string name="edit">Edit</string>
     <string name="rename">Rename</string>
     <string name="delete">Delete</string>
@@ -16,7 +17,7 @@
     <string name="network_scanner">Network scanner</string>
     <string name="add_manually_button_text">Add manually</string>
     <string name="add_all_in_range_button_text">Add all in range</string>
-    <string name="add_bssid_dialog_title">Add BSSID</string>
+    <string name="enter_bssid">Enter network BSSID</string>
     <string name="invalid_bssid_title">Invalid BSSID</string>
     <string name="invalid_bssid_message">BSSID must be in the format xx:xx:xx:xx:xx:xx!</string>
     <string name="signal_strength_description">Signal strength</string>
@@ -50,7 +51,7 @@
     <string name="pref_enabled_toast_messages_summary">Select which toast messages to display</string>
     <string name="pref_show_retry_notification_title">Show retry notification</string>
     <string name="pref_show_retry_notification_summary_on">Show notification to retry when login fails</string>
-    <string name="pref_show_retry_notification_summary_off">Do not show a notification to retry when login fails</string>
+    <string name="pref_show_retry_notification_summary_off">Do not show notification to retry when login fails</string>
 
     <!-- Preferences -> Network scanner -->
     <string name="pref_category_network_scanner">Network scanner</string>

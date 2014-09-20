@@ -1,28 +1,26 @@
 package com.oxycode.swallow;
 
 import android.app.Activity;
-import android.content.ComponentName;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.ToggleButton;
 
 public class ConfigActivity extends Activity {
     private static final String TAG = ConfigActivity.class.getName();
+    private static final String PREF_USERNAME_KEY = "username";
+    private static final String PREF_PASSWORD_KEY = "password";
 
     private EditText _usernameTextBox;
     private EditText _passwordTextBox;
-    private ToggleButton _autoLoginToggleButton;
+    // private ToggleButton _autoLoginToggleButton;
     private Button _profileManagerButton;
 
     private SharedPreferences _preferences;
@@ -38,8 +36,8 @@ public class ConfigActivity extends Activity {
         _passwordTextBox = (EditText)findViewById(R.id.password_edittext);
         _profileManagerButton = (Button)findViewById(R.id.profile_manager_button);
 
-        _usernameTextBox.setText(_preferences.getString("username", null));
-        _passwordTextBox.setText(_preferences.getString("password", null));
+        _usernameTextBox.setText(_preferences.getString(PREF_USERNAME_KEY, null));
+        _passwordTextBox.setText(_preferences.getString(PREF_PASSWORD_KEY, null));
 
         _usernameTextBox.addTextChangedListener(new TextWatcher() {
             @Override
@@ -52,7 +50,7 @@ public class ConfigActivity extends Activity {
             public void afterTextChanged(Editable s) {
                 String username = s.toString();
                 SharedPreferences.Editor editor = _preferences.edit();
-                editor.putString("username", username);
+                editor.putString(PREF_USERNAME_KEY, username);
                 editor.apply();
             }
         });
@@ -68,7 +66,7 @@ public class ConfigActivity extends Activity {
             public void afterTextChanged(Editable s) {
                 String password = s.toString();
                 SharedPreferences.Editor editor = _preferences.edit();
-                editor.putString("password", password);
+                editor.putString(PREF_PASSWORD_KEY, password);
                 editor.apply();
             }
         });
@@ -107,7 +105,8 @@ public class ConfigActivity extends Activity {
                 return super.onOptionsItemSelected(item);
         }
     }
-    private void setReceiverEnabled(boolean enabled) {
+
+    /*private void setReceiverEnabled(boolean enabled) {
         PackageManager packageManager = getPackageManager();
         ComponentName componentName = new ComponentName(this, WifiStateReceiver.class);
         int status = enabled ? PackageManager.COMPONENT_ENABLED_STATE_ENABLED : PackageManager.COMPONENT_ENABLED_STATE_DISABLED;
@@ -129,5 +128,5 @@ public class ConfigActivity extends Activity {
 
         Log.w(TAG, "Unknown receiver state: " + status);
         return false;
-    }
+    }*/
 }

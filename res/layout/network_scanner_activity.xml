@@ -1,34 +1,37 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
                 android:orientation="vertical"
                 android:layout_width="fill_parent"
                 android:layout_height="fill_parent"
+                android:divider="?android:attr/dividerHorizontal"
+                android:showDividers="middle"
                 android:weightSum="1">
+    <ListView
+        android:layout_width="fill_parent"
+        android:layout_height="0dp"
+        android:id="@android:id/list"
+        android:layout_weight="1"/>
     <LinearLayout
         android:id="@+id/scan_buttons_bar"
         android:orientation="horizontal"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:weightSum="1"
-        android:layout_alignParentBottom="true"
         style="?android:attr/buttonBarStyle">
         <Button
+            android:id="@+id/add_manually_button"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:text="@string/add_manually_button_text"
-            android:id="@+id/add_manually_button" android:layout_weight="0.5"
-            style="?android:attr/borderlessButtonStyle"/>
+            android:layout_weight="0.5"
+            style="?android:attr/buttonBarButtonStyle"/>
         <Button
+            android:id="@+id/add_all_in_range_button"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:text="@string/add_all_in_range_button_text"
-            android:id="@+id/add_all_in_range_button" android:layout_weight="0.5"
-            style="?android:attr/borderlessButtonStyle"/>
+            android:layout_weight="0.5"
+            style="?android:attr/buttonBarButtonStyle"/>
     </LinearLayout>
-    <ListView
-        android:layout_width="match_parent"
-        android:layout_height="fill_parent"
-        android:layout_above="@id/scan_buttons_bar"
-        android:id="@+id/bssid_listview"/>
-</RelativeLayout>
+</LinearLayout>

@@ -1,8 +1,8 @@
 package com.oxycode.swallow;
 
 import android.app.ActionBar;
-import android.app.Activity;
 import android.app.FragmentManager;
+import android.app.ListActivity;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
@@ -11,9 +11,9 @@ import android.view.*;
 import android.widget.AdapterView;
 import android.widget.ListView;
 
-import java.util.*;
+import java.util.ArrayList;
 
-public class ProfileManagerActivity extends Activity implements TextEntryDialog.Listener {
+public class ProfileManagerActivity extends ListActivity implements TextEntryDialog.Listener {
     private static final String TAG = ProfileManagerActivity.class.getName();
     private static final String SET_PROFILE_NAME_DIALOG_TAG = "set_profile_name_dialog";
 
@@ -25,7 +25,6 @@ public class ProfileManagerActivity extends Activity implements TextEntryDialog.
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.profile_manager_activity);
 
         // Add back button to the action bar
         ActionBar actionBar = getActionBar();
@@ -47,8 +46,7 @@ public class ProfileManagerActivity extends Activity implements TextEntryDialog.
         }
         */
 
-        _profileListView = (ListView)findViewById(R.id.profile_listview);
-        registerForContextMenu(_profileListView);
+        registerForContextMenu(getListView());
     }
 
     @Override
@@ -73,7 +71,7 @@ public class ProfileManagerActivity extends Activity implements TextEntryDialog.
             case R.id.add_profile_button:
                 TextEntryDialog dialog = new TextEntryDialog();
                 Bundle arguments = new Bundle();
-                arguments.putString("title", getString(R.string.create_profile));
+                arguments.putString(TextEntryDialog.TITLE, getString(R.string.enter_profile_name));
                 dialog.setArguments(arguments);
                 FragmentManager fragmentManager = getFragmentManager();
                 dialog.show(fragmentManager, SET_PROFILE_NAME_DIALOG_TAG);
