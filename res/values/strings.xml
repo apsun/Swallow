@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Activities -> Config -->
+    <!-- Activities -> Main -->
     <string name="app_name">Swallow</string>
+    <string name="enable">Enable</string>
     <string name="username">Username</string>
     <string name="password">Password</string>
 
@@ -15,6 +16,7 @@
 
     <!-- Activities -> Network scanner -->
     <string name="network_scanner">Network scanner</string>
+    <string name="refresh">Refresh</string>
     <string name="add_manually_button_text">Add manually</string>
     <string name="add_all_in_range_button_text">Add all in range</string>
     <string name="enter_bssid">Enter network BSSID</string>

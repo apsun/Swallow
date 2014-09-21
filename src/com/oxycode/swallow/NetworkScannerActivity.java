@@ -11,6 +11,8 @@ import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.v4.app.NavUtils;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
@@ -35,6 +37,7 @@ public class NetworkScannerActivity extends ListActivity implements TextEntryDia
     private ListView _bssidListView;
     private Button _addManuallyButton;
     private Button _addAllInRangeButton;
+    private MenuItem _refreshMenuItem;
 
     private SharedPreferences _preferences;
     private SharedPreferences.OnSharedPreferenceChangeListener _preferenceChangedListener;
@@ -112,6 +115,14 @@ public class NetworkScannerActivity extends ListActivity implements TextEntryDia
         };
     }
 
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.network_scanner_options_menu, menu);
+        _refreshMenuItem = menu.findItem(R.id.refresh_networks_button);
+        return super.onCreateOptionsMenu(menu);
+    }
+
     private void addBssidToProfile(Bssid bssid) {
         _profile.add(bssid);
     }
@@ -122,9 +133,23 @@ public class NetworkScannerActivity extends ListActivity implements TextEntryDia
 
     private void startWifiScan() {
         _wifiManager.startScan();
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                if (_refreshMenuItem.getActionView() == null) {
+                    _refreshMenuItem.setActionView(R.layout.refresh_layout);
+                }
+            }
+        });
     }
 
     private void onWifiScanCompleted() {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                _refreshMenuItem.setActionView(null);
+            }
+        });
         List<ScanResult> results = _wifiManager.getScanResults();
         Collections.sort(results, new Comparator<ScanResult>() {
             @Override
@@ -172,7 +197,11 @@ public class NetworkScannerActivity extends ListActivity implements TextEntryDia
                 }
             };
 
-            _scanTimer.scheduleAtFixedRate(_scanTask, 0, _scanRate * 1000);
+            // TODO: Fix this hack!
+            // For some reason onCreateOptionsMenu is called AFTER onResume
+            // This means that if we scan with 0 delay, we will crash with a NPE
+            // since the refresh menu item hasn't been set yet.
+            _scanTimer.scheduleAtFixedRate(_scanTask, _scanRate * 1000, _scanRate * 1000);
         }
     }
 
@@ -214,6 +243,9 @@ public class NetworkScannerActivity extends ListActivity implements TextEntryDia
         switch (item.getItemId()) {
             case android.R.id.home:
                 NavUtils.navigateUpFromSameTask(this);
+                return true;
+            case R.id.refresh_networks_button:
+                startWifiScan();
                 return true;
             default:
                 return super.onOptionsItemSelected(item);

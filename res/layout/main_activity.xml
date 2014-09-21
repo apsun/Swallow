@@ -4,18 +4,23 @@
               android:orientation="vertical"
               android:layout_width="fill_parent"
               android:layout_height="fill_parent"
-              android:weightSum="1" android:padding="@dimen/window_padding">
+              android:weightSum="1"
+              android:padding="@dimen/window_padding">
     <EditText
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="@string/username" android:id="@+id/username_edittext" android:singleLine="true"
+        android:hint="@string/username"
+        android:id="@+id/username_edittext"
+        android:singleLine="true"
         android:inputType="textVisiblePassword|textCapSentences"/>
     <EditText
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:ems="10"
         android:id="@+id/password_edittext"
-        android:hint="@string/password" android:inputType="textPassword" android:singleLine="true"/>
+        android:hint="@string/password"
+        android:inputType="textPassword"
+        android:singleLine="true"/>
     <LinearLayout
         android:orientation="horizontal"
         android:layout_width="match_parent"
@@ -24,12 +29,13 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:text="@string/profile_manager"
-            android:id="@+id/profile_manager_button" android:layout_weight="0.5"/>
+            android:id="@+id/profile_manager_button"
+            android:layout_weight="0.5"/>
         <Button
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:text="@string/settings"
-            android:id="@+id/settings_button" android:singleLine="false"
+            android:id="@+id/settings_button"
             android:layout_weight="0.5"/>
     </LinearLayout>
 </LinearLayout>

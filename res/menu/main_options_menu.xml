@@ -3,7 +3,7 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item
         android:id="@+id/enable_switch_view"
-        android:title=""
+        android:title="@string/enable"
         android:showAsAction="always"
         android:actionLayout="@layout/switch_layout"/>
     <!--item

@@ -67,6 +67,22 @@ public class LoginService extends IntentService {
 
     @Override
     protected void onHandleIntent(Intent intent) {
+        // make sure we have credentials (username + password)
+        // get preferences (retry count, notification method, etc)
+        // if use toast:
+        //   show begin login toast
+        // else:
+        //   create ongoing notification
+        // do:
+        //   try:
+        //     login()
+        //   except IOException:
+        //     if use toast:
+        //        show retrying notification
+        //     else:
+        //        update ongoing notification
+        // while retry
+
         /*SharedPreferences credentials = getSharedPreferences(PREF_LOGIN_CREDENTIALS, MODE_PRIVATE);
 
         String username = credentials.getString(PREF_USERNAME_KEY, null);

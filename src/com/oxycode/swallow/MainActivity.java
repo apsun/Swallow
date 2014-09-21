@@ -124,13 +124,18 @@ public class MainActivity extends Activity {
         switch (status) {
             case PackageManager.COMPONENT_ENABLED_STATE_ENABLED:
                 return true;
-            case PackageManager.COMPONENT_ENABLED_STATE_DEFAULT:
             case PackageManager.COMPONENT_ENABLED_STATE_DISABLED:
             case PackageManager.COMPONENT_ENABLED_STATE_DISABLED_USER:
                 return false;
+            case PackageManager.COMPONENT_ENABLED_STATE_DEFAULT:
+                // Note: this value must be synchronized with the value defined in
+                // the manifest file. For some reason, if the default state is false,
+                // we cannot retrieve the receiver info, so getting this value
+                // programatically is not possible as of right now.
+                return true;
+            default:
+                Log.w(TAG, "Unknown receiver state: " + status);
+                return false;
         }
-
-        Log.w(TAG, "Unknown receiver state: " + status);
-        return false;
     }
 }
