@@ -13,6 +13,8 @@
     <string name="edit">Edit</string>
     <string name="rename">Rename</string>
     <string name="delete">Delete</string>
+    <string name="save">Save</string>
+    <string name="cancel">Cancel</string>
 
     <!-- Activities -> Network scanner -->
     <string name="network_scanner">Network scanner</string>

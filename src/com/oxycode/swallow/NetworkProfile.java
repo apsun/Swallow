@@ -16,6 +16,32 @@ public class NetworkProfile implements Parcelable, Iterable<Bssid> {
         }
     };
 
+    public static class Editor {
+        private String _name;
+        private Set<Bssid> _bssids;
+
+        private Editor(String name, Set<Bssid> bssids) {
+            _name = name;
+            _bssids = bssids;
+        }
+
+        public boolean add(Bssid bssid) {
+            return _bssids.add(bssid);
+        }
+
+        public boolean remove(Bssid bssid) {
+            return _bssids.remove(bssid);
+        }
+
+        public void rename(String name) {
+            _name = name;
+        }
+
+        public NetworkProfile save() {
+            return new NetworkProfile(_name, _bssids);
+        }
+    }
+
     private final String _name;
     private final Set<Bssid> _bssids;
 
@@ -30,7 +56,7 @@ public class NetworkProfile implements Parcelable, Iterable<Bssid> {
         _bssids = new HashSet<Bssid>();
     }
 
-    public NetworkProfile(String name, Set<Bssid> bssids) {
+    private NetworkProfile(String name, Set<Bssid> bssids) {
         _name = name;
         _bssids = bssids;
     }
@@ -38,14 +64,6 @@ public class NetworkProfile implements Parcelable, Iterable<Bssid> {
     public NetworkProfile(String name, Collection<Bssid> bssids) {
         _name = name;
         _bssids = new HashSet<Bssid>(bssids);
-    }
-
-    public boolean add(Bssid bssid) {
-        return _bssids.add(bssid);
-    }
-
-    public boolean remove(Bssid bssid) {
-        return _bssids.remove(bssid);
     }
 
     public boolean contains(Bssid bssid) {

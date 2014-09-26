@@ -2,7 +2,6 @@ package com.oxycode.swallow;
 
 import android.app.ActionBar;
 import android.app.AlertDialog;
-import android.app.FragmentManager;
 import android.app.ListActivity;
 import android.content.*;
 import android.net.wifi.ScanResult;
@@ -11,18 +10,15 @@ import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.v4.app.NavUtils;
 import android.util.Log;
-import android.view.Menu;
-import android.view.MenuInflater;
-import android.view.MenuItem;
-import android.view.View;
+import android.view.*;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ListView;
 
 import java.util.*;
 
-public class NetworkScannerActivity extends ListActivity implements TextEntryDialog.Listener {
+public class NetworkScannerActivity extends ListActivity {
     private static final String TAG = NetworkScannerActivity.class.getName();
-    private static final String ADD_BSSID_DIALOG_TAG = "add_bssid_dialog";
     private static final String PREF_SHOW_SHS_ONLY_KEY = "pref_show_shs_only";
     private static final String PREF_SCAN_RATE_KEY = "pref_scan_rate";
     private static final String PREF_MINIMUM_SIGNAL_STRENGTH_KEY = "pref_minimum_signal_strength";
@@ -79,22 +75,28 @@ public class NetworkScannerActivity extends ListActivity implements TextEntryDia
             }
         };
 
-        // _bssidListView = (ListView)findViewById(R.id.bssid_listview);
+        // Get inner views
+        _bssidListView = getListView();
         _addManuallyButton = (Button)findViewById(R.id.add_manually_button);
         _addAllInRangeButton = (Button)findViewById(R.id.add_all_in_range_button);
 
+        // Hook up the "add manually" button to the BSSID entry dialog
         _addManuallyButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                TextEntryDialog dialog = new TextEntryDialog();
-                Bundle arguments = new Bundle();
-                arguments.putString(TextEntryDialog.TITLE, getString(R.string.enter_bssid));
-                dialog.setArguments(arguments);
-                FragmentManager fragmentManager = getFragmentManager();
-                dialog.show(fragmentManager, ADD_BSSID_DIALOG_TAG);
+                showAddBssidDialog();
             }
         });
 
+        _addAllInRangeButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // TODO: Handle "add all in range" button click
+            }
+        });
+
+        // Get shared preferences (we only read the scanner preferences)
+        // TODO: Refactor scanner preferences into a separate menu
         _preferences = PreferenceManager.getDefaultSharedPreferences(this);
 
         // Attatch our preference change listener so we can update
@@ -123,12 +125,52 @@ public class NetworkScannerActivity extends ListActivity implements TextEntryDia
         return super.onCreateOptionsMenu(menu);
     }
 
-    private void addBssidToProfile(Bssid bssid) {
-        _profile.add(bssid);
+    private void showAddBssidDialog() {
+        View promptView = getLayoutInflater().inflate(R.layout.textedit_dialog, null);
+        final EditText editText = (EditText)promptView.findViewById(R.id.textedit_dialog_edittext);
+        AlertDialog.Builder builder = new AlertDialog.Builder(this)
+            .setTitle(R.string.enter_bssid)
+            .setView(promptView)
+            .setPositiveButton(R.string.save, new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    onAddBssidDialogFinished(editText.getText().toString());
+                }
+            })
+            .setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    dialog.cancel();
+                }
+            });
+
+        AlertDialog alert = builder.create();
+        alert.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE);
+        alert.show();
     }
 
-    private void removeBssidFromProfile(Bssid bssid) {
-        _profile.remove(bssid);
+    private void onAddBssidDialogFinished(String bssidText) {
+        Bssid bssid;
+        try {
+            bssid = new Bssid(bssidText);
+        } catch (IllegalArgumentException e) {
+            AlertDialog.Builder builder = new AlertDialog.Builder(NetworkScannerActivity.this)
+                .setTitle(getString(R.string.invalid_bssid_title))
+                .setMessage(getString(R.string.invalid_bssid_message))
+                .setCancelable(false)
+                .setPositiveButton(getString(android.R.string.ok), new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.dismiss();
+                    }
+                });
+
+            AlertDialog alert = builder.create();
+            alert.show();
+            return;
+        }
+
+        // TODO: Add BSSID here
     }
 
     private void startWifiScan() {
@@ -250,34 +292,5 @@ public class NetworkScannerActivity extends ListActivity implements TextEntryDia
             default:
                 return super.onOptionsItemSelected(item);
         }
-    }
-
-    @Override
-    public void onTextEntryDialogOk(String tag, String text) {
-        if (!tag.equals(ADD_BSSID_DIALOG_TAG)) return;
-        Bssid bssid;
-        try {
-            bssid = new Bssid(text);
-        } catch (IllegalArgumentException e) {
-            AlertDialog.Builder builder = new AlertDialog.Builder(this);
-            builder.setTitle(getString(R.string.invalid_bssid_title));
-            builder.setMessage(getString(R.string.invalid_bssid_message));
-            builder.setCancelable(false);
-            builder.setPositiveButton(getString(android.R.string.ok), new DialogInterface.OnClickListener() {
-                @Override
-                public void onClick(DialogInterface dialog, int which) {
-                    dialog.dismiss();
-                }
-            });
-            builder.create().show();
-            return;
-        }
-
-        addBssidToProfile(bssid);
-    }
-
-    @Override
-    public void onTextEntryDialogCancel(String tag) {
-
     }
 }

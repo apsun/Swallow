@@ -1,21 +1,22 @@
 package com.oxycode.swallow;
 
 import android.app.ActionBar;
-import android.app.FragmentManager;
+import android.app.AlertDialog;
 import android.app.ListActivity;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.v4.app.NavUtils;
 import android.view.*;
 import android.widget.AdapterView;
+import android.widget.EditText;
 import android.widget.ListView;
 
 import java.util.ArrayList;
 
-public class ProfileManagerActivity extends ListActivity implements TextEntryDialog.Listener {
+public class ProfileManagerActivity extends ListActivity {
     private static final String TAG = ProfileManagerActivity.class.getName();
-    private static final String SET_PROFILE_NAME_DIALOG_TAG = "set_profile_name_dialog";
 
     private ArrayList<NetworkProfile> _profiles;
 
@@ -32,21 +33,11 @@ public class ProfileManagerActivity extends ListActivity implements TextEntryDia
             actionBar.setDisplayHomeAsUpEnabled(true);
         }
 
-        // Load the current list of profiles
-        /*
-        _preferences = getSharedPreferences("NetworkProfiles", MODE_PRIVATE);
-        Set<? extends Map.Entry<String, ?>> profiles = _preferences.getAll().entrySet();
-        _profiles = new ArrayList<NetworkProfile>(profiles.size());
+        // TODO: Do we even need to cache the listview?
+        _profileListView = getListView();
 
-        for (Map.Entry<String, ?> profileEntry : profiles) {
-            String profileName = profileEntry.getKey();
-            HashSet<Bssid> profileBssids = (HashSet<Bssid>)profileEntry.getValue();
-            NetworkProfile profile = new NetworkProfile(profileName, profileBssids);
-            _profiles.add(profile);
-        }
-        */
-
-        registerForContextMenu(getListView());
+        // Add the long-press listview context menu
+        registerForContextMenu(_profileListView);
     }
 
     @Override
@@ -62,6 +53,30 @@ public class ProfileManagerActivity extends ListActivity implements TextEntryDia
         startActivity(intent);
     }
 
+    private void showSetProfileNameDialog() {
+        View promptView = getLayoutInflater().inflate(R.layout.textedit_dialog, null);
+        final EditText editText = (EditText)promptView.findViewById(R.id.textedit_dialog_edittext);
+        AlertDialog.Builder builder = new AlertDialog.Builder(this)
+            .setTitle(R.string.enter_profile_name)
+            .setView(promptView)
+            .setPositiveButton(R.string.save, new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    // TODO: Do something
+                }
+            })
+            .setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    dialog.cancel();
+                }
+            });
+
+        AlertDialog alert = builder.create();
+        alert.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE);
+        alert.show();
+    }
+
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
@@ -69,12 +84,7 @@ public class ProfileManagerActivity extends ListActivity implements TextEntryDia
                 NavUtils.navigateUpFromSameTask(this);
                 return true;
             case R.id.add_profile_button:
-                TextEntryDialog dialog = new TextEntryDialog();
-                Bundle arguments = new Bundle();
-                arguments.putString(TextEntryDialog.TITLE, getString(R.string.enter_profile_name));
-                dialog.setArguments(arguments);
-                FragmentManager fragmentManager = getFragmentManager();
-                dialog.show(fragmentManager, SET_PROFILE_NAME_DIALOG_TAG);
+                showSetProfileNameDialog();
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
@@ -104,17 +114,5 @@ public class ProfileManagerActivity extends ListActivity implements TextEntryDia
             default:
                 return super.onContextItemSelected(item);
         }
-    }
-
-    @Override
-    public void onTextEntryDialogOk(String tag, String text) {
-        if (!tag.equals(SET_PROFILE_NAME_DIALOG_TAG)) return;
-        NetworkProfile profile = new NetworkProfile(text);
-        showNetworkScanner(profile);
-    }
-
-    @Override
-    public void onTextEntryDialogCancel(String tag) {
-
     }
 }

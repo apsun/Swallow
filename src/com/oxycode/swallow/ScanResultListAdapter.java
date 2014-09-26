@@ -12,15 +12,16 @@ import java.util.Comparator;
 import java.util.List;
 
 public class ScanResultListAdapter extends BaseAdapter implements CompoundButton.OnCheckedChangeListener {
-    private static class ScanResultListItem {
-        CheckBox _selectedCheckBox;
-        TextView _bssidTextView;
-        TextView _ssidTextView;
-        ImageView _levelImageView;
-        TextView _levelTextView;
+    private static class ScanResultViewHolder {
+        CheckBox enabledCheckBox;
+        TextView bssidTextView;
+        TextView ssidTextView;
+        ImageView levelImageView;
+        TextView levelTextView;
     }
 
     private Context _context;
+    private LayoutInflater _layoutInflater;
     private Comparator<ScanResult> _resultSorter;
     private List<ScanResult> _results;
 
@@ -36,6 +37,7 @@ public class ScanResultListAdapter extends BaseAdapter implements CompoundButton
 
     public ScanResultListAdapter(Context context, Comparator<ScanResult> sorter) {
         _context = context;
+        _layoutInflater = (LayoutInflater)context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         _resultSorter = sorter;
     }
 
@@ -57,19 +59,23 @@ public class ScanResultListAdapter extends BaseAdapter implements CompoundButton
 
     @Override
     public long getItemId(int position) {
-        return 0;
+        return position;
     }
 
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
-        ScanResultListItem listItem;
+        ScanResultViewHolder viewHolder;
         if (convertView == null) {
-            LayoutInflater inflater = (LayoutInflater)_context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-            convertView = inflater.inflate(R.layout.network_scanresult_listitem, null);
-            listItem = new ScanResultListItem();
-            convertView.setTag(listItem);
+            convertView = _layoutInflater.inflate(R.layout.network_scanresult_listitem, null);
+            viewHolder = new ScanResultViewHolder();
+            viewHolder.enabledCheckBox = (CheckBox)convertView.findViewById(R.id.network_scan_enabled_checkbox);
+            viewHolder.bssidTextView = (TextView)convertView.findViewById(R.id.network_scan_bssid_textview);
+            viewHolder.ssidTextView = (TextView)convertView.findViewById(R.id.network_scan_detail_textview);
+            viewHolder.levelImageView = (ImageView)convertView.findViewById(R.id.network_scan_level_imageview);
+            viewHolder.levelTextView = (TextView)convertView.findViewById(R.id.network_scan_level_textview);
+            convertView.setTag(viewHolder);
         } else {
-            listItem = (ScanResultListItem)convertView.getTag();
+            viewHolder = (ScanResultViewHolder)convertView.getTag();
         }
 
         ScanResult scanResult = getItem(position);
@@ -77,6 +83,11 @@ public class ScanResultListAdapter extends BaseAdapter implements CompoundButton
         String bssid = scanResult.BSSID;
         int level = scanResult.level;
 
+        // TODO: Read checked value
+        viewHolder.enabledCheckBox.setChecked(false);
+        viewHolder.bssidTextView.setText(bssid);
+        viewHolder.ssidTextView.setText(ssid);
+        viewHolder.levelTextView.setText(String.valueOf(level));
 
 
         return convertView;

@@ -61,7 +61,7 @@ download a browser/plugin that has userscript support.
 Note that the userscript doesn't limit login locations, so don't be surprised
 if you get banned for using it outside of your building.
 
-You may find the userscript at: http://host-a.net/dl/0/18694976501355
+You may find the userscript here: http://host-a.net/u/crossbowffs/shsidwifiautologin.user.js
 
 ### Who do I have to thank for this awesome app?! ###
 
