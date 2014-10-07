@@ -11,24 +11,116 @@ import android.preference.PreferenceManager;
 import android.support.v4.app.NavUtils;
 import android.util.Log;
 import android.view.*;
-import android.widget.Button;
-import android.widget.EditText;
-import android.widget.ListView;
+import android.widget.*;
 
 import java.util.*;
 
 public class NetworkScannerActivity extends ListActivity {
+    private static class ScanResultViewHolder {
+        CheckBox enabledCheckBox;
+        TextView bssidTextView;
+        TextView ssidTextView;
+        ImageView levelImageView;
+        TextView levelTextView;
+    }
+
+    private class ScanResultListAdapter extends BaseAdapter implements CompoundButton.OnCheckedChangeListener {
+        private LayoutInflater _layoutInflater;
+        private Comparator<ScanResult> _resultSorter;
+        private List<ScanResult> _results;
+
+        public ScanResultListAdapter() {
+            this(new Comparator<ScanResult>() {
+                @Override
+                public int compare(ScanResult lhs, ScanResult rhs) {
+                    // Sort from strongest to weakest signal
+                    return rhs.level - lhs.level;
+                }
+            });
+        }
+
+        public ScanResultListAdapter(Comparator<ScanResult> sorter) {
+            _layoutInflater = (LayoutInflater)NetworkScannerActivity.this.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+            _resultSorter = sorter;
+        }
+
+        public void updateResults(List<ScanResult> results) {
+            _results.clear();
+            _results.addAll(results);
+            Collections.sort(_results, _resultSorter);
+            notifyDataSetChanged();
+        }
+
+        @Override
+        public int getCount() {
+            return _results.size();
+        }
+
+        @Override
+        public ScanResult getItem(int position) {
+            return _results.get(position);
+        }
+
+        @Override
+        public long getItemId(int position) {
+            return position;
+        }
+
+        @Override
+        public View getView(int position, View convertView, ViewGroup parent) {
+            ScanResultViewHolder viewHolder;
+            if (convertView == null) {
+                convertView = _layoutInflater.inflate(R.layout.network_scanresult_listitem, null);
+                viewHolder = new ScanResultViewHolder();
+                viewHolder.enabledCheckBox = (CheckBox)convertView.findViewById(R.id.network_scan_enabled_checkbox);
+                viewHolder.enabledCheckBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+                    @Override
+                    public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                        // TODO: Update selection value
+                    }
+                });
+                viewHolder.bssidTextView = (TextView)convertView.findViewById(R.id.network_scan_bssid_textview);
+                viewHolder.ssidTextView = (TextView)convertView.findViewById(R.id.network_scan_detail_textview);
+                viewHolder.levelImageView = (ImageView)convertView.findViewById(R.id.network_scan_level_imageview);
+                viewHolder.levelTextView = (TextView)convertView.findViewById(R.id.network_scan_level_textview);
+                convertView.setTag(viewHolder);
+            } else {
+                viewHolder = (ScanResultViewHolder)convertView.getTag();
+            }
+
+            ScanResult scanResult = getItem(position);
+            String ssid = scanResult.SSID;
+            String bssid = scanResult.BSSID;
+            int level = scanResult.level;
+            boolean checked = NetworkScannerActivity.this._profile.contains(new Bssid(bssid));
+
+            // TODO: Read checked value
+            viewHolder.enabledCheckBox.setChecked(checked);
+            viewHolder.bssidTextView.setText(bssid);
+            viewHolder.ssidTextView.setText(ssid);
+            viewHolder.levelTextView.setText(String.valueOf(level));
+
+            return convertView;
+        }
+
+        @Override
+        public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+
+        }
+    }
+
     private static final String TAG = NetworkScannerActivity.class.getName();
     private static final String PREF_SHOW_SHS_ONLY_KEY = "pref_show_shs_only";
     private static final String PREF_SCAN_RATE_KEY = "pref_scan_rate";
     private static final String PREF_MINIMUM_SIGNAL_STRENGTH_KEY = "pref_minimum_signal_strength";
+    public static final String EXTRA_PROFILE_NAME = "profile";
 
     private Timer _scanTimer;
     private TimerTask _scanTask;
     private WifiManager _wifiManager;
     private BroadcastReceiver _scanReceiver;
 
-    private NetworkProfile _profile;
+    private NetworkProfile.Editor _profile;
 
     private ListView _bssidListView;
     private Button _addManuallyButton;
@@ -54,7 +146,9 @@ public class NetworkScannerActivity extends ListActivity {
         }
 
         // Get the profile we're editing from the intent
-        _profile = getIntent().getParcelableExtra("profile");
+        String profileName = getIntent().getStringExtra("profile");
+        NetworkProfile profile = null /* get profile somehow */;
+        _profile = profile.edit();
 
         // Get the system WiFi manager for scanning
         _wifiManager = (WifiManager)getSystemService(Context.WIFI_SERVICE);
@@ -108,7 +202,7 @@ public class NetworkScannerActivity extends ListActivity {
                     _minimumSignalStrength = readPrefMinimumStrength();
                 } else if (PREF_SCAN_RATE_KEY.equals(key)) {
                     _scanRate = readPrefScanRate();
-                    stopScanTmer();
+                    stopScanTimer();
                     startScanTimer();
                 } else if (PREF_SHOW_SHS_ONLY_KEY.equals(key)) {
                     _showShsOnly = readPrefShowShsOnly();
@@ -129,9 +223,9 @@ public class NetworkScannerActivity extends ListActivity {
         View promptView = getLayoutInflater().inflate(R.layout.textedit_dialog, null);
         final EditText editText = (EditText)promptView.findViewById(R.id.textedit_dialog_edittext);
         AlertDialog.Builder builder = new AlertDialog.Builder(this)
-            .setTitle(R.string.enter_bssid)
             .setView(promptView)
-            .setPositiveButton(R.string.save, new DialogInterface.OnClickListener() {
+            .setTitle(R.string.enter_bssid)
+            .setPositiveButton(R.string.add, new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
                     onAddBssidDialogFinished(editText.getText().toString());
@@ -154,11 +248,10 @@ public class NetworkScannerActivity extends ListActivity {
         try {
             bssid = new Bssid(bssidText);
         } catch (IllegalArgumentException e) {
-            AlertDialog.Builder builder = new AlertDialog.Builder(NetworkScannerActivity.this)
-                .setTitle(getString(R.string.invalid_bssid_title))
-                .setMessage(getString(R.string.invalid_bssid_message))
-                .setCancelable(false)
-                .setPositiveButton(getString(android.R.string.ok), new DialogInterface.OnClickListener() {
+            AlertDialog.Builder builder = new AlertDialog.Builder(this)
+                .setTitle(R.string.invalid_bssid_title)
+                .setMessage(R.string.invalid_bssid_message)
+                .setNeutralButton(R.string.ok, new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         dialog.dismiss();
@@ -170,7 +263,7 @@ public class NetworkScannerActivity extends ListActivity {
             return;
         }
 
-        // TODO: Add BSSID here
+        _profile.put(bssid, true);
     }
 
     private void startWifiScan() {
@@ -192,6 +285,8 @@ public class NetworkScannerActivity extends ListActivity {
                 _refreshMenuItem.setActionView(null);
             }
         });
+
+        // TODO: Remove below, actually implement listview stuff
         List<ScanResult> results = _wifiManager.getScanResults();
         Collections.sort(results, new Comparator<ScanResult>() {
             @Override
@@ -223,7 +318,7 @@ public class NetworkScannerActivity extends ListActivity {
         return _preferences.getBoolean(PREF_SHOW_SHS_ONLY_KEY, false);
     }
 
-    private void stopScanTmer() {
+    private void stopScanTimer() {
         if (_scanTask != null) {
             _scanTask.cancel();
             _scanTask = null;
@@ -273,7 +368,7 @@ public class NetworkScannerActivity extends ListActivity {
         // Stop scanning for WiFi networks
         // This saves battery, since we are not uselessly
         // refreshing the WiFi list in the background.
-        stopScanTmer();
+        stopScanTimer();
         unregisterReceiver(_scanReceiver);
 
         // Stop listening for preference change events

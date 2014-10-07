@@ -112,7 +112,8 @@ public class MainActivity extends Activity {
     private void setReceiverEnabled(boolean enabled) {
         PackageManager packageManager = getPackageManager();
         ComponentName componentName = new ComponentName(this, WifiStateReceiver.class);
-        int status = enabled ? PackageManager.COMPONENT_ENABLED_STATE_ENABLED : PackageManager.COMPONENT_ENABLED_STATE_DISABLED;
+        int status = enabled ? PackageManager.COMPONENT_ENABLED_STATE_ENABLED
+                             : PackageManager.COMPONENT_ENABLED_STATE_DISABLED;
         packageManager.setComponentEnabledSetting(componentName, status, PackageManager.DONT_KILL_APP);
         Log.d(TAG, "Set receiver enabled -> " + enabled);
     }

@@ -1,73 +1,76 @@
 package com.oxycode.swallow;
 
-import android.os.Parcel;
-import android.os.Parcelable;
-
 import java.util.*;
 
-public class NetworkProfile implements Parcelable, Iterable<Bssid> {
-    public static final Parcelable.Creator<NetworkProfile> CREATOR = new Parcelable.Creator<NetworkProfile>() {
-        public NetworkProfile createFromParcel(Parcel in) {
-            return new NetworkProfile(in);
-        }
-
-        public NetworkProfile[] newArray(int size) {
-            return new NetworkProfile[size];
-        }
-    };
-
+public class NetworkProfile implements Iterable<Map.Entry<Bssid, Boolean>> {
     public static class Editor {
-        private String _name;
-        private Set<Bssid> _bssids;
+        private String _editorName;
+        private Map<Bssid, Boolean> _editorBssids;
 
-        private Editor(String name, Set<Bssid> bssids) {
-            _name = name;
-            _bssids = bssids;
+        private Editor(String name, Map<Bssid, Boolean> bssids) {
+            _editorName = name;
+            _editorBssids = bssids;
         }
 
-        public boolean add(Bssid bssid) {
-            return _bssids.add(bssid);
+        public boolean contains(Bssid bssid) {
+            return _editorBssids.get(bssid) != null;
+        }
+
+        public boolean isEnabled(Bssid bssid) {
+            return Boolean.TRUE.equals(_editorBssids.get(bssid));
+        }
+
+        public String getName() {
+            return _editorName;
+        }
+
+        public int count() {
+            return _editorBssids.size();
+        }
+
+        public boolean put(Bssid bssid, boolean enabled) {
+            return _editorBssids.put(bssid, enabled);
         }
 
         public boolean remove(Bssid bssid) {
-            return _bssids.remove(bssid);
+            return _editorBssids.remove(bssid);
         }
 
         public void rename(String name) {
-            _name = name;
+            _editorName = name;
         }
 
         public NetworkProfile save() {
-            return new NetworkProfile(_name, _bssids);
+            return new NetworkProfile(_editorName, _editorBssids, false);
         }
     }
 
     private final String _name;
-    private final Set<Bssid> _bssids;
+    private final Map<Bssid, Boolean> _bssids;
 
-    private NetworkProfile(Parcel in) {
-        _name = in.readString();
-        Bssid[] bssids = in.createTypedArray(Bssid.CREATOR);
-        _bssids = new HashSet<Bssid>(Arrays.asList(bssids));
+    private NetworkProfile(String name, Map<Bssid, Boolean> bssids, boolean copy) {
+        _name = name;
+        if (copy) {
+            _bssids = new HashMap<Bssid, Boolean>(bssids);
+        } else {
+            _bssids = bssids;
+        }
     }
 
     public NetworkProfile(String name) {
-        _name = name;
-        _bssids = new HashSet<Bssid>();
+        this(name, new HashMap<Bssid, Boolean>(), false);
     }
 
-    private NetworkProfile(String name, Set<Bssid> bssids) {
-        _name = name;
-        _bssids = bssids;
-    }
-
-    public NetworkProfile(String name, Collection<Bssid> bssids) {
-        _name = name;
-        _bssids = new HashSet<Bssid>(bssids);
+    public NetworkProfile(String name, Map<Bssid, Boolean> bssids) {
+        this(name, bssids, true);
     }
 
     public boolean contains(Bssid bssid) {
-        return _bssids.contains(bssid);
+        return _bssids.get(bssid) != null;
+    }
+
+    public boolean isEnabled(Bssid bssid) {
+        return Boolean.TRUE.equals(_bssids.get(bssid));
     }
 
     public String getName() {
@@ -78,20 +81,12 @@ public class NetworkProfile implements Parcelable, Iterable<Bssid> {
         return _bssids.size();
     }
 
-    @Override
-    public int describeContents() {
-        return 0;
+    public Editor edit() {
+        return new Editor(_name, new HashMap<Bssid, Boolean>(_bssids));
     }
 
     @Override
-    public void writeToParcel(Parcel out, int flags) {
-        out.writeString(getName());
-        Bssid[] bssids = new Bssid[_bssids.size()];
-        out.writeTypedArray(_bssids.toArray(bssids), flags);
-    }
-
-    @Override
-    public Iterator<Bssid> iterator() {
-        return _bssids.iterator();
+    public Iterator<Map.Entry<Bssid, Boolean>> iterator() {
+        return _bssids.entrySet().iterator();
     }
 }

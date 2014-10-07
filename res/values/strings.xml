@@ -1,5 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Common -->
+    <string name="ok">OK</string>
+    <string name="edit">Edit</string>
+    <string name="rename">Rename</string>
+    <string name="delete">Delete</string>
+    <string name="save">Save</string>
+    <string name="cancel">Cancel</string>
+    <string name="add">Add</string>
+    <string name="refresh">Refresh</string>
+    <string name="settings">Settings</string>
+
     <!-- Activities -> Main -->
     <string name="app_name">Swallow</string>
     <string name="enable">Enable</string>
@@ -10,15 +21,9 @@
     <string name="profile_manager">Profiles</string>
     <string name="create_profile">Create profile</string>
     <string name="enter_profile_name">Enter profile name</string>
-    <string name="edit">Edit</string>
-    <string name="rename">Rename</string>
-    <string name="delete">Delete</string>
-    <string name="save">Save</string>
-    <string name="cancel">Cancel</string>
 
     <!-- Activities -> Network scanner -->
     <string name="network_scanner">Network scanner</string>
-    <string name="refresh">Refresh</string>
     <string name="add_manually_button_text">Add manually</string>
     <string name="add_all_in_range_button_text">Add all in range</string>
     <string name="enter_bssid">Enter network BSSID</string>
@@ -31,9 +36,6 @@
     <string name="login_retry">WiFi login failed, retrying %d more time(s)…</string>
     <string name="login_failed">WiFi login failed: %s</string>
     <string name="login_succeeded">Logged in to school WiFi!</string>
-
-    <!-- Preferences -->
-    <string name="settings">Settings</string>
 
     <!-- Preferences -> Login -->
     <string name="pref_category_login">Login</string>

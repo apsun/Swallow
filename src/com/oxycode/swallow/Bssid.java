@@ -1,12 +1,9 @@
 package com.oxycode.swallow;
 
-import android.os.Parcel;
-import android.os.Parcelable;
-
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class Bssid implements Parcelable {
+public class Bssid {
     private static final Pattern BSSID_PATTERN = Pattern.compile(
         "^" +
         "([0-9A-Fa-f]{2}):" +
@@ -18,31 +15,11 @@ public class Bssid implements Parcelable {
         "$"
     );
 
-    public static final Parcelable.Creator<Bssid> CREATOR = new Parcelable.Creator<Bssid>() {
-        public Bssid createFromParcel(Parcel in) {
-            return new Bssid(in);
-        }
-
-        public Bssid[] newArray(int size) {
-            return new Bssid[size];
-        }
-    };
-
     private final byte b1, b2, b3, b4, b5, b6;
-
-    private Bssid(Parcel in) {
-        b1 = in.readByte();
-        b2 = in.readByte();
-        b3 = in.readByte();
-        b4 = in.readByte();
-        b5 = in.readByte();
-        b6 = in.readByte();
-    }
-
 
     public Bssid(byte[] bssidBytes) {
         if (bssidBytes.length != 6) {
-            throw new IllegalArgumentException("BSSID must consist of 6 bytes");
+            throw new IllegalArgumentException("BSSID must consist of exactly 6 bytes");
         }
 
         b1 = bssidBytes[0];
@@ -68,21 +45,6 @@ public class Bssid implements Parcelable {
         b4 = (byte)Integer.parseInt(matcher.group(4), 16);
         b5 = (byte)Integer.parseInt(matcher.group(5), 16);
         b6 = (byte)Integer.parseInt(matcher.group(6), 16);
-    }
-
-    @Override
-    public int describeContents() {
-        return 0;
-    }
-
-    @Override
-    public void writeToParcel(Parcel out, int flags) {
-        out.writeByte(b1);
-        out.writeByte(b2);
-        out.writeByte(b3);
-        out.writeByte(b4);
-        out.writeByte(b5);
-        out.writeByte(b6);
     }
 
     @Override

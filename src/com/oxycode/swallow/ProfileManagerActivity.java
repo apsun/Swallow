@@ -13,12 +13,8 @@ import android.widget.AdapterView;
 import android.widget.EditText;
 import android.widget.ListView;
 
-import java.util.ArrayList;
-
 public class ProfileManagerActivity extends ListActivity {
     private static final String TAG = ProfileManagerActivity.class.getName();
-
-    private ArrayList<NetworkProfile> _profiles;
 
     private SharedPreferences _preferences;
     private ListView _profileListView;
@@ -33,11 +29,12 @@ public class ProfileManagerActivity extends ListActivity {
             actionBar.setDisplayHomeAsUpEnabled(true);
         }
 
-        // TODO: Do we even need to cache the listview?
         _profileListView = getListView();
 
         // Add the long-press listview context menu
         registerForContextMenu(_profileListView);
+
+        // TODO: Load listview items
     }
 
     @Override
@@ -49,7 +46,7 @@ public class ProfileManagerActivity extends ListActivity {
 
     private void showNetworkScanner(NetworkProfile profile) {
         Intent intent = new Intent(this, NetworkScannerActivity.class);
-        intent.putExtra("profile", profile);
+        intent.putExtra(NetworkScannerActivity.EXTRA_PROFILE_NAME, profile.getName());
         startActivity(intent);
     }
 
@@ -57,12 +54,15 @@ public class ProfileManagerActivity extends ListActivity {
         View promptView = getLayoutInflater().inflate(R.layout.textedit_dialog, null);
         final EditText editText = (EditText)promptView.findViewById(R.id.textedit_dialog_edittext);
         AlertDialog.Builder builder = new AlertDialog.Builder(this)
-            .setTitle(R.string.enter_profile_name)
             .setView(promptView)
+            .setTitle(R.string.enter_profile_name)
+            // TODO: Change text based on create vs. rename
             .setPositiveButton(R.string.save, new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
-                    // TODO: Do something
+                    String profileName = editText.getText().toString();
+                    // TODO: Handle based on action
+                    showNetworkScanner(null);
                 }
             })
             .setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {

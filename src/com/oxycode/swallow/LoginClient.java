@@ -10,6 +10,17 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 public final class LoginClient {
+    public enum Result {
+        SUCCESS,
+        INCORRECT_CREDENTIALS,
+        ACCOUNT_BANNED,
+        EXCEEDED_MAX_RETRIES
+    }
+
+    public static interface Handler {
+        void onException(IOException e, int remainingTrialCount);
+    }
+
     private static final String TAG = LoginClient.class.getName();
     private static final String LOGIN_PAGE_URL = "http://192.255.255.94/";
     private static final String LOGIN_PAGE_ENCODING = "GB2312";
@@ -23,34 +34,42 @@ public final class LoginClient {
         return false;
     }
 
-    public static LoginResult login(String username, String password) throws IOException {
-        HttpURLConnection urlConnection = createConnection("POST");
-
-        // Get request body
+    public static Result login(String username, String password, int trialCount, Handler handler) {
+        // Prepare request body and headers
+        // These values can be re-used, so we don't have to evaluate them
+        // every time something goes wrong.
         String encryptedPassword = encryptPassword(password);
         Map<String, String> params = getPostData(username, encryptedPassword);
         byte[] data = convertPostParams(params);
-
-        // Set request headers
         Map<String, String> headers = getPostHeaders(data);
-        for (Map.Entry<String, String> param : headers.entrySet()) {
-            urlConnection.addRequestProperty(param.getKey(), param.getValue());
+
+        while (--trialCount >= 0) {
+            try {
+                HttpURLConnection urlConnection = createConnection("POST");
+
+                // Set request headers
+                for (Map.Entry<String, String> param : headers.entrySet()) {
+                    urlConnection.addRequestProperty(param.getKey(), param.getValue());
+                }
+
+                // Write request body
+                urlConnection.setDoOutput(true);
+                urlConnection.getOutputStream().write(data);
+
+                // Read response to see if login succeeded
+                InputStream inputStream = urlConnection.getInputStream();
+                BufferedReader inputReader = createStreamReader(inputStream);
+                String line;
+                while ((line = inputReader.readLine()) != null) {
+                    // TODO: Check success flag
+                    Log.d(TAG, line);
+                }
+            } catch (IOException e) {
+                handler.onException(e, trialCount);
+            }
         }
 
-        // Write request body
-        urlConnection.setDoOutput(true);
-        urlConnection.getOutputStream().write(data);
-
-        // Read response to see if login succeeded
-        InputStream inputStream = urlConnection.getInputStream();
-        BufferedReader inputReader = createStreamReader(inputStream);
-        String line;
-        while ((line = inputReader.readLine()) != null) {
-            // TODO: Check success flag
-            Log.d(TAG, line);
-        }
-
-        return LoginResult.SUCCESS;
+        return Result.EXCEEDED_MAX_RETRIES;
     }
 
     public static void logout() throws IOException {
