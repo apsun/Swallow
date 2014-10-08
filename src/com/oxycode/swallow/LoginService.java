@@ -34,7 +34,7 @@ public class LoginService extends IntentService {
         _handler = new Handler();
     }
 
-    private LoginClient.Result login(String username, String password, int trialCount) {
+    private LoginClient.LoginResult login(String username, String password, int trialCount) {
         return LoginClient.login(username, password, trialCount, new LoginClient.Handler() {
             @Override
             public void onException(IOException e, int remainingTrialCount) {
@@ -66,7 +66,7 @@ public class LoginService extends IntentService {
         // TODO (TOAST_MODE & SHOW_BEGIN): Show begin login toast message
         // TODO (NOTIFICATION_MODE): Create ongoing notification
 
-        LoginClient.Result result = LoginClient.login(username, password, retryCount + 1, new LoginClient.Handler() {
+        LoginClient.LoginResult result = LoginClient.login(username, password, retryCount + 1, new LoginClient.Handler() {
             @Override
             public void onException(IOException e, int remainingTrialCount) {
                 Log.e(TAG, "Login failed, retrying " + remainingTrialCount + " more time(s)", e);

@@ -8,13 +8,30 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public final class LoginClient {
-    public enum Result {
+    public enum CheckResult {
+        LOGGED_IN,
+        LOGGED_OUT,
+        EXCEEDED_MAX_RETRIES,
+        UNKNOWN
+    }
+
+    public enum LoginResult {
         SUCCESS,
         INCORRECT_CREDENTIALS,
         ACCOUNT_BANNED,
-        EXCEEDED_MAX_RETRIES
+        EXCEEDED_MAX_RETRIES,
+        UNKNOWN
+    }
+
+    public enum LogoutResult {
+        SUCCESS,
+        NOT_LOGGED_IN,
+        EXCEEDED_MAX_RETRIES,
+        UNKNOWN
     }
 
     public static interface Handler {
@@ -23,29 +40,70 @@ public final class LoginClient {
 
     private static final String TAG = LoginClient.class.getName();
     private static final String LOGIN_PAGE_URL = "http://192.255.255.94/";
-    private static final String LOGIN_PAGE_ENCODING = "GB2312";
+    private static final String LOGOUT_PAGE_URL = "http://192.255.255.94/F.htm";
+    private static final String PAGE_ENCODING = "GB2312";
+    private static final Pattern PAGE_TITLE_REGEX = Pattern.compile("^<title>(.*?)</title>$");
+    private static final Pattern PAGE_STATUS_CODE_REGEX = Pattern.compile("Msg=(\\d\\d);");
+    // private static final Pattern PAGE_STATUS_MESSAGE_REGEX = Pattern.compile("msga='(.*?)';");
 
     private LoginClient() {
 
     }
 
-    public static boolean isLoggedIn() throws IOException {
-        // TODO: Complete
-        return false;
-    }
-
-    public static Result login(String username, String password, int trialCount, Handler handler) {
-        // Prepare request body and headers
-        // These values can be re-used, so we don't have to evaluate them
-        // every time something goes wrong.
-        String encryptedPassword = encryptPassword(password);
-        Map<String, String> params = getPostData(username, encryptedPassword);
-        byte[] data = convertPostParams(params);
-        Map<String, String> headers = getPostHeaders(data);
-
+    public static CheckResult getLoginStatus(int trialCount, Handler handler) {
+        Map<String, String> headers = createGetHeaders();
         while (--trialCount >= 0) {
             try {
-                HttpURLConnection urlConnection = createConnection("POST");
+                // Create GET request to login page
+                HttpURLConnection urlConnection = createConnection(LOGIN_PAGE_URL, "GET");
+
+                // Set request headers
+                for (Map.Entry<String, String> param : headers.entrySet()) {
+                    urlConnection.addRequestProperty(param.getKey(), param.getValue());
+                }
+
+                // Read response to determine the page we are on.
+                // If we are logged in, the page will contain login status info;
+                // otherwise, the page will be the login form.
+                InputStream inputStream = urlConnection.getInputStream();
+                BufferedReader inputReader = createStreamReader(inputStream);
+                Matcher titleMatcher = PAGE_TITLE_REGEX.matcher("");
+                String line;
+                while ((line = inputReader.readLine()) != null) {
+                    titleMatcher.reset(line);
+                    if (titleMatcher.matches()) {
+                        String title = titleMatcher.group(1);
+                        if (title.startsWith("Drcom上网信息窗")) {
+                            return CheckResult.LOGGED_IN;
+                        } else if (title.startsWith("Drcom上网登录窗")) {
+                            return CheckResult.LOGGED_OUT;
+                        } else {
+                            Log.w(TAG, "Unknown login status page title: " + title);
+                            return CheckResult.UNKNOWN;
+                        }
+                    }
+                }
+
+                // Could not find page title, for some reason...
+                Log.w(TAG, "Could not find title on login status page");
+                return CheckResult.UNKNOWN;
+            } catch (IOException e) {
+                handler.onException(e, trialCount);
+            }
+        }
+
+        return CheckResult.EXCEEDED_MAX_RETRIES;
+    }
+
+    public static LoginResult login(String username, String password, int trialCount, Handler handler) {
+        String encryptedPassword = encryptPassword(password);
+        Map<String, String> params = createPostData(username, encryptedPassword);
+        byte[] data = convertPostParams(params);
+        Map<String, String> headers = createPostHeaders(data);
+        while (--trialCount >= 0) {
+            try {
+                // Create POST request to login page
+                HttpURLConnection urlConnection = createConnection(LOGIN_PAGE_URL, "POST");
 
                 // Set request headers
                 for (Map.Entry<String, String> param : headers.entrySet()) {
@@ -59,24 +117,107 @@ public final class LoginClient {
                 // Read response to see if login succeeded
                 InputStream inputStream = urlConnection.getInputStream();
                 BufferedReader inputReader = createStreamReader(inputStream);
+                Matcher titleMatcher = PAGE_TITLE_REGEX.matcher("");
+                Matcher statusCodeMatcher = null;
                 String line;
                 while ((line = inputReader.readLine()) != null) {
-                    // TODO: Check success flag
-                    Log.d(TAG, line);
+                    if (statusCodeMatcher == null) {
+                        // First we need to find the type of the page we're on.
+                        // This is done by parsing the title of the page, which
+                        // tells us whether the login succeeded or not.
+                        titleMatcher.reset(line);
+                        if (titleMatcher.matches()) {
+                            String title = titleMatcher.group(1);
+                            if (title.equals("登录成功窗")) {
+                                // Login succeeded, no status code exists on this page.
+                                return LoginResult.SUCCESS;
+                            } else if (title.equals("信息返回窗")) {
+                                // Login failed, now search for the status code.
+                                statusCodeMatcher = PAGE_STATUS_CODE_REGEX.matcher("");
+                            } else {
+                                Log.w(TAG, "Unknown login result page title: " + title);
+                                return LoginResult.UNKNOWN;
+                            }
+                        }
+                    } else {
+                        statusCodeMatcher.reset(line);
+                        if (statusCodeMatcher.matches()) {
+                            String statusCodeStr = statusCodeMatcher.group(1);
+                            int statusCode = Integer.parseInt(statusCodeStr);
+                            if (statusCode == 1) {
+                                return LoginResult.INCORRECT_CREDENTIALS;
+                            } else if (statusCode == 5) {
+                                return LoginResult.ACCOUNT_BANNED;
+                            } else {
+                                Log.w(TAG, "Unknown login result status code: " + statusCode);
+                                return LoginResult.UNKNOWN;
+                            }
+                        }
+                    }
                 }
+
+                // We could not find the page title and/or status code...
+                // Either an unhandled case that we didn't consider, or
+                // the format of the page has changed.
+                if (statusCodeMatcher == null) {
+                    Log.w(TAG, "Could not find title on login result page");
+                } else {
+                    Log.w(TAG, "Could not find status code on login result page");
+                }
+                return LoginResult.UNKNOWN;
             } catch (IOException e) {
                 handler.onException(e, trialCount);
             }
         }
 
-        return Result.EXCEEDED_MAX_RETRIES;
+        return LoginResult.EXCEEDED_MAX_RETRIES;
     }
 
-    public static void logout() throws IOException {
-        // TODO: Complete
+    public static LogoutResult logout(int trialCount, Handler handler) {
+        Map<String, String> headers = createGetHeaders();
+        while (--trialCount >= 0) {
+            try {
+                // Create GET request to logout page
+                HttpURLConnection urlConnection = createConnection(LOGOUT_PAGE_URL, "GET");
+
+                // Set request headers
+                for (Map.Entry<String, String> param : headers.entrySet()) {
+                    urlConnection.addRequestProperty(param.getKey(), param.getValue());
+                }
+
+                // Read response to determine the logout result
+                InputStream inputStream = urlConnection.getInputStream();
+                BufferedReader inputReader = createStreamReader(inputStream);
+                Matcher statusCodeMatcher = PAGE_STATUS_CODE_REGEX.matcher("");
+                String line;
+                while ((line = inputReader.readLine()) != null) {
+                    statusCodeMatcher.reset(line);
+                    if (statusCodeMatcher.matches()) {
+                        String statusCodeStr = statusCodeMatcher.group(1);
+                        int statusCode = Integer.parseInt(statusCodeStr);
+                        if (statusCode == 1) {
+                            return LogoutResult.NOT_LOGGED_IN;
+                        } else if (statusCode == 14) {
+                            return LogoutResult.SUCCESS;
+                        } else {
+                            Log.w(TAG, "Unknown logout result status code: " + statusCode);
+                            return LogoutResult.UNKNOWN;
+                        }
+                    }
+                }
+
+                // Could not find status code, for some reason...
+                Log.w(TAG, "Could not find status code on logout result page");
+                return LogoutResult.UNKNOWN;
+            } catch (IOException e) {
+                handler.onException(e, trialCount);
+            }
+        }
+
+        return LogoutResult.EXCEEDED_MAX_RETRIES;
     }
 
-    private static Map<String, String> getPostHeaders(byte[] content) {
+    private static Map<String, String> createGetHeaders() {
         // Just to make the request look less automated, in case
         // they start banning auto-login clients.
         // Headers are from Internet Explorer 11.
@@ -87,11 +228,16 @@ public final class LoginClient {
         headers.put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; Trident/7.0; rv:11.0) like Gecko");
         headers.put("Referer", "http://192.255.255.94/");
         headers.put("Content-Type", "application/x-www-form-urlencoded");
+        return headers;
+    }
+
+    private static Map<String, String> createPostHeaders(byte[] content) {
+        Map<String, String> headers = createGetHeaders();
         headers.put("Content-Length", String.valueOf(content.length));
         return headers;
     }
 
-    private static Map<String, String> getPostData(String username, String encryptedPassword) {
+    private static Map<String, String> createPostData(String username, String encryptedPassword) {
         // Of these 6 parameters, only 2 are useful. WHY?!
         // Use LinkedHashMap to maintain the order of parameters,
         // just in case they take that into account as well when
@@ -114,12 +260,12 @@ public final class LoginClient {
         return md5("1" + plainTextPassword + "12345678") + "123456781";
     }
 
-    private static HttpURLConnection createConnection(String method) throws IOException {
+    private static HttpURLConnection createConnection(String urlString, String method) throws IOException {
         URL url;
         try {
-            url = new URL(LOGIN_PAGE_URL);
+            url = new URL(urlString);
         } catch (MalformedURLException e) {
-            Log.wtf(TAG, "Login page URL is malformed: " + LOGIN_PAGE_URL, e);
+            Log.wtf(TAG, "Login page URL is malformed: " + urlString, e);
             return null;
         }
 
@@ -177,9 +323,9 @@ public final class LoginClient {
     private static BufferedReader createStreamReader(InputStream inputStream) {
         InputStreamReader inputReader;
         try {
-            inputReader = new InputStreamReader(inputStream, LOGIN_PAGE_ENCODING);
+            inputReader = new InputStreamReader(inputStream, PAGE_ENCODING);
         } catch (UnsupportedEncodingException e) {
-            Log.wtf(TAG, "Unsupported encoding: " + LOGIN_PAGE_ENCODING, e);
+            Log.wtf(TAG, "Unsupported encoding: " + PAGE_ENCODING, e);
             return null;
         }
         return new BufferedReader(inputReader);
