@@ -23,8 +23,12 @@ public class MainActivity extends Activity {
     private Switch _enabledSwitch;
     private EditText _usernameTextBox;
     private EditText _passwordTextBox;
+    private Button _saveCredentialsButton;
     private Button _profileManagerButton;
     private Button _settingsButton;
+
+    // TODO: Add warning when leaving activity/performing login without saving credentials
+    private boolean _credentialsModified;
 
     private SharedPreferences _preferences;
 
@@ -37,13 +41,14 @@ public class MainActivity extends Activity {
 
         _usernameTextBox = (EditText)findViewById(R.id.username_edittext);
         _passwordTextBox = (EditText)findViewById(R.id.password_edittext);
+        _saveCredentialsButton = (Button)findViewById(R.id.save_credentials_button);
         _profileManagerButton = (Button)findViewById(R.id.profile_manager_button);
         _settingsButton = (Button)findViewById(R.id.settings_button);
 
         _usernameTextBox.setText(_preferences.getString(LoginService.PREF_USERNAME_KEY, null));
         _passwordTextBox.setText(_preferences.getString(LoginService.PREF_PASSWORD_KEY, null));
 
-        _usernameTextBox.addTextChangedListener(new TextWatcher() {
+        TextWatcher credentialsWatcher = new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
 
@@ -52,26 +57,24 @@ public class MainActivity extends Activity {
 
             @Override
             public void afterTextChanged(Editable s) {
-                String username = s.toString();
+                _credentialsModified = true;
+            }
+        };
+
+        _usernameTextBox.addTextChangedListener(credentialsWatcher);
+        _passwordTextBox.addTextChangedListener(credentialsWatcher);
+
+        _saveCredentialsButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String username = _usernameTextBox.getText().toString();
+                String password = _passwordTextBox.getText().toString();
                 SharedPreferences.Editor editor = _preferences.edit();
                 editor.putString(LoginService.PREF_USERNAME_KEY, username);
-                editor.apply();
-            }
-        });
-
-        _passwordTextBox.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
-
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) { }
-
-            @Override
-            public void afterTextChanged(Editable s) {
-                String password = s.toString();
-                SharedPreferences.Editor editor = _preferences.edit();
                 editor.putString(LoginService.PREF_PASSWORD_KEY, password);
                 editor.apply();
+                _credentialsModified = false;
+                // TODO: Display toast message?
             }
         });
 

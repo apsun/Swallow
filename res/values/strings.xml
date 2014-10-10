@@ -16,6 +16,7 @@
     <string name="enable">Enable</string>
     <string name="username">Username</string>
     <string name="password">Password</string>
+    <string name="save_login_credentials">Save login credentials</string>
 
     <!-- Activities -> Profile manager -->
     <string name="profile_manager">Profiles</string>
@@ -30,6 +31,17 @@
     <string name="invalid_bssid_title">Invalid BSSID</string>
     <string name="invalid_bssid_message">BSSID must be in the format xx:xx:xx:xx:xx:xx!</string>
     <string name="signal_strength_description">Signal strength</string>
+
+    <!-- Notifications -->
+    <string name="noti_logging_in">Logging in</string>
+    <string name="noti_logging_in_using_account">Using account: %s</string>
+    <string name="noti_logging_in_retrying_plural">Retrying %d more times</string>
+    <string name="noti_logging_in_retrying_single">Retrying %d more time</string>
+    <string name="noti_login_failed">Login failed</string>
+    <string name="noti_login_failed_incorrect_credentials">Incorrect username/password</string>
+    <string name="noti_login_failed_account_banned">Account has been disabled</string>
+    <string name="noti_login_failed_exceeded_max_retries">Connection failed. Touch to retry</string>
+    <string name="noti_login_failed_unknown">Unknown error occurred. Touch to retry</string>
 
     <!-- Toast messages -->
     <string name="login_start">Logging in to school WiFi…</string>
@@ -47,17 +59,12 @@
 
     <!-- Preferences -> Notifications -->
     <string name="pref_category_notifications">Notifications</string>
-    <string name="pref_enable_status_notifications_title">Enable status notifications</string>
-    <string name="pref_enable_status_notifications_summary_on">Display login status notifications</string>
-    <string name="pref_enable_status_notifications_summary_off">Do not display login status notifications</string>
-    <string name="pref_use_toast_messages_title">Use toast messages</string>
-    <string name="pref_use_toast_messages_summary_on">Login status will be displayed as a toast message</string>
-    <string name="pref_use_toast_messages_summary_off">Login status will be displayed in the notification center</string>
-    <string name="pref_enabled_toast_messages_title">Enabled toast messages</string>
-    <string name="pref_enabled_toast_messages_summary">Select which toast messages to display</string>
-    <string name="pref_show_retry_notification_title">Show retry notification</string>
-    <string name="pref_show_retry_notification_summary_on">Show notification to retry when login fails</string>
-    <string name="pref_show_retry_notification_summary_off">Do not show notification to retry when login fails</string>
+    <string name="pref_show_progress_notification_title">Show progress notification</string>
+    <string name="pref_show_progress_notification_summary_on">Display login progress notification</string>
+    <string name="pref_show_progress_notification_summary_off">Do not display login progress notification</string>
+    <string name="pref_show_error_notification_title">Show error notification</string>
+    <string name="pref_show_error_notification_summary_on">Display a notification when login fails</string>
+    <string name="pref_show_error_notification_summary_off">Do not display a notification when login fails</string>
 
     <!-- Preferences -> Network scanner -->
     <string name="pref_category_network_scanner">Network scanner</string>

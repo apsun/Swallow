@@ -12,31 +12,16 @@
     </PreferenceCategory>
     <PreferenceCategory android:title="@string/pref_category_notifications">
         <CheckBoxPreference
-            android:key="pref_enable_status_notifications"
-            android:title="@string/pref_enable_status_notifications_title"
-            android:summaryOn="@string/pref_enable_status_notifications_summary_on"
-            android:summaryOff="@string/pref_enable_status_notifications_summary_off"
+            android:key="pref_show_progress_notification"
+            android:title="@string/pref_show_progress_notification_title"
+            android:summaryOn="@string/pref_show_progress_notification_summary_on"
+            android:summaryOff="@string/pref_show_progress_notification_summary_off"
             android:defaultValue="true"/>
         <CheckBoxPreference
-            android:key="pref_use_toast_messages"
-            android:title="@string/pref_use_toast_messages_title"
-            android:dependency="pref_enable_status_notifications"
-            android:summaryOn="@string/pref_use_toast_messages_summary_on"
-            android:summaryOff="@string/pref_use_toast_messages_summary_off"
-            android:defaultValue="true"/>
-        <MultiSelectListPreference
-            android:key="pref_enabled_toast_messages"
-            android:dependency="pref_use_toast_messages"
-            android:title="@string/pref_enabled_toast_messages_title"
-            android:summary="@string/pref_enabled_toast_messages_summary"
-            android:entries="@array/pref_enabled_toast_messages_entries"
-            android:entryValues="@array/pref_enabled_toast_messages_values"
-            android:defaultValue="@array/pref_enabled_toast_messages_default_values"/>
-        <CheckBoxPreference
-            android:key="pref_show_retry_notification"
-            android:title="@string/pref_show_retry_notification_title"
-            android:summaryOn="@string/pref_show_retry_notification_summary_on"
-            android:summaryOff="@string/pref_show_retry_notification_summary_off"
+            android:key="pref_show_error_notification"
+            android:title="@string/pref_show_error_notification_title"
+            android:summaryOn="@string/pref_show_error_notification_summary_on"
+            android:summaryOff="@string/pref_show_error_notification_summary_off"
             android:defaultValue="true"/>
     </PreferenceCategory>
     <PreferenceCategory android:title="@string/pref_category_network_scanner">

@@ -42,6 +42,11 @@ public final class LoginClient {
     private static final String LOGIN_PAGE_URL = "http://192.255.255.94/";
     private static final String LOGOUT_PAGE_URL = "http://192.255.255.94/F.htm";
     private static final String PAGE_ENCODING = "GB2312";
+    private static final int CONNECT_TIMEOUT_MS = 3000;
+    private static final int READ_TIMEOUT_MS = 3000;
+
+    // Don't feel like using a full blown HTML parser for this, plus the page is not
+    // under our control anyways, so a parser won't really help with long-term stability.
     private static final Pattern PAGE_TITLE_REGEX = Pattern.compile("^<title>(.*?)</title>$");
     private static final Pattern PAGE_STATUS_CODE_REGEX = Pattern.compile("Msg=(\\d\\d);");
     // private static final Pattern PAGE_STATUS_MESSAGE_REGEX = Pattern.compile("msga='(.*?)';");
@@ -276,6 +281,9 @@ public final class LoginClient {
             Log.wtf(TAG, "Invalid request method: " + method, e);
             return null;
         }
+
+        connection.setConnectTimeout(CONNECT_TIMEOUT_MS);
+        connection.setReadTimeout(READ_TIMEOUT_MS);
 
         return connection;
     }
