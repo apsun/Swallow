@@ -12,7 +12,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public final class LoginClient {
-    public enum CheckResult {
+    public enum QueryResult {
         LOGGED_IN,
         LOGGED_OUT,
         EXCEEDED_MAX_RETRIES,
@@ -46,16 +46,15 @@ public final class LoginClient {
     private static final int READ_TIMEOUT_MS = 3000;
 
     // Don't feel like using a full blown HTML parser for this, plus the page is not
-    // under our control anyways, so a parser won't really help with long-term stability.
+    // under our control anyways, so a parser won't really help in the long run.
     private static final Pattern PAGE_TITLE_REGEX = Pattern.compile("^<title>(.*?)</title>$");
-    private static final Pattern PAGE_STATUS_CODE_REGEX = Pattern.compile("Msg=(\\d\\d);");
-    // private static final Pattern PAGE_STATUS_MESSAGE_REGEX = Pattern.compile("msga='(.*?)';");
+    private static final Pattern PAGE_STATUS_CODE_REGEX = Pattern.compile("^Msg=(\\d\\d);.*");
 
     private LoginClient() {
 
     }
 
-    public static CheckResult getLoginStatus(int trialCount, Handler handler) {
+    public static QueryResult getLoginStatus(int trialCount, Handler handler) {
         Map<String, String> headers = createGetHeaders();
         while (--trialCount >= 0) {
             try {
@@ -79,25 +78,28 @@ public final class LoginClient {
                     if (titleMatcher.matches()) {
                         String title = titleMatcher.group(1);
                         if (title.startsWith("Drcom上网信息窗")) {
-                            return CheckResult.LOGGED_IN;
+                            Log.d(TAG, "Query login status returned result: logged in");
+                            return QueryResult.LOGGED_IN;
                         } else if (title.startsWith("Drcom上网登录窗")) {
-                            return CheckResult.LOGGED_OUT;
+                            Log.d(TAG, "Query login status returned result: not logged in");
+                            return QueryResult.LOGGED_OUT;
                         } else {
                             Log.w(TAG, "Unknown login status page title: " + title);
-                            return CheckResult.UNKNOWN;
+                            return QueryResult.UNKNOWN;
                         }
                     }
                 }
 
                 // Could not find page title, for some reason...
                 Log.w(TAG, "Could not find title on login status page");
-                return CheckResult.UNKNOWN;
+                return QueryResult.UNKNOWN;
             } catch (IOException e) {
                 handler.onException(e, trialCount);
             }
         }
 
-        return CheckResult.EXCEEDED_MAX_RETRIES;
+        Log.d(TAG, "Query login status failed, exceeded max retries");
+        return QueryResult.EXCEEDED_MAX_RETRIES;
     }
 
     public static LoginResult login(String username, String password, int trialCount, Handler handler) {
@@ -135,6 +137,7 @@ public final class LoginClient {
                             String title = titleMatcher.group(1);
                             if (title.equals("登录成功窗")) {
                                 // Login succeeded, no status code exists on this page.
+                                Log.d(TAG, "Login returned result: success");
                                 return LoginResult.SUCCESS;
                             } else if (title.equals("信息返回窗")) {
                                 // Login failed, now search for the status code.
@@ -150,8 +153,10 @@ public final class LoginClient {
                             String statusCodeStr = statusCodeMatcher.group(1);
                             int statusCode = Integer.parseInt(statusCodeStr);
                             if (statusCode == 1) {
+                                Log.d(TAG, "Login returned result: incorrect credentials");
                                 return LoginResult.INCORRECT_CREDENTIALS;
                             } else if (statusCode == 5) {
+                                Log.d(TAG, "Login returned result: account banned");
                                 return LoginResult.ACCOUNT_BANNED;
                             } else {
                                 Log.w(TAG, "Unknown login result status code: " + statusCode);
@@ -175,6 +180,7 @@ public final class LoginClient {
             }
         }
 
+        Log.d(TAG, "Login failed, exceeded max retries");
         return LoginResult.EXCEEDED_MAX_RETRIES;
     }
 
@@ -201,8 +207,10 @@ public final class LoginClient {
                         String statusCodeStr = statusCodeMatcher.group(1);
                         int statusCode = Integer.parseInt(statusCodeStr);
                         if (statusCode == 1) {
+                            Log.d(TAG, "Logout returned result: not logged in");
                             return LogoutResult.NOT_LOGGED_IN;
                         } else if (statusCode == 14) {
+                            Log.d(TAG, "Logout returned result: success");
                             return LogoutResult.SUCCESS;
                         } else {
                             Log.w(TAG, "Unknown logout result status code: " + statusCode);
@@ -219,6 +227,7 @@ public final class LoginClient {
             }
         }
 
+        Log.d(TAG, "Logout failed, exceeded max retries");
         return LogoutResult.EXCEEDED_MAX_RETRIES;
     }
 

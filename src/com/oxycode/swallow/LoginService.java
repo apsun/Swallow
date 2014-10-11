@@ -8,6 +8,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 import android.support.v4.app.NotificationCompat;
+import android.support.v4.app.TaskStackBuilder;
 import android.util.Log;
 
 import java.io.IOException;
@@ -102,7 +103,10 @@ public class LoginService extends IntentService {
             case INCORRECT_CREDENTIALS:
             case ACCOUNT_BANNED:
                 Intent configIntent = new Intent(this, MainActivity.class);
-                pendingIntent = PendingIntent.getService(this, 0, configIntent, 0);
+                TaskStackBuilder stackBuilder = TaskStackBuilder.create(this);
+                stackBuilder.addParentStack(MainActivity.class);
+                stackBuilder.addNextIntent(configIntent);
+                pendingIntent = stackBuilder.getPendingIntent(0, PendingIntent.FLAG_UPDATE_CURRENT);
                 break;
             case EXCEEDED_MAX_RETRIES:
             case UNKNOWN:
