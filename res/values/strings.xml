@@ -17,14 +17,15 @@
     <string name="username">Username</string>
     <string name="password">Password</string>
     <string name="save_login_credentials">Save login credentials</string>
+    <string name="credentials_saved">Credentials saved!</string>
 
     <!-- Activities -> Profile manager -->
     <string name="profile_manager">Profiles</string>
     <string name="create_profile">Create profile</string>
     <string name="enter_profile_name">Enter profile name</string>
 
-    <!-- Activities -> Network scanner -->
-    <string name="network_scanner">Network scanner</string>
+    <!-- Activities -> Profile editor -->
+    <string name="profile_editor">Profile editor</string>
     <string name="add_manually_button_text">Add manually</string>
     <string name="add_all_in_range_button_text">Add all in range</string>
     <string name="enter_bssid">Enter network BSSID</string>

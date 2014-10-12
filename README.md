@@ -45,6 +45,23 @@ ToS agreement or anything. Of course, be prepared for the worst! If the
 school notices the sudden increase of bandwidth usage due to the lower
 effort required to log in, watch out!
 
+### What does this error mean?! ###
+
+#### Connection failed. ####
+This error is displayed when the app cannot load the login page (http://192.255.255.94/).
+This can occur for three reasons:
+- You disconnected from the WiFi while the app was logging in (most likely)
+- The network you are connecting to is not a SHSID network (configuration error)
+- The school changed their WiFi login address (least likely)
+If you have made sure that the error is not being caused by (1) and (2), please send a
+bug report so I can fix the problem as soon as possible!
+
+#### Unknown error occured. ####
+This error is displayed when the app was able to load the login page, but does not know
+how to handle the reply. In most cases, this error is due to some weird corner case that
+I did not consider. The other possibility is that the school changed the format of their
+WiFi login page. If you get this error, please send a bug report.
+
 ### Will there be an iOS/Windows Phone/Desktop version? ###
 
 Unfortunately, iOS doesn't allow this type of app in the App Store, and I have no

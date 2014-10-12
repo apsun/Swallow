@@ -12,6 +12,9 @@ import android.support.v4.app.TaskStackBuilder;
 import android.util.Log;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 
 public class LoginService extends IntentService {
     private static final String TAG = LoginService.class.getName();
@@ -28,6 +31,30 @@ public class LoginService extends IntentService {
     public static final String PREF_USERNAME_KEY = "username";
     public static final String PREF_PASSWORD_KEY = "password";
 
+    private static final Set<Bssid> XMB_PROFILE;
+
+    static {
+        XMB_PROFILE = new HashSet<Bssid>(Arrays.asList(
+            new Bssid("00:1f:41:27:62:69"),
+            new Bssid("00:22:7f:18:2c:79"),
+            new Bssid("00:22:7f:18:33:39"),
+            new Bssid("00:22:7f:18:2f:e9"),
+            new Bssid("00:22:7f:18:33:19"),
+            new Bssid("00:22:7f:18:21:c9"),
+            new Bssid("58:93:96:1b:8c:d9"),
+            new Bssid("58:93:96:1b:91:e9"),
+            new Bssid("58:93:96:1b:92:19"),
+            new Bssid("58:93:96:1b:91:99"),
+            new Bssid("58:93:96:1b:8e:99"),
+            new Bssid("58:93:96:1b:91:49")
+
+            // TODO: TESTING BSSIDS
+            // new Bssid("c4:01:7c:39:4e:e9"),
+            // new Bssid("74:91:1a:2c:b4:79"),
+            // new Bssid("c4:01:7c:39:97:29")
+        ));
+    }
+
     public LoginService() {
         super(TAG);
     }
@@ -39,7 +66,11 @@ public class LoginService extends IntentService {
         // Check that bssid is in a currently active profile
         if (checkBssid) {
             Bssid bssid = intent.getParcelableExtra(NETWORK_BSSID_EXTRA);
-            // TODO: FINISH THIS
+            // TODO: TEMP CODE BELOW
+            if (!XMB_PROFILE.contains(bssid)) {
+                Log.d(TAG, "Current network is not in XMB profile");
+                return;
+            }
         }
 
         // Get login credentials from saved preferences

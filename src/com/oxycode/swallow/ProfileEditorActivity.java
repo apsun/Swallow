@@ -15,7 +15,7 @@ import android.widget.*;
 
 import java.util.*;
 
-public class NetworkScannerActivity extends ListActivity {
+public class ProfileEditorActivity extends ListActivity {
     private static class ScanResultViewHolder {
         CheckBox enabledCheckBox;
         TextView bssidTextView;
@@ -40,7 +40,7 @@ public class NetworkScannerActivity extends ListActivity {
         }
 
         public ScanResultListAdapter(Comparator<ScanResult> sorter) {
-            _layoutInflater = (LayoutInflater)NetworkScannerActivity.this.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+            _layoutInflater = (LayoutInflater)ProfileEditorActivity.this.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
             _resultSorter = sorter;
         }
 
@@ -92,7 +92,7 @@ public class NetworkScannerActivity extends ListActivity {
             String ssid = scanResult.SSID;
             String bssid = scanResult.BSSID;
             int level = scanResult.level;
-            boolean checked = NetworkScannerActivity.this._profile.contains(new Bssid(bssid));
+            boolean checked = ProfileEditorActivity.this._profile.contains(new Bssid(bssid));
 
             // TODO: Read checked value
             viewHolder.enabledCheckBox.setChecked(checked);
@@ -109,11 +109,11 @@ public class NetworkScannerActivity extends ListActivity {
         }
     }
 
-    private static final String TAG = NetworkScannerActivity.class.getName();
+    private static final String TAG = ProfileEditorActivity.class.getName();
     private static final String PREF_SHOW_SHS_ONLY_KEY = "pref_show_shs_only";
     private static final String PREF_SCAN_RATE_KEY = "pref_scan_rate";
     private static final String PREF_MINIMUM_SIGNAL_STRENGTH_KEY = "pref_minimum_signal_strength";
-    public static final String EXTRA_PROFILE_NAME = "profile";
+    public static final String EXTRA_PROFILE_NAME = "profileName";
 
     private Timer _scanTimer;
     private TimerTask _scanTask;
@@ -148,7 +148,7 @@ public class NetworkScannerActivity extends ListActivity {
         // Get the profile we're editing from the intent
         String profileName = getIntent().getStringExtra("profile");
         NetworkProfile profile = null /* get profile somehow */;
-        _profile = profile.edit();
+        // _profile = profile.edit();
 
         // Get the system WiFi manager for scanning
         _wifiManager = (WifiManager)getSystemService(Context.WIFI_SERVICE);

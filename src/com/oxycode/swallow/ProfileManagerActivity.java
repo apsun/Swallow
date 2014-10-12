@@ -14,6 +14,10 @@ import android.widget.EditText;
 import android.widget.ListView;
 
 public class ProfileManagerActivity extends ListActivity {
+    private static interface SetProfileNameDialogHandler {
+        void onSave(String name);
+    }
+
     private static final String TAG = ProfileManagerActivity.class.getName();
 
     private SharedPreferences _preferences;
@@ -44,25 +48,23 @@ public class ProfileManagerActivity extends ListActivity {
         return super.onCreateOptionsMenu(menu);
     }
 
-    private void showNetworkScanner(NetworkProfile profile) {
-        Intent intent = new Intent(this, NetworkScannerActivity.class);
-        intent.putExtra(NetworkScannerActivity.EXTRA_PROFILE_NAME, profile.getName());
+    private void showNetworkScanner() {
+        Intent intent = new Intent(this, ProfileEditorActivity.class);
+        intent.putExtra(ProfileEditorActivity.EXTRA_PROFILE_NAME, "" /* todo */);
         startActivity(intent);
     }
 
-    private void showSetProfileNameDialog() {
+    private void showSetProfileNameDialog(final SetProfileNameDialogHandler handler) {
         View promptView = getLayoutInflater().inflate(R.layout.textedit_dialog, null);
         final EditText editText = (EditText)promptView.findViewById(R.id.textedit_dialog_edittext);
         AlertDialog.Builder builder = new AlertDialog.Builder(this)
             .setView(promptView)
             .setTitle(R.string.enter_profile_name)
-            // TODO: Change text based on create vs. rename
             .setPositiveButton(R.string.save, new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
                     String profileName = editText.getText().toString();
-                    // TODO: Handle based on action
-                    showNetworkScanner(null);
+                    handler.onSave(profileName);
                 }
             })
             .setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
@@ -84,7 +86,13 @@ public class ProfileManagerActivity extends ListActivity {
                 NavUtils.navigateUpFromSameTask(this);
                 return true;
             case R.id.add_profile_button:
-                showSetProfileNameDialog();
+                showSetProfileNameDialog(new SetProfileNameDialogHandler() {
+                    @Override
+                    public void onSave(String name) {
+                        // TODO: create profile, then show scanner
+                        showNetworkScanner();
+                    }
+                });
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
@@ -109,7 +117,12 @@ public class ProfileManagerActivity extends ListActivity {
                 // do something
                 return true;
             case R.id.profile_context_menu_rename:
-                // do something
+                showSetProfileNameDialog(new SetProfileNameDialogHandler() {
+                    @Override
+                    public void onSave(String name) {
+                        // TODO: update profile name
+                    }
+                });
                 return true;
             default:
                 return super.onContextItemSelected(item);

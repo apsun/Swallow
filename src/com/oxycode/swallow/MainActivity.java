@@ -6,16 +6,14 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.View;
-import android.widget.Button;
-import android.widget.CompoundButton;
-import android.widget.EditText;
-import android.widget.Switch;
+import android.widget.*;
 
 public class MainActivity extends Activity {
     private static final String TAG = MainActivity.class.getName();
@@ -38,11 +36,14 @@ public class MainActivity extends Activity {
         setContentView(R.layout.main_activity);
 
         _preferences = getSharedPreferences(LoginService.PREF_LOGIN_CREDENTIALS, MODE_PRIVATE);
+        PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
 
         _usernameTextBox = (EditText)findViewById(R.id.username_edittext);
         _passwordTextBox = (EditText)findViewById(R.id.password_edittext);
         _saveCredentialsButton = (Button)findViewById(R.id.save_credentials_button);
         _profileManagerButton = (Button)findViewById(R.id.profile_manager_button);
+        // TODO: TEMP CODE
+        _profileManagerButton.setEnabled(false);
         _settingsButton = (Button)findViewById(R.id.settings_button);
 
         _usernameTextBox.setText(_preferences.getString(LoginService.PREF_USERNAME_KEY, null));
@@ -74,7 +75,7 @@ public class MainActivity extends Activity {
                 editor.putString(LoginService.PREF_PASSWORD_KEY, password);
                 editor.apply();
                 _credentialsModified = false;
-                // TODO: Display toast message?
+                Toast.makeText(MainActivity.this, R.string.credentials_saved, Toast.LENGTH_SHORT).show();
             }
         });
 
