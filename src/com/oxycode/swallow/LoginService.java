@@ -132,7 +132,7 @@ public class LoginService extends IntentService {
         PendingIntent pendingIntent = null;
         switch (result) {
             case INCORRECT_CREDENTIALS:
-            case ACCOUNT_BANNED:
+            case ACCOUNT_BANNED: // TODO: Why do we show main activity for banned account?
                 Intent configIntent = new Intent(this, MainActivity.class);
                 TaskStackBuilder stackBuilder = TaskStackBuilder.create(this);
                 stackBuilder.addParentStack(MainActivity.class);

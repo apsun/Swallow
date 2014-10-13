@@ -45,14 +45,16 @@ ToS agreement or anything. Of course, be prepared for the worst! If the
 school notices the sudden increase of bandwidth usage due to the lower
 effort required to log in, watch out!
 
-### What does this error mean?! ###
+### I haz an error. ###
 
 #### Connection failed. ####
 This error is displayed when the app cannot load the login page (http://192.255.255.94/).
 This can occur for three reasons:
+
 - You disconnected from the WiFi while the app was logging in (most likely)
 - The network you are connecting to is not a SHSID network (configuration error)
 - The school changed their WiFi login address (least likely)
+
 If you have made sure that the error is not being caused by (1) and (2), please send a
 bug report so I can fix the problem as soon as possible!
 
