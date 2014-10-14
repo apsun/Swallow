@@ -20,21 +20,31 @@ public class WifiStateReceiver extends BroadcastReceiver {
         String action = intent.getAction();
         if (!action.equals(WifiManager.SUPPLICANT_STATE_CHANGED_ACTION)) return;
         SupplicantState state = intent.getParcelableExtra(WifiManager.EXTRA_NEW_STATE);
-        if (state != SupplicantState.COMPLETED) return;
+        Log.d(TAG, "WiFi state -> " + state);
 
-        // Get the BSSID of the newly-connected network
-        WifiManager wifiManager = (WifiManager)context.getSystemService(Context.WIFI_SERVICE);
-        WifiInfo wifiInfo = wifiManager.getConnectionInfo();
-        if (wifiInfo == null) return;
-        String ssidStr = wifiInfo.getSSID();
-        String bssidStr = wifiInfo.getBSSID();
-        if (ssidStr == null || bssidStr == null) return;
-        Bssid bssid = new Bssid(bssidStr);
-        Log.d(TAG, String.format("Connected to network with SSID: %s, BSSID: %s", ssidStr, bssidStr));
-
-        // Start the login service, which will also perform the other state checks
         Intent loginIntent = new Intent(context, LoginService.class);
-        loginIntent.putExtra(LoginService.NETWORK_BSSID_EXTRA, bssid);
+        if (state == SupplicantState.COMPLETED) {
+            // Get the SSID/BSSID of the newly-connected network
+            WifiManager wifiManager = (WifiManager)context.getSystemService(Context.WIFI_SERVICE);
+            WifiInfo wifiInfo = wifiManager.getConnectionInfo();
+            if (wifiInfo == null) return;
+            String ssid = wifiInfo.getSSID();
+            String bssidStr = wifiInfo.getBSSID();
+            if (ssid == null || bssidStr == null) return;
+            Bssid bssid = new Bssid(bssidStr);
+            Log.d(TAG, String.format("Connected to network with SSID: %s, BSSID: %s", ssid, bssidStr));
+
+            // Start the login service, which will also perform the other state checks
+            loginIntent.putExtra(LoginService.FORCE_LOGIN_EXTRA, false);
+            loginIntent.putExtra(LoginService.IS_CONNECTED_EXTRA, true);
+            loginIntent.putExtra(LoginService.NETWORK_SSID_EXTRA, ssid);
+            loginIntent.putExtra(LoginService.NETWORK_BSSID_EXTRA, bssid);
+        } else if (state == SupplicantState.DISCONNECTED) {
+            loginIntent.putExtra(LoginService.FORCE_LOGIN_EXTRA, false);
+            loginIntent.putExtra(LoginService.IS_CONNECTED_EXTRA, false);
+        } else {
+            return;
+        }
         context.startService(loginIntent);
     }
 }

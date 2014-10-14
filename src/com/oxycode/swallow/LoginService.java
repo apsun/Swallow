@@ -18,14 +18,19 @@ import java.util.Set;
 
 public class LoginService extends IntentService {
     private static final String TAG = LoginService.class.getName();
+
+    public static final String FORCE_LOGIN_EXTRA = "force_login";
+    public static final String IS_CONNECTED_EXTRA = "is_connected";
+    public static final String NETWORK_SSID_EXTRA = "ssid";
     public static final String NETWORK_BSSID_EXTRA = "bssid";
-    public static final String CHECK_BSSID_EXTRA = "check_bssid";
 
     private static final String PREF_LOGIN_RETRY_COUNT_KEY = "pref_login_retry_count";
+    private static final String PREF_SHOW_LOGIN_PROMPT_KEY = "pref_show_login_prompt";
     private static final String PREF_SHOW_PROGRESS_NOTIFICATION_KEY = "pref_show_progress_notification";
     private static final String PREF_SHOW_ERROR_NOTIFICATION_KEY = "pref_show_error_notification";
 
-    private static final int NOTIFICATION_ID = 0xdcaeee;
+    private static final int NOTI_LOGIN_PROGRESS_ID = 0xdcaeee;
+    private static final int NOTI_LOGIN_ACTION_ID = 0x9f37ff;
 
     public static final String PREF_LOGIN_CREDENTIALS = "com.oxycode.swallow.credentials";
     public static final String PREF_USERNAME_KEY = "username";
@@ -46,12 +51,12 @@ public class LoginService extends IntentService {
             new Bssid("58:93:96:1b:92:19"),
             new Bssid("58:93:96:1b:91:99"),
             new Bssid("58:93:96:1b:8e:99"),
-            new Bssid("58:93:96:1b:91:49")
+            new Bssid("58:93:96:1b:91:49"),
 
             // TODO: TESTING BSSIDS
-            // new Bssid("c4:01:7c:39:4e:e9"),
-            // new Bssid("74:91:1a:2c:b4:79"),
-            // new Bssid("c4:01:7c:39:97:29")
+            new Bssid("c4:01:7c:39:4e:e9"),
+            new Bssid("74:91:1a:2c:b4:79"),
+            new Bssid("c4:01:7c:39:97:29")
         ));
     }
 
@@ -59,21 +64,7 @@ public class LoginService extends IntentService {
         super(TAG);
     }
 
-    @Override
-    protected void onHandleIntent(Intent intent) {
-        boolean checkBssid = intent.getBooleanExtra(CHECK_BSSID_EXTRA, true);
-
-        // Check that bssid is in a currently active profile
-        if (checkBssid) {
-            Bssid bssid = intent.getParcelableExtra(NETWORK_BSSID_EXTRA);
-            // TODO: TEMP CODE BELOW
-            if (!XMB_PROFILE.contains(bssid)) {
-                Log.d(TAG, "Current network is not in XMB profile");
-                return;
-            }
-        }
-
-        // Get login credentials from saved preferences
+    private void performLogin() {
         SharedPreferences credentials = getSharedPreferences(PREF_LOGIN_CREDENTIALS, MODE_PRIVATE);
         String username = credentials.getString(PREF_USERNAME_KEY, null);
         String password = credentials.getString(PREF_PASSWORD_KEY, null);
@@ -99,7 +90,7 @@ public class LoginService extends IntentService {
                 .setContentText(String.format(getString(R.string.noti_logging_in_using_account), username))
                 .setOngoing(true)
                 .setProgress(0, 0, true);
-            notificationManager.notify(NOTIFICATION_ID, notification.build());
+            notificationManager.notify(NOTI_LOGIN_PROGRESS_ID, notification.build());
         }
 
         LoginClient.LoginResult result = LoginClient.login(username, password, retryCount + 1, new LoginClient.Handler() {
@@ -108,16 +99,20 @@ public class LoginService extends IntentService {
                 // Update notification with retry state
                 if (showProgressNotification && remainingTrialCount > 0) {
                     int messageId = (remainingTrialCount > 1) ? R.string.noti_logging_in_retrying_plural
-                                                              : R.string.noti_logging_in_retrying_single;
+                        : R.string.noti_logging_in_retrying_single;
                     notification.setContentText(String.format(getString(messageId), remainingTrialCount));
-                    notificationManager.notify(NOTIFICATION_ID, notification.build());
+                    notificationManager.notify(NOTI_LOGIN_PROGRESS_ID, notification.build());
                 }
             }
         });
 
+        // Remove progress notification
+        if (showProgressNotification) {
+            notificationManager.cancel(NOTI_LOGIN_PROGRESS_ID);
+        }
+
         // If login succeeded or no error notification is needed, remove notification and exit
         if (result == LoginClient.LoginResult.SUCCESS || !showErrorNotification) {
-            notificationManager.cancel(NOTIFICATION_ID);
             return;
         }
 
@@ -142,6 +137,7 @@ public class LoginService extends IntentService {
             case EXCEEDED_MAX_RETRIES:
             case UNKNOWN:
                 Intent retryIntent = new Intent(this, LoginService.class);
+                retryIntent.putExtra(LoginService.FORCE_LOGIN_EXTRA, true);
                 pendingIntent = PendingIntent.getService(this, 0, retryIntent, 0);
                 break;
         }
@@ -166,6 +162,56 @@ public class LoginService extends IntentService {
         notification.setContentText(getString(messageId));
 
         // Display the error notification
-        notificationManager.notify(NOTIFICATION_ID, notification.build());
+        notificationManager.notify(NOTI_LOGIN_ACTION_ID, notification.build());
+    }
+
+    @Override
+    protected void onHandleIntent(Intent intent) {
+        boolean forceLogin = intent.getBooleanExtra(FORCE_LOGIN_EXTRA, false);
+        if (forceLogin) {
+            Log.d(TAG, "Performing login");
+            performLogin();
+            return;
+        }
+
+        boolean isConnected = intent.getBooleanExtra(IS_CONNECTED_EXTRA, true);
+        if (!isConnected) {
+            // TODO: What about the in-progress notifications?
+            Log.d(TAG, "Disconnected from network, removing non-progress notifications");
+            NotificationManager notificationManager = (NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE);
+            notificationManager.cancel(NOTI_LOGIN_ACTION_ID);
+            return;
+        }
+
+        Bssid bssid = intent.getParcelableExtra(NETWORK_BSSID_EXTRA);
+        if (!XMB_PROFILE.contains(bssid)) {
+            Log.d(TAG, "BSSID not in profile, skipping login");
+            NotificationManager notificationManager = (NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE);
+            notificationManager.cancel(NOTI_LOGIN_ACTION_ID);
+            return;
+        }
+
+        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
+        boolean showLoginPrompt = preferences.getBoolean(PREF_SHOW_LOGIN_PROMPT_KEY, true);
+        if (!showLoginPrompt) {
+            Log.d(TAG, "Login prompt is disabled, directly logging in");
+            performLogin();
+            return;
+        }
+
+        Log.d(TAG, "Setting up delayed login notification");
+
+        Intent loginIntent = new Intent(this, LoginService.class);
+        loginIntent.putExtra(LoginService.FORCE_LOGIN_EXTRA, true);
+        PendingIntent pendingIntent = PendingIntent.getService(this, 0, loginIntent, 0);
+
+        NotificationManager notificationManager = (NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE);
+        NotificationCompat.Builder notification = new NotificationCompat.Builder(this)
+            .setSmallIcon(R.drawable.icon)
+            .setContentTitle("LOGIN RAY READY")
+            .setContentText("Tap to log into WiFi")
+            .setAutoCancel(true)
+            .setContentIntent(pendingIntent);
+        notificationManager.notify(NOTI_LOGIN_ACTION_ID, notification.build());
     }
 }

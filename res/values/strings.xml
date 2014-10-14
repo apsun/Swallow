@@ -76,4 +76,9 @@
     <string name="pref_scan_rate_summary">How often to refresh the list of WiFi networks</string>
     <string name="pref_minimum_signal_strength_title">Minimum signal strength</string>
     <string name="pref_minimum_signal_strength_summary">The minimum strength for displayed WiFi networks</string>
+    <string name="pref_show_login_prompt_title">Show login prompt</string>
+    <string name="pref_show_login_prompt_summary_on">Show notification prompt before logging in</string>
+    <string name="pref_show_login_prompt_summary_off">Do not show login prompt (recommended if you only have one
+        device)
+    </string>
 </resources>

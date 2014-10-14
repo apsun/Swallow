@@ -12,6 +12,12 @@
     </PreferenceCategory>
     <PreferenceCategory android:title="@string/pref_category_notifications">
         <CheckBoxPreference
+            android:key="pref_show_login_prompt"
+            android:title="@string/pref_show_login_prompt_title"
+            android:summaryOn="@string/pref_show_login_prompt_summary_on"
+            android:summaryOff="@string/pref_show_login_prompt_summary_off"
+            android:defaultValue="true"/>
+        <CheckBoxPreference
             android:key="pref_show_progress_notification"
             android:title="@string/pref_show_progress_notification_title"
             android:summaryOn="@string/pref_show_progress_notification_summary_on"
