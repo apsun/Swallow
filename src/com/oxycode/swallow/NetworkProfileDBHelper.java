@@ -1,3 +1,9 @@
+//      PROFILES                             ACCESS_POINTS
+// ------------------               ----------------------------
+// _id      (int) <-----------|     _id         (int)
+// name     (string)          |---- profile_id  (int)
+// enabled  (boolean)               bssid       (string/byte[6])
+
 package com.oxycode.swallow;
 
 import android.content.Context;

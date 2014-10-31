@@ -1,28 +1,19 @@
 package com.oxycode.swallow;
 
-import android.app.IntentService;
-import android.app.NotificationManager;
-import android.app.PendingIntent;
+import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
-import android.preference.PreferenceManager;
-import android.support.v4.app.NotificationCompat;
-import android.support.v4.app.TaskStackBuilder;
+import android.net.wifi.WifiInfo;
+import android.net.wifi.WifiManager;
+import android.os.IBinder;
 import android.util.Log;
 
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
-public class LoginService extends IntentService {
-    private static final String TAG = LoginService.class.getName();
-
-    public static final String FORCE_LOGIN_EXTRA = "force_login";
-    public static final String IS_CONNECTED_EXTRA = "is_connected";
-    public static final String NETWORK_SSID_EXTRA = "ssid";
-    public static final String NETWORK_BSSID_EXTRA = "bssid";
+public class LoginService extends Service {
+    private static final String TAG = LoginService.class.getSimpleName();
 
     private static final String PREF_LOGIN_RETRY_COUNT_KEY = "pref_login_retry_count";
     private static final String PREF_SHOW_LOGIN_PROMPT_KEY = "pref_show_login_prompt";
@@ -36,35 +27,54 @@ public class LoginService extends IntentService {
     public static final String PREF_USERNAME_KEY = "username";
     public static final String PREF_PASSWORD_KEY = "password";
 
-    private static final Set<Bssid> XMB_PROFILE;
+    private static final Set<String> XMB_PROFILE;
+
+    private WifiManager _wifiManager;
 
     static {
-        XMB_PROFILE = new HashSet<Bssid>(Arrays.asList(
-            new Bssid("00:1f:41:27:62:69"),
-            new Bssid("00:22:7f:18:2c:79"),
-            new Bssid("00:22:7f:18:33:39"),
-            new Bssid("00:22:7f:18:2f:e9"),
-            new Bssid("00:22:7f:18:33:19"),
-            new Bssid("00:22:7f:18:21:c9"),
-            new Bssid("58:93:96:1b:8c:d9"),
-            new Bssid("58:93:96:1b:91:e9"),
-            new Bssid("58:93:96:1b:92:19"),
-            new Bssid("58:93:96:1b:91:99"),
-            new Bssid("58:93:96:1b:8e:99"),
-            new Bssid("58:93:96:1b:91:49"),
+        XMB_PROFILE = new HashSet<String>(Arrays.asList(
+            "00:1f:41:27:62:69",
+            "00:22:7f:18:2c:79",
+            "00:22:7f:18:33:39",
+            "00:22:7f:18:2f:e9",
+            "00:22:7f:18:33:19",
+            "00:22:7f:18:21:c9",
+            "58:93:96:1b:8c:d9",
+            "58:93:96:1b:91:e9",
+            "58:93:96:1b:92:19",
+            "58:93:96:1b:91:99",
+            "58:93:96:1b:8e:99",
+            "58:93:96:1b:91:49"
 
             // TODO: TESTING BSSIDS
-            new Bssid("c4:01:7c:39:4e:e9"),
-            new Bssid("74:91:1a:2c:b4:79"),
-            new Bssid("c4:01:7c:39:97:29")
+            // "c4:01:7c:39:4e:e9",
+            // "74:91:1a:2c:b4:79",
+            // "c4:01:7c:39:97:29"
         ));
     }
 
-    public LoginService() {
-        super(TAG);
+    @Override
+    public IBinder onBind(Intent intent) {
+        return null;
     }
 
-    private void performLogin() {
+    @Override
+    public void onCreate() {
+        super.onCreate();
+
+        _wifiManager = (WifiManager)getSystemService(Context.WIFI_SERVICE);
+    }
+
+    private void onWifiConnected(Intent intent) {
+        WifiInfo wifiInfo = _wifiManager.getConnectionInfo();
+        if (wifiInfo == null) return;
+        String ssid = wifiInfo.getSSID();
+        String bssid = wifiInfo.getBSSID();
+        if (ssid == null || bssid == null) return;
+        Log.d(TAG, String.format("Connected to network with SSID: %s, BSSID: %s", ssid, bssid));
+    }
+
+    /*private void performLogin() {
         SharedPreferences credentials = getSharedPreferences(PREF_LOGIN_CREDENTIALS, MODE_PRIVATE);
         String username = credentials.getString(PREF_USERNAME_KEY, null);
         String password = credentials.getString(PREF_PASSWORD_KEY, null);
@@ -167,14 +177,14 @@ public class LoginService extends IntentService {
 
     @Override
     protected void onHandleIntent(Intent intent) {
-        boolean forceLogin = intent.getBooleanExtra(FORCE_LOGIN_EXTRA, false);
+        boolean forceLogin = intent.getBooleanExtra(EXTRA_FORCE_LOGIN, false);
         if (forceLogin) {
             Log.d(TAG, "Performing login");
             performLogin();
             return;
         }
 
-        boolean isConnected = intent.getBooleanExtra(IS_CONNECTED_EXTRA, true);
+        boolean isConnected = intent.getBooleanExtra(EXTRA_IS_CONNECTED, true);
         if (!isConnected) {
             // TODO: What about the in-progress notifications?
             Log.d(TAG, "Disconnected from network, removing non-progress notifications");
@@ -183,7 +193,8 @@ public class LoginService extends IntentService {
             return;
         }
 
-        Bssid bssid = intent.getParcelableExtra(NETWORK_BSSID_EXTRA);
+        String ssid = intent.getStringExtra(NETWORK_SSID_EXTRA);
+        String bssid = intent.getStringExtra(NETWORK_BSSID_EXTRA);
         if (!XMB_PROFILE.contains(bssid)) {
             Log.d(TAG, "BSSID not in profile, skipping login");
             NotificationManager notificationManager = (NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE);
@@ -208,10 +219,10 @@ public class LoginService extends IntentService {
         NotificationManager notificationManager = (NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE);
         NotificationCompat.Builder notification = new NotificationCompat.Builder(this)
             .setSmallIcon(R.drawable.icon)
-            .setContentTitle("LOGIN RAY READY")
-            .setContentText("Tap to log into WiFi")
+            .setContentTitle(getString(R.string.noti_touch_to_log_in))
+            .setContentText(String.format("%s - %s", ssid, bssid))
             .setAutoCancel(true)
             .setContentIntent(pendingIntent);
         notificationManager.notify(NOTI_LOGIN_ACTION_ID, notification.build());
-    }
+    }*/
 }

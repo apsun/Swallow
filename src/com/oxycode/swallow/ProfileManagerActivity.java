@@ -18,7 +18,7 @@ public class ProfileManagerActivity extends ListActivity {
         void onSave(String name);
     }
 
-    private static final String TAG = ProfileManagerActivity.class.getName();
+    private static final String TAG = ProfileManagerActivity.class.getSimpleName();
 
     private SharedPreferences _preferences;
     private ListView _profileListView;

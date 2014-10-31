@@ -92,10 +92,10 @@ public class ProfileEditorActivity extends ListActivity {
             String ssid = scanResult.SSID;
             String bssid = scanResult.BSSID;
             int level = scanResult.level;
-            boolean checked = ProfileEditorActivity.this._profile.contains(new Bssid(bssid));
+            // boolean checked = ProfileEditorActivity.this._profile.contains(new Bssid(bssid));
 
             // TODO: Read checked value
-            viewHolder.enabledCheckBox.setChecked(checked);
+            // viewHolder.enabledCheckBox.setChecked(checked);
             viewHolder.bssidTextView.setText(bssid);
             viewHolder.ssidTextView.setText(ssid);
             viewHolder.levelTextView.setText(String.valueOf(level));
@@ -120,7 +120,7 @@ public class ProfileEditorActivity extends ListActivity {
     private WifiManager _wifiManager;
     private BroadcastReceiver _scanReceiver;
 
-    private NetworkProfile.Editor _profile;
+    // private NetworkProfile.Editor _profile;
 
     private ListView _bssidListView;
     private Button _addManuallyButton;
@@ -147,7 +147,7 @@ public class ProfileEditorActivity extends ListActivity {
 
         // Get the profile we're editing from the intent
         String profileName = getIntent().getStringExtra("profile");
-        NetworkProfile profile = null /* get profile somehow */;
+        // NetworkProfile profile = null /* get profile somehow */;
         // _profile = profile.edit();
 
         // Get the system WiFi manager for scanning
@@ -244,9 +244,9 @@ public class ProfileEditorActivity extends ListActivity {
     }
 
     private void onAddBssidDialogFinished(String bssidText) {
-        Bssid bssid;
+        // Bssid bssid;
         try {
-            bssid = new Bssid(bssidText);
+            // bssid = new Bssid(bssidText);
         } catch (IllegalArgumentException e) {
             AlertDialog.Builder builder = new AlertDialog.Builder(this)
                 .setTitle(R.string.invalid_bssid_title)
@@ -263,7 +263,7 @@ public class ProfileEditorActivity extends ListActivity {
             return;
         }
 
-        _profile.put(bssid, true);
+        // _profile.put(bssid, true);
     }
 
     private void startWifiScan() {
