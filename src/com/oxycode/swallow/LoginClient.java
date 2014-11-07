@@ -93,7 +93,9 @@ public final class LoginClient {
                 Log.w(TAG, "Could not find title on login status page");
                 return QueryResult.UNKNOWN;
             } catch (IOException e) {
-                handler.onException(e, trialCount);
+                if (handler != null) {
+                    handler.onException(e, trialCount);
+                }
             }
         }
 
@@ -175,7 +177,9 @@ public final class LoginClient {
                 }
                 return LoginResult.UNKNOWN;
             } catch (IOException e) {
-                handler.onException(e, trialCount);
+                if (handler != null) {
+                    handler.onException(e, trialCount);
+                }
             }
         }
 
@@ -222,7 +226,9 @@ public final class LoginClient {
                 Log.w(TAG, "Could not find status code on logout result page");
                 return LogoutResult.UNKNOWN;
             } catch (IOException e) {
-                handler.onException(e, trialCount);
+                if (handler != null) {
+                    handler.onException(e, trialCount);
+                }
             }
         }
 

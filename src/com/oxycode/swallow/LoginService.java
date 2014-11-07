@@ -1,13 +1,19 @@
 package com.oxycode.swallow;
 
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
-import android.net.wifi.WifiInfo;
+import android.content.SharedPreferences;
 import android.net.wifi.WifiManager;
 import android.os.IBinder;
+import android.preference.PreferenceManager;
+import android.support.v4.app.NotificationCompat;
+import android.support.v4.app.TaskStackBuilder;
 import android.util.Log;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
@@ -27,9 +33,30 @@ public class LoginService extends Service {
     public static final String PREF_USERNAME_KEY = "username";
     public static final String PREF_PASSWORD_KEY = "password";
 
+    public static final String EXTRA_ACTION = "action";
+    public static final int EXTRA_ACTION_DEFAULT = 0;
+    // public static final int EXTRA_ACTION_CHECK = 1;
+    public static final int EXTRA_ACTION_LOG_IN = 2;
+
+    public static final String EXTRA_SSID = "ssid";
+    public static final String EXTRA_BSSID = "bssid";
+
     private static final Set<String> XMB_PROFILE;
 
+    private SharedPreferences.OnSharedPreferenceChangeListener _prefChangeListener;
+
+    private SharedPreferences _preferences;
+    private SharedPreferences _credentials;
     private WifiManager _wifiManager;
+    private NotificationManager _notificationManager;
+
+    // Preferences
+    private int _retryCount;
+    private boolean _showPromptNotification;
+    private boolean _showProgressNotification;
+    private boolean _showErrorNotification;
+    private String _username;
+    private String _password;
 
     static {
         XMB_PROFILE = new HashSet<String>(Arrays.asList(
@@ -63,21 +90,19 @@ public class LoginService extends Service {
         super.onCreate();
 
         _wifiManager = (WifiManager)getSystemService(Context.WIFI_SERVICE);
+        _notificationManager = (NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE);
+        _preferences = PreferenceManager.getDefaultSharedPreferences(this);
+        _credentials = getSharedPreferences(PREF_LOGIN_CREDENTIALS, MODE_PRIVATE);
+        // Load database here
     }
 
-    private void onWifiConnected(Intent intent) {
-        WifiInfo wifiInfo = _wifiManager.getConnectionInfo();
-        if (wifiInfo == null) return;
-        String ssid = wifiInfo.getSSID();
-        String bssid = wifiInfo.getBSSID();
-        if (ssid == null || bssid == null) return;
-        Log.d(TAG, String.format("Connected to network with SSID: %s, BSSID: %s", ssid, bssid));
-    }
-
-    /*private void performLogin() {
-        SharedPreferences credentials = getSharedPreferences(PREF_LOGIN_CREDENTIALS, MODE_PRIVATE);
-        String username = credentials.getString(PREF_USERNAME_KEY, null);
-        String password = credentials.getString(PREF_PASSWORD_KEY, null);
+    private void performLogin() {
+        final String username = _username;
+        final String password = _password;
+        final int retryCount = _retryCount;
+        final boolean showProgressNotification = _showProgressNotification;
+        final boolean showErrorNotification = _showErrorNotification;
+        final NotificationManager notificationManager = _notificationManager;
 
         if (username == null || password == null) {
             Log.d(TAG, "Null login credentials, skipping login");
@@ -85,12 +110,6 @@ public class LoginService extends Service {
             return;
         }
 
-        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
-        final int retryCount = Integer.parseInt(preferences.getString(PREF_LOGIN_RETRY_COUNT_KEY, null));
-        final boolean showProgressNotification = preferences.getBoolean(PREF_SHOW_PROGRESS_NOTIFICATION_KEY, true);
-        final boolean showErrorNotification = preferences.getBoolean(PREF_SHOW_ERROR_NOTIFICATION_KEY, true);
-
-        final NotificationManager notificationManager = (NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE);
         final NotificationCompat.Builder notification = new NotificationCompat.Builder(this)
             .setSmallIcon(R.drawable.icon);
 
@@ -109,7 +128,7 @@ public class LoginService extends Service {
                 // Update notification with retry state
                 if (showProgressNotification && remainingTrialCount > 0) {
                     int messageId = (remainingTrialCount > 1) ? R.string.noti_logging_in_retrying_plural
-                        : R.string.noti_logging_in_retrying_single;
+                                                              : R.string.noti_logging_in_retrying_single;
                     notification.setContentText(String.format(getString(messageId), remainingTrialCount));
                     notificationManager.notify(NOTI_LOGIN_PROGRESS_ID, notification.build());
                 }
@@ -147,7 +166,7 @@ public class LoginService extends Service {
             case EXCEEDED_MAX_RETRIES:
             case UNKNOWN:
                 Intent retryIntent = new Intent(this, LoginService.class);
-                retryIntent.putExtra(LoginService.FORCE_LOGIN_EXTRA, true);
+                retryIntent.putExtra(EXTRA_ACTION, EXTRA_ACTION_LOG_IN);
                 pendingIntent = PendingIntent.getService(this, 0, retryIntent, 0);
                 break;
         }
@@ -172,57 +191,57 @@ public class LoginService extends Service {
         notification.setContentText(getString(messageId));
 
         // Display the error notification
-        notificationManager.notify(NOTI_LOGIN_ACTION_ID, notification.build());
+        _notificationManager.notify(NOTI_LOGIN_ACTION_ID, notification.build());
+    }
+
+    private void checkLoginStatus(String ssid, String bssid) {
+        LoginClient.QueryResult result = LoginClient.getLoginStatus(_retryCount + 1, null);
+        if (result == LoginClient.QueryResult.LOGGED_OUT) {
+            if (_showPromptNotification) {
+                Intent loginIntent = new Intent(this, LoginService.class);
+                loginIntent.putExtra(EXTRA_ACTION, EXTRA_ACTION_LOG_IN);
+                PendingIntent pendingIntent = PendingIntent.getService(this, 0, loginIntent, 0);
+
+                NotificationCompat.Builder notification = new NotificationCompat.Builder(this)
+                    .setSmallIcon(R.drawable.icon)
+                    .setContentTitle(getString(R.string.noti_touch_to_log_in))
+                    .setContentText(String.format("%s - %s", ssid, bssid))
+                    .setAutoCancel(true)
+                    .setContentIntent(pendingIntent);
+
+                _notificationManager.notify(NOTI_LOGIN_ACTION_ID, notification.build());
+            } else {
+                performLogin();
+            }
+        }
     }
 
     @Override
-    protected void onHandleIntent(Intent intent) {
-        boolean forceLogin = intent.getBooleanExtra(EXTRA_FORCE_LOGIN, false);
-        if (forceLogin) {
-            Log.d(TAG, "Performing login");
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        int action = intent.getIntExtra(EXTRA_ACTION, EXTRA_ACTION_DEFAULT);
+        if (action == EXTRA_ACTION_DEFAULT) {
+            String ssid = intent.getStringExtra(EXTRA_SSID);
+            String bssid = intent.getStringExtra(EXTRA_BSSID);
+
+            if (!XMB_PROFILE.contains(bssid)) {
+                _notificationManager.cancel(NOTI_LOGIN_ACTION_ID);
+            }
+
+            checkLoginStatus(ssid, bssid);
+        }
+
+        if (action == EXTRA_ACTION_LOG_IN) {
+            // Perform login
             performLogin();
-            return;
         }
 
-        boolean isConnected = intent.getBooleanExtra(EXTRA_IS_CONNECTED, true);
-        if (!isConnected) {
-            // TODO: What about the in-progress notifications?
-            Log.d(TAG, "Disconnected from network, removing non-progress notifications");
-            NotificationManager notificationManager = (NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE);
-            notificationManager.cancel(NOTI_LOGIN_ACTION_ID);
-            return;
-        }
+        return START_STICKY;
+    }
 
-        String ssid = intent.getStringExtra(NETWORK_SSID_EXTRA);
-        String bssid = intent.getStringExtra(NETWORK_BSSID_EXTRA);
-        if (!XMB_PROFILE.contains(bssid)) {
-            Log.d(TAG, "BSSID not in profile, skipping login");
-            NotificationManager notificationManager = (NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE);
-            notificationManager.cancel(NOTI_LOGIN_ACTION_ID);
-            return;
-        }
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
 
-        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
-        boolean showLoginPrompt = preferences.getBoolean(PREF_SHOW_LOGIN_PROMPT_KEY, true);
-        if (!showLoginPrompt) {
-            Log.d(TAG, "Login prompt is disabled, directly logging in");
-            performLogin();
-            return;
-        }
-
-        Log.d(TAG, "Setting up delayed login notification");
-
-        Intent loginIntent = new Intent(this, LoginService.class);
-        loginIntent.putExtra(LoginService.FORCE_LOGIN_EXTRA, true);
-        PendingIntent pendingIntent = PendingIntent.getService(this, 0, loginIntent, 0);
-
-        NotificationManager notificationManager = (NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE);
-        NotificationCompat.Builder notification = new NotificationCompat.Builder(this)
-            .setSmallIcon(R.drawable.icon)
-            .setContentTitle(getString(R.string.noti_touch_to_log_in))
-            .setContentText(String.format("%s - %s", ssid, bssid))
-            .setAutoCancel(true)
-            .setContentIntent(pendingIntent);
-        notificationManager.notify(NOTI_LOGIN_ACTION_ID, notification.build());
-    }*/
+        _notificationManager.cancelAll();
+    }
 }

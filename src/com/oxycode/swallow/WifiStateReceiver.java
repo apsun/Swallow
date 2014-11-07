@@ -20,6 +20,7 @@ public class WifiStateReceiver extends BroadcastReceiver {
         // We want to start the service when WiFi connection is established,
         // but destroying it when WiFi is disconnected is not really necessary.
         String action = intent.getAction();
+        Intent loginIntent = new Intent(context, LoginService.class);
 
         if (action.equals(WifiManager.NETWORK_STATE_CHANGED_ACTION)) {
             Log.d(TAG, "NETWORK_STATE_CHANGED_ACTION");
@@ -43,14 +44,11 @@ public class WifiStateReceiver extends BroadcastReceiver {
                 String ssid = wifiInfo.getSSID();
                 String bssid = wifiInfo.getBSSID();
                 Log.d(TAG, String.format("Connected to network with SSID: %s, BSSID: %s", ssid, bssid));
+                context.startService(loginIntent);
             } else if (state == SupplicantState.DISCONNECTED) {
                 Log.d(TAG, "Disconnected from WiFi network");
+                context.stopService(loginIntent);
             }
         }
-
-        /*
-        Intent loginIntent = new Intent(context, LoginService.class);
-        context.startService(loginIntent);
-        */
     }
 }
