@@ -320,7 +320,12 @@ public class LoginService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        int action = intent.getIntExtra(EXTRA_ACTION, EXTRA_ACTION_DEFAULT);
+        int action;
+        if (intent == null) {
+            action = EXTRA_ACTION_CHECK;
+        } else {
+            action = intent.getIntExtra(EXTRA_ACTION, EXTRA_ACTION_DEFAULT);
+        }
 
         if (action == EXTRA_ACTION_DEFAULT) {
             // Default action: check BSSID before getting login status
