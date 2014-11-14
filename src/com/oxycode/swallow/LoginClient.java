@@ -21,6 +21,7 @@ public final class LoginClient {
 
     public enum LoginResult {
         SUCCESS,
+        EMPTY_CREDENTIALS,
         INCORRECT_CREDENTIALS,
         ACCOUNT_BANNED,
         EXCEEDED_MAX_RETRIES,
@@ -104,6 +105,10 @@ public final class LoginClient {
     }
 
     public static LoginResult login(String username, String password, int trialCount, Handler handler) {
+        if (username == null || username.isEmpty() || password == null || password.isEmpty()) {
+            return LoginResult.EMPTY_CREDENTIALS;
+        }
+
         String encryptedPassword = encryptPassword(password);
         Map<String, String> params = createPostData(username, encryptedPassword);
         byte[] data = convertPostParams(params);

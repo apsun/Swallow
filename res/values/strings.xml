@@ -45,9 +45,11 @@
     <string name="noti_login_failed">Login failed</string>
     <string name="noti_login_failed_incorrect_credentials">Incorrect username/password</string>
     <string name="noti_login_failed_account_banned">Account has been disabled</string>
+    <string name="noti_login_failed_unset_credentials">Username/password not set</string>
     <string name="noti_login_failed_exceeded_max_retries">Connection failed. Touch to retry</string>
     <string name="noti_login_failed_unknown">Unknown error occurred. Touch to retry</string>
-    <string name="noti_touch_to_log_in">Touch to log in to WiFi</string>
+    <string name="noti_touch_to_log_in_title">Swallow</string>
+    <string name="noti_touch_to_log_in_content">Touch to log in to WiFi</string>
 
     <!-- Toast messages -->
     <string name="login_start">Logging in to school WiFi…</string>

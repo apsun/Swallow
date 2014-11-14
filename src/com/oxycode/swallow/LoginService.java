@@ -33,8 +33,7 @@ public class LoginService extends Service {
 
         @Override
         protected void onPreExecute() {
-            // TODO: Do we need to do anything here?
-            super.onPreExecute();
+            Log.d(TAG, "Checking login status...");
         }
 
         @Override
@@ -42,20 +41,21 @@ public class LoginService extends Service {
             IOException e = (IOException)values[0];
             int remainingTrialCount = (Integer)values[1];
             Log.d(TAG, "Exception occured while getting login status", e);
-            Log.d(TAG, "Retrying login status fetch " + remainingTrialCount + " more time(s)");
+            if (remainingTrialCount > 0) {
+                Log.d(TAG, "Retrying login status fetch " + remainingTrialCount + " more time(s)");
+            }
         }
 
         @Override
         protected void onPostExecute(LoginClient.QueryResult result) {
-            // Error occured or already logged in
-            // TODO: Handle error
             if (result == LoginClient.QueryResult.EXCEEDED_MAX_RETRIES) {
-                Log.d(TAG, "Login status fetch failed: exceeded max retries");
+                // TODO: Create timer task to retry task
+                Log.w(TAG, "Login status fetch failed: exceeded max retries");
                 return;
             }
 
             if (result == LoginClient.QueryResult.UNKNOWN) {
-                Log.d(TAG, "Login status fetch failed: unknown result");
+                Log.e(TAG, "Login status fetch failed: unknown result");
                 return;
             }
 
@@ -64,8 +64,7 @@ public class LoginService extends Service {
                 return;
             }
 
-            // If not set to show login confirmation,
-            // just immediately log in
+            // If no confirmation needed, just immediately log in
             if (!_showPromptNotification) {
                 new PerformLoginTask().execute();
                 return;
@@ -78,14 +77,14 @@ public class LoginService extends Service {
 
             NotificationCompat.Builder notification = new NotificationCompat.Builder(LoginService.this)
                 .setSmallIcon(R.drawable.icon)
-                .setContentTitle(getString(R.string.noti_touch_to_log_in))
-                .setContentText(String.format("YAY!"))
+                .setContentTitle(getString(R.string.noti_touch_to_log_in_title))
+                .setContentText(getString(R.string.noti_touch_to_log_in_content))
                 .setAutoCancel(true)
                 .setContentIntent(pendingIntent);
 
             _notificationManager.notify(NOTI_LOGIN_ACTION_ID, notification.build());
 
-            Log.d(TAG, "Created login notification");
+            Log.d(TAG, "Created login confirmation notification");
         }
     }
 
@@ -103,11 +102,7 @@ public class LoginService extends Service {
 
         @Override
         protected void onPreExecute() {
-            if (_username == null || _password == null) {
-                Log.d(TAG, "Null login credentials, skipping login");
-                // TODO: Do we want to display a notification here?
-                return;
-            }
+            Log.d(TAG, "Logging in to WiFi...");
 
             _notification = new NotificationCompat.Builder(LoginService.this)
                 .setSmallIcon(R.drawable.icon);
@@ -119,8 +114,8 @@ public class LoginService extends Service {
                     .setOngoing(true)
                     .setProgress(0, 0, true);
                 _notificationManager.notify(NOTI_LOGIN_PROGRESS_ID, _notification.build());
+                _notificationManager.cancel(NOTI_LOGIN_ACTION_ID);
             }
-
         }
 
         @Override
@@ -130,8 +125,12 @@ public class LoginService extends Service {
 
             // Update notification with retry state
             if (_showProgressNotification && remainingTrialCount > 0) {
-                int messageId = (remainingTrialCount > 1) ? R.string.noti_logging_in_retrying_plural
-                                                          : R.string.noti_logging_in_retrying_single;
+                int messageId;
+                if (remainingTrialCount == 1) {
+                    messageId = R.string.noti_logging_in_retrying_single;
+                } else {
+                    messageId = R.string.noti_logging_in_retrying_plural;
+                }
                 _notification.setContentText(String.format(getString(messageId), remainingTrialCount));
                 _notificationManager.notify(NOTI_LOGIN_PROGRESS_ID, _notification.build());
             }
@@ -139,6 +138,8 @@ public class LoginService extends Service {
 
         @Override
         protected void onPostExecute(LoginClient.LoginResult result) {
+            Log.d(TAG, "Login result: " + result);
+
             // Remove progress notification
             if (_showProgressNotification) {
                 _notificationManager.cancel(NOTI_LOGIN_PROGRESS_ID);
@@ -159,8 +160,9 @@ public class LoginService extends Service {
             // Set intent to run on notification touch
             PendingIntent pendingIntent = null;
             switch (result) {
+                case EMPTY_CREDENTIALS:
                 case INCORRECT_CREDENTIALS:
-                case ACCOUNT_BANNED: // TODO: Why do we show main activity for banned account?
+                case ACCOUNT_BANNED:
                     Intent configIntent = new Intent(LoginService.this, MainActivity.class);
                     TaskStackBuilder stackBuilder = TaskStackBuilder.create(LoginService.this);
                     stackBuilder.addParentStack(MainActivity.class);
@@ -179,6 +181,9 @@ public class LoginService extends Service {
             // Set body of notification
             int messageId = 0;
             switch (result) {
+                case EMPTY_CREDENTIALS:
+                    messageId = R.string.noti_login_failed_unset_credentials;
+                    break;
                 case INCORRECT_CREDENTIALS:
                     messageId = R.string.noti_login_failed_incorrect_credentials;
                     break;
@@ -223,6 +228,7 @@ public class LoginService extends Service {
 
     private static final Set<String> XMB_PROFILE;
 
+    @SuppressWarnings("FieldCanBeLocal")
     private SharedPreferences.OnSharedPreferenceChangeListener _prefChangeListener;
 
     private SharedPreferences _preferences;
@@ -230,7 +236,6 @@ public class LoginService extends Service {
     private WifiManager _wifiManager;
     private NotificationManager _notificationManager;
 
-    // Preferences
     private int _retryCount;
     private boolean _showPromptNotification;
     private boolean _showProgressNotification;
@@ -274,6 +279,26 @@ public class LoginService extends Service {
         _showErrorNotification = _preferences.getBoolean(PREF_SHOW_ERROR_NOTIFICATION_KEY, false);
         _username = _credentials.getString(PREF_USERNAME_KEY, null);
         _password = _credentials.getString(PREF_PASSWORD_KEY, null);
+        _prefChangeListener = new SharedPreferences.OnSharedPreferenceChangeListener() {
+            @Override
+            public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+                if (key.equals(PREF_USERNAME_KEY)) {
+                    _username = sharedPreferences.getString(key, null);
+                } else if (key.equals(PREF_PASSWORD_KEY)) {
+                    _password = sharedPreferences.getString(key, null);
+                } else if (key.equals(PREF_LOGIN_RETRY_COUNT_KEY)) {
+                    _retryCount = Integer.parseInt(sharedPreferences.getString(PREF_LOGIN_RETRY_COUNT_KEY, null));
+                } else if (key.equals(PREF_SHOW_LOGIN_PROMPT_KEY)) {
+                    _showPromptNotification = sharedPreferences.getBoolean(PREF_SHOW_LOGIN_PROMPT_KEY, false);
+                } else if (key.equals(PREF_SHOW_PROGRESS_NOTIFICATION_KEY)) {
+                    _showProgressNotification = sharedPreferences.getBoolean(PREF_SHOW_PROGRESS_NOTIFICATION_KEY, false);
+                } else if (key.equals(PREF_SHOW_ERROR_NOTIFICATION_KEY)) {
+                    _showErrorNotification = sharedPreferences.getBoolean(PREF_SHOW_ERROR_NOTIFICATION_KEY, false);
+                }
+            }
+        };
+        _preferences.registerOnSharedPreferenceChangeListener(_prefChangeListener);
+        _credentials.registerOnSharedPreferenceChangeListener(_prefChangeListener);
         // TODO: Load database here
 
         Log.d(TAG, "Started login service");
@@ -282,8 +307,7 @@ public class LoginService extends Service {
     private boolean isBssidWhitelisted(String bssid) {
         // TODO: Change impl
         Log.d(TAG, "Checking BSSID: " + bssid);
-        return true;
-        // return XMB_PROFILE.contains(bssid);
+        return XMB_PROFILE.contains(bssid);
     }
 
     private void checkLoginStatus() {

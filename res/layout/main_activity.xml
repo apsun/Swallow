@@ -31,22 +31,33 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
         <Button
-            android:layout_width="wrap_content"
+            android:layout_width="fill_parent"
             android:layout_height="wrap_content"
             android:text="@string/profile_manager"
             android:id="@+id/profile_manager_button"
             android:layout_weight="0.5"/>
         <Button
-            android:layout_width="wrap_content"
+            android:layout_width="fill_parent"
             android:layout_height="wrap_content"
             android:text="@string/settings"
             android:id="@+id/settings_button"
             android:layout_weight="0.5"/>
     </LinearLayout>
-    <Button
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:text="Start service (debug)"
-        android:id="@+id/debug_service_button" android:layout_gravity="center_horizontal"/>
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" android:layout_gravity="center_horizontal">
+        <Button
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:text="Check login"
+            android:id="@+id/debug_check_button"
+            android:layout_weight="0.5"/>
+        <Button
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:text="Force login"
+            android:id="@+id/debug_login_button" android:layout_weight="0.5"/>
+    </LinearLayout>
 </LinearLayout>
 
