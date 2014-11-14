@@ -43,5 +43,10 @@
             android:id="@+id/settings_button"
             android:layout_weight="0.5"/>
     </LinearLayout>
+    <Button
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:text="Start service (debug)"
+        android:id="@+id/debug_service_button" android:layout_gravity="center_horizontal"/>
 </LinearLayout>
 

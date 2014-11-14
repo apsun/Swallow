@@ -89,6 +89,17 @@ public class MainActivity extends Activity {
                 startActivity(intent);
             }
         });
+
+        Button debugButton = (Button)findViewById(R.id.debug_service_button);
+        debugButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent loginIntent = new Intent(MainActivity.this, LoginService.class);
+                loginIntent.putExtra(LoginService.EXTRA_SSID, "TEST_SSID");
+                loginIntent.putExtra(LoginService.EXTRA_BSSID, "TEST_BSSID");
+                startService(loginIntent);
+            }
+        });
     }
 
     @Override

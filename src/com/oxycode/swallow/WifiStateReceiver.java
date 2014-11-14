@@ -44,6 +44,8 @@ public class WifiStateReceiver extends BroadcastReceiver {
                 String ssid = wifiInfo.getSSID();
                 String bssid = wifiInfo.getBSSID();
                 Log.d(TAG, String.format("Connected to network with SSID: %s, BSSID: %s", ssid, bssid));
+                loginIntent.putExtra(LoginService.EXTRA_SSID, ssid);
+                loginIntent.putExtra(LoginService.EXTRA_BSSID, bssid);
                 context.startService(loginIntent);
             } else if (state == SupplicantState.DISCONNECTED) {
                 Log.d(TAG, "Disconnected from WiFi network");
