@@ -26,8 +26,9 @@ public class LoginService extends Service {
         protected LoginClient.QueryResult doInBackground(Void... params) {
             return LoginClient.getLoginStatus(_retryCount + 1, new LoginClient.Handler() {
                 @Override
-                public void onException(IOException e, int remainingTrialCount) {
+                public boolean onException(IOException e, int remainingTrialCount) {
                     publishProgress(e, remainingTrialCount);
+                    return !isCancelled();
                 }
             });
         }
@@ -95,8 +96,9 @@ public class LoginService extends Service {
         protected LoginClient.LoginResult doInBackground(Void... params) {
             return LoginClient.login(_username, _password, _retryCount + 1, new LoginClient.Handler() {
                 @Override
-                public void onException(IOException e, int remainingTrialCount) {
+                public boolean onException(IOException e, int remainingTrialCount) {
                     publishProgress(e, remainingTrialCount);
+                    return !isCancelled();
                 }
             });
         }
@@ -147,7 +149,9 @@ public class LoginService extends Service {
             }
 
             // If login succeeded or no error notification is needed, remove notification and exit
-            if (result == LoginClient.LoginResult.SUCCESS || !_showErrorNotification) {
+            if (result == LoginClient.LoginResult.SUCCESS ||
+                result == LoginClient.LoginResult.CANCELLED ||
+                !_showErrorNotification) {
                 return;
             }
 
@@ -243,6 +247,8 @@ public class LoginService extends Service {
     private String _username;
     private String _password;
 
+    private AsyncTask<?, ?, ?> _runningTask;
+
     static {
         XMB_PROFILE = new HashSet<String>(Arrays.asList(
             "00:1f:41:27:62:69",
@@ -274,7 +280,7 @@ public class LoginService extends Service {
         // Load preferences
         _preferences = PreferenceManager.getDefaultSharedPreferences(this);
         _credentials = getSharedPreferences(PREF_LOGIN_CREDENTIALS, MODE_PRIVATE);
-        _retryCount = Integer.parseInt(_preferences.getString(PREF_LOGIN_RETRY_COUNT_KEY, null));
+        _retryCount = Integer.parseInt(_preferences.getString(PREF_LOGIN_RETRY_COUNT_KEY, "0"));
         _showPromptNotification = _preferences.getBoolean(PREF_SHOW_LOGIN_PROMPT_KEY, false);
         _showProgressNotification = _preferences.getBoolean(PREF_SHOW_PROGRESS_NOTIFICATION_KEY, false);
         _showErrorNotification = _preferences.getBoolean(PREF_SHOW_ERROR_NOTIFICATION_KEY, false);
@@ -288,7 +294,7 @@ public class LoginService extends Service {
                 } else if (key.equals(PREF_PASSWORD_KEY)) {
                     _password = sharedPreferences.getString(key, null);
                 } else if (key.equals(PREF_LOGIN_RETRY_COUNT_KEY)) {
-                    _retryCount = Integer.parseInt(sharedPreferences.getString(PREF_LOGIN_RETRY_COUNT_KEY, null));
+                    _retryCount = Integer.parseInt(sharedPreferences.getString(PREF_LOGIN_RETRY_COUNT_KEY, "0"));
                 } else if (key.equals(PREF_SHOW_LOGIN_PROMPT_KEY)) {
                     _showPromptNotification = sharedPreferences.getBoolean(PREF_SHOW_LOGIN_PROMPT_KEY, false);
                 } else if (key.equals(PREF_SHOW_PROGRESS_NOTIFICATION_KEY)) {
@@ -329,11 +335,14 @@ public class LoginService extends Service {
     }
 
     private void checkLoginStatus() {
-        new CheckLoginStatusTask().execute();
+        _runningTask = new CheckLoginStatusTask().execute();
     }
 
     private void performLogin() {
-        new PerformLoginTask().execute();
+        if (_runningTask != null) {
+            _runningTask.cancel(true);
+        }
+        _runningTask = new PerformLoginTask().execute();
     }
 
     @Override
@@ -364,6 +373,7 @@ public class LoginService extends Service {
 
     @Override
     public void onDestroy() {
+        _runningTask.cancel(true);
         _notificationManager.cancelAll();
         Log.d(TAG, "Stopping login service");
     }

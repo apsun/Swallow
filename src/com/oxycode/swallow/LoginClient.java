@@ -16,6 +16,7 @@ public final class LoginClient {
         LOGGED_IN,
         LOGGED_OUT,
         EXCEEDED_MAX_RETRIES,
+        CANCELLED,
         UNKNOWN
     }
 
@@ -25,6 +26,7 @@ public final class LoginClient {
         INCORRECT_CREDENTIALS,
         ACCOUNT_BANNED,
         EXCEEDED_MAX_RETRIES,
+        CANCELLED,
         UNKNOWN
     }
 
@@ -32,18 +34,19 @@ public final class LoginClient {
         SUCCESS,
         NOT_LOGGED_IN,
         EXCEEDED_MAX_RETRIES,
+        CANCELLED,
         UNKNOWN
     }
 
     public static interface Handler {
-        void onException(IOException e, int remainingTrialCount);
+        boolean onException(IOException e, int remainingTrialCount);
     }
 
     private static final String TAG = LoginClient.class.getName();
     private static final String LOGIN_PAGE_URL = "http://192.255.255.94/";
     private static final String LOGOUT_PAGE_URL = "http://192.255.255.94/F.htm";
     private static final String PAGE_ENCODING = "GB2312";
-    private static final int SOCKET_TIMEOUT_MS = 10000;
+    private static final int SOCKET_TIMEOUT_MS = 5000;
 
     // Don't feel like using a full blown HTML parser for this, plus the page is not
     // under our control anyways, so a parser won't really help in the long run.
@@ -71,31 +74,40 @@ public final class LoginClient {
                 // otherwise, the page will be the login form.
                 InputStream inputStream = urlConnection.getInputStream();
                 BufferedReader inputReader = createStreamReader(inputStream);
-                Matcher titleMatcher = PAGE_TITLE_REGEX.matcher("");
-                String line;
-                while ((line = inputReader.readLine()) != null) {
-                    titleMatcher.reset(line);
-                    if (titleMatcher.matches()) {
-                        String title = titleMatcher.group(1);
-                        if (title.startsWith("Drcom上网信息窗")) {
-                            Log.d(TAG, "Query login status returned result: logged in");
-                            return QueryResult.LOGGED_IN;
-                        } else if (title.startsWith("Drcom上网登录窗")) {
-                            Log.d(TAG, "Query login status returned result: not logged in");
-                            return QueryResult.LOGGED_OUT;
-                        } else {
-                            Log.w(TAG, "Unknown login status page title: " + title);
-                            return QueryResult.UNKNOWN;
+                try {
+                    Matcher titleMatcher = PAGE_TITLE_REGEX.matcher("");
+                    String line;
+                    while ((line = inputReader.readLine()) != null) {
+                        titleMatcher.reset(line);
+                        if (titleMatcher.matches()) {
+                            String title = titleMatcher.group(1);
+                            if (title.startsWith("Drcom上网信息窗")) {
+                                Log.d(TAG, "Query login status returned result: logged in");
+                                return QueryResult.LOGGED_IN;
+                            } else if (title.startsWith("Drcom上网登录窗")) {
+                                Log.d(TAG, "Query login status returned result: not logged in");
+                                return QueryResult.LOGGED_OUT;
+                            } else {
+                                Log.w(TAG, "Unknown login status page title: " + title);
+                                return QueryResult.UNKNOWN;
+                            }
                         }
                     }
-                }
 
-                // Could not find page title, for some reason...
-                Log.w(TAG, "Could not find title on login status page");
-                return QueryResult.UNKNOWN;
+                    // Could not find page title, for some reason...
+                    Log.w(TAG, "Could not find title on login status page");
+                    return QueryResult.UNKNOWN;
+                } finally {
+                    if (inputReader != null) {
+                        inputReader.close();
+                    }
+                }
             } catch (IOException e) {
                 if (handler != null) {
-                    handler.onException(e, trialCount);
+                    if (!handler.onException(e, trialCount)) {
+                        Log.d(TAG, "Query cancelled by exception handler");
+                        return QueryResult.CANCELLED;
+                    }
                 }
             }
         }
@@ -130,60 +142,67 @@ public final class LoginClient {
                 // Read response to see if login succeeded
                 InputStream inputStream = urlConnection.getInputStream();
                 BufferedReader inputReader = createStreamReader(inputStream);
-                Matcher titleMatcher = PAGE_TITLE_REGEX.matcher("");
-                Matcher statusCodeMatcher = null;
-                String line;
-                while ((line = inputReader.readLine()) != null) {
-                    if (statusCodeMatcher == null) {
-                        // First we need to find the type of the page we're on.
-                        // This is done by parsing the title of the page, which
-                        // tells us whether the login succeeded or not.
-                        titleMatcher.reset(line);
-                        if (titleMatcher.matches()) {
-                            String title = titleMatcher.group(1);
-                            if (title.equals("登录成功窗")) {
-                                // Login succeeded, no status code exists on this page.
-                                Log.d(TAG, "Login returned result: success");
-                                return LoginResult.SUCCESS;
-                            } else if (title.equals("信息返回窗")) {
-                                // Login failed, now search for the status code.
-                                statusCodeMatcher = PAGE_STATUS_CODE_REGEX.matcher("");
-                            } else {
-                                Log.w(TAG, "Unknown login result page title: " + title);
-                                return LoginResult.UNKNOWN;
+                try {
+                    Matcher titleMatcher = PAGE_TITLE_REGEX.matcher("");
+                    Matcher statusCodeMatcher = null;
+                    String line;
+                    while ((line = inputReader.readLine()) != null) {
+                        if (statusCodeMatcher == null) {
+                            // First we need to find the type of the page we're on.
+                            // This is done by parsing the title of the page, which
+                            // tells us whether the login succeeded or not.
+                            titleMatcher.reset(line);
+                            if (titleMatcher.matches()) {
+                                String title = titleMatcher.group(1);
+                                if (title.equals("登录成功窗")) {
+                                    // Login succeeded, no status code exists on this page.
+                                    Log.d(TAG, "Login returned result: success");
+                                    return LoginResult.SUCCESS;
+                                } else if (title.equals("信息返回窗")) {
+                                    // Login failed, now search for the status code.
+                                    statusCodeMatcher = PAGE_STATUS_CODE_REGEX.matcher("");
+                                } else {
+                                    Log.w(TAG, "Unknown login result page title: " + title);
+                                    return LoginResult.UNKNOWN;
+                                }
                             }
-                        }
-                    } else {
-                        statusCodeMatcher.reset(line);
-                        if (statusCodeMatcher.matches()) {
-                            String statusCodeStr = statusCodeMatcher.group(1);
-                            int statusCode = Integer.parseInt(statusCodeStr);
-                            if (statusCode == 1) {
-                                Log.d(TAG, "Login returned result: incorrect credentials");
-                                return LoginResult.INCORRECT_CREDENTIALS;
-                            } else if (statusCode == 5) {
-                                Log.d(TAG, "Login returned result: account banned");
-                                return LoginResult.ACCOUNT_BANNED;
-                            } else {
-                                Log.w(TAG, "Unknown login result status code: " + statusCode);
-                                return LoginResult.UNKNOWN;
+                        } else {
+                            statusCodeMatcher.reset(line);
+                            if (statusCodeMatcher.matches()) {
+                                String statusCodeStr = statusCodeMatcher.group(1);
+                                int statusCode = Integer.parseInt(statusCodeStr);
+                                if (statusCode == 1) {
+                                    Log.d(TAG, "Login returned result: incorrect credentials");
+                                    return LoginResult.INCORRECT_CREDENTIALS;
+                                } else if (statusCode == 5) {
+                                    Log.d(TAG, "Login returned result: account banned");
+                                    return LoginResult.ACCOUNT_BANNED;
+                                } else {
+                                    Log.w(TAG, "Unknown login result status code: " + statusCode);
+                                    return LoginResult.UNKNOWN;
+                                }
                             }
                         }
                     }
-                }
 
-                // We could not find the page title and/or status code...
-                // Either an unhandled case that we didn't consider, or
-                // the format of the page has changed.
-                if (statusCodeMatcher == null) {
-                    Log.w(TAG, "Could not find title on login result page");
-                } else {
-                    Log.w(TAG, "Could not find status code on login result page");
+                    // We could not find the page title and/or status code...
+                    // Either an unhandled case that we didn't consider, or
+                    // the format of the page has changed.
+                    if (statusCodeMatcher == null) {
+                        Log.w(TAG, "Could not find title on login result page");
+                    } else {
+                        Log.w(TAG, "Could not find status code on login result page");
+                    }
+                    return LoginResult.UNKNOWN;
+                } finally {
+                    if (inputReader != null) {
+                        inputReader.close();
+                    }
                 }
-                return LoginResult.UNKNOWN;
             } catch (IOException e) {
-                if (handler != null) {
-                    handler.onException(e, trialCount);
+                if (!handler.onException(e, trialCount)) {
+                    Log.d(TAG, "Login cancelled by exception handler");
+                    return LoginResult.CANCELLED;
                 }
             }
         }
@@ -207,32 +226,39 @@ public final class LoginClient {
                 // Read response to determine the logout result
                 InputStream inputStream = urlConnection.getInputStream();
                 BufferedReader inputReader = createStreamReader(inputStream);
-                Matcher statusCodeMatcher = PAGE_STATUS_CODE_REGEX.matcher("");
-                String line;
-                while ((line = inputReader.readLine()) != null) {
-                    statusCodeMatcher.reset(line);
-                    if (statusCodeMatcher.matches()) {
-                        String statusCodeStr = statusCodeMatcher.group(1);
-                        int statusCode = Integer.parseInt(statusCodeStr);
-                        if (statusCode == 1) {
-                            Log.d(TAG, "Logout returned result: not logged in");
-                            return LogoutResult.NOT_LOGGED_IN;
-                        } else if (statusCode == 14) {
-                            Log.d(TAG, "Logout returned result: success");
-                            return LogoutResult.SUCCESS;
-                        } else {
-                            Log.w(TAG, "Unknown logout result status code: " + statusCode);
-                            return LogoutResult.UNKNOWN;
+                try {
+                    Matcher statusCodeMatcher = PAGE_STATUS_CODE_REGEX.matcher("");
+                    String line;
+                    while ((line = inputReader.readLine()) != null) {
+                        statusCodeMatcher.reset(line);
+                        if (statusCodeMatcher.matches()) {
+                            String statusCodeStr = statusCodeMatcher.group(1);
+                            int statusCode = Integer.parseInt(statusCodeStr);
+                            if (statusCode == 1) {
+                                Log.d(TAG, "Logout returned result: not logged in");
+                                return LogoutResult.NOT_LOGGED_IN;
+                            } else if (statusCode == 14) {
+                                Log.d(TAG, "Logout returned result: success");
+                                return LogoutResult.SUCCESS;
+                            } else {
+                                Log.w(TAG, "Unknown logout result status code: " + statusCode);
+                                return LogoutResult.UNKNOWN;
+                            }
                         }
                     }
-                }
 
-                // Could not find status code, for some reason...
-                Log.w(TAG, "Could not find status code on logout result page");
-                return LogoutResult.UNKNOWN;
+                    // Could not find status code, for some reason...
+                    Log.w(TAG, "Could not find status code on logout result page");
+                    return LogoutResult.UNKNOWN;
+                } finally {
+                    if (inputReader != null) {
+                        inputReader.close();
+                    }
+                }
             } catch (IOException e) {
-                if (handler != null) {
-                    handler.onException(e, trialCount);
+                if (!handler.onException(e, trialCount)) {
+                    Log.d(TAG, "Logout cancelled by exception handler");
+                    return LogoutResult.CANCELLED;
                 }
             }
         }
