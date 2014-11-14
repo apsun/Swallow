@@ -6,6 +6,7 @@ import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.AsyncTask;
 import android.os.IBinder;
@@ -222,9 +223,8 @@ public class LoginService extends Service {
     public static final int EXTRA_ACTION_DEFAULT = 0;
     public static final int EXTRA_ACTION_CHECK = 1;
     public static final int EXTRA_ACTION_LOG_IN = 2;
-
-    public static final String EXTRA_SSID = "ssid";
-    public static final String EXTRA_BSSID = "bssid";
+    public static final int EXTRA_ACTION_CONNECTED = 3;
+    public static final int EXTRA_ACTION_DISCONNECTED = 4;
 
     private static final Set<String> XMB_PROFILE;
 
@@ -267,10 +267,11 @@ public class LoginService extends Service {
 
     @Override
     public void onCreate() {
-        super.onCreate();
-
+        // Cache system services
         _wifiManager = (WifiManager)getSystemService(Context.WIFI_SERVICE);
         _notificationManager = (NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE);
+
+        // Load preferences
         _preferences = PreferenceManager.getDefaultSharedPreferences(this);
         _credentials = getSharedPreferences(PREF_LOGIN_CREDENTIALS, MODE_PRIVATE);
         _retryCount = Integer.parseInt(_preferences.getString(PREF_LOGIN_RETRY_COUNT_KEY, null));
@@ -299,15 +300,32 @@ public class LoginService extends Service {
         };
         _preferences.registerOnSharedPreferenceChangeListener(_prefChangeListener);
         _credentials.registerOnSharedPreferenceChangeListener(_prefChangeListener);
+
         // TODO: Load database here
 
         Log.d(TAG, "Started login service");
     }
 
     private boolean isBssidWhitelisted(String bssid) {
-        // TODO: Change impl
+        // TODO: Change implementation
         Log.d(TAG, "Checking BSSID: " + bssid);
         return XMB_PROFILE.contains(bssid);
+    }
+
+    private void checkConnectivity() {
+        Log.d(TAG, "Checking connectivity");
+        WifiInfo wifiInfo = _wifiManager.getConnectionInfo();
+        if (wifiInfo == null) return;
+        String bssid = wifiInfo.getBSSID();
+        if (isBssidWhitelisted(bssid)) {
+            checkLoginStatus();
+        } else {
+            removeActionNotification();
+        }
+    }
+
+    private void removeActionNotification() {
+        _notificationManager.cancel(NOTI_LOGIN_ACTION_ID);
     }
 
     private void checkLoginStatus() {
@@ -321,28 +339,24 @@ public class LoginService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         int action;
-        if (intent == null) {
-            action = EXTRA_ACTION_CHECK;
-        } else {
+
+        // Intent can be null if the service was restarted by the system
+        if (intent != null) {
             action = intent.getIntExtra(EXTRA_ACTION, EXTRA_ACTION_DEFAULT);
+        } else {
+            action = EXTRA_ACTION_DEFAULT;
         }
 
         if (action == EXTRA_ACTION_DEFAULT) {
-            // Default action: check BSSID before getting login status
-            String bssid = intent.getStringExtra(EXTRA_BSSID);
-
-            if (isBssidWhitelisted(bssid)) {
-                checkLoginStatus();
-            } else {
-                // Remove the login prompt notification
-                _notificationManager.cancel(NOTI_LOGIN_ACTION_ID);
-            }
+            checkConnectivity();
         } else if (action == EXTRA_ACTION_CHECK) {
-            // Force check action: check login status regardless of BSSID
             checkLoginStatus();
         } else if (action == EXTRA_ACTION_LOG_IN) {
-            // Login action: log into WiFi
             performLogin();
+        } else if (action == EXTRA_ACTION_CONNECTED) {
+            checkConnectivity();
+        } else if (action == EXTRA_ACTION_DISCONNECTED) {
+            removeActionNotification();
         }
 
         return START_STICKY;
@@ -350,8 +364,7 @@ public class LoginService extends Service {
 
     @Override
     public void onDestroy() {
-        super.onDestroy();
-
         _notificationManager.cancelAll();
+        Log.d(TAG, "Stopping login service");
     }
 }

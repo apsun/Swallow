@@ -7,6 +7,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
@@ -28,12 +29,16 @@ public class MainActivity extends Activity {
     private Button _saveCredentialsButton;
     private Button _profileManagerButton;
     private Button _settingsButton;
+
     private SharedPreferences _preferences;
+    private WifiManager _wifiManager;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main_activity);
+
+        _wifiManager = (WifiManager)getSystemService(WIFI_SERVICE);
 
         _preferences = getSharedPreferences(LoginService.PREF_LOGIN_CREDENTIALS, MODE_PRIVATE);
         PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
@@ -118,7 +123,6 @@ public class MainActivity extends Activity {
         String password = _passwordTextBox.getText().toString();
         outState.putString(INST_USERNAME, username);
         outState.putString(INST_PASSWORD, password);
-        Log.d(TAG, "Saved instance state to bundle");
     }
 
     @Override
@@ -175,6 +179,22 @@ public class MainActivity extends Activity {
         int status = enabled ? PackageManager.COMPONENT_ENABLED_STATE_ENABLED
                              : PackageManager.COMPONENT_ENABLED_STATE_DISABLED;
         packageManager.setComponentEnabledSetting(componentName, status, PackageManager.DONT_KILL_APP);
+
+        // Also start/stop the service as necessary.
+        // For starting the service, only do so if WiFi is enabled.
+        // When disabling the receiver, it doesn't matter what the
+        // current WiFi state is, since the service must be stopped
+        // either way.
+        if (enabled) {
+            if (_wifiManager.isWifiEnabled()) {
+                Intent loginIntent = new Intent(this, LoginService.class);
+                startService(loginIntent);
+            }
+        } else {
+            Intent loginIntent = new Intent(this, LoginService.class);
+            stopService(loginIntent);
+        }
+
         Log.d(TAG, "Set receiver enabled -> " + enabled);
     }
 
