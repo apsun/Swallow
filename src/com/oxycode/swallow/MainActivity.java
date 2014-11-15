@@ -130,8 +130,8 @@ public class MainActivity extends Activity {
         String username = _usernameTextBox.getText().toString();
         String password = _passwordTextBox.getText().toString();
 
-        String prefUsername = _preferences.getString(LoginService.PREF_USERNAME_KEY, null);
-        String prefPassword = _preferences.getString(LoginService.PREF_PASSWORD_KEY, null);
+        String prefUsername = _preferences.getString(LoginService.PREF_USERNAME_KEY, "");
+        String prefPassword = _preferences.getString(LoginService.PREF_PASSWORD_KEY, "");
 
         if (!username.equals(prefUsername) || !password.equals(prefPassword)) {
             AlertDialog.Builder builder = new AlertDialog.Builder(this)

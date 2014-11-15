@@ -6,6 +6,7 @@ import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.database.Cursor;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.AsyncTask;
@@ -16,9 +17,7 @@ import android.support.v4.app.TaskStackBuilder;
 import android.util.Log;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.HashSet;
-import java.util.Set;
 
 public class LoginService extends Service {
     private class CheckLoginStatusTask extends AsyncTask<Void, Object, LoginClient.QueryResult> {
@@ -230,13 +229,12 @@ public class LoginService extends Service {
     public static final int EXTRA_ACTION_CONNECTED = 3;
     public static final int EXTRA_ACTION_DISCONNECTED = 4;
 
-    private static final Set<String> XMB_PROFILE;
-
-    @SuppressWarnings("FieldCanBeLocal")
-    private SharedPreferences.OnSharedPreferenceChangeListener _prefChangeListener;
-
     private SharedPreferences _preferences;
     private SharedPreferences _credentials;
+    private SharedPreferences.OnSharedPreferenceChangeListener _prefChangeListener;
+    private NetworkProfileDBAdapter _profileDatabase;
+    private HashSet<String> _whitelistedBssids;
+
     private WifiManager _wifiManager;
     private NotificationManager _notificationManager;
 
@@ -248,23 +246,6 @@ public class LoginService extends Service {
     private String _password;
 
     private AsyncTask<?, ?, ?> _runningTask;
-
-    static {
-        XMB_PROFILE = new HashSet<String>(Arrays.asList(
-            "00:1f:41:27:62:69",
-            "00:22:7f:18:2c:79",
-            "00:22:7f:18:33:39",
-            "00:22:7f:18:2f:e9",
-            "00:22:7f:18:33:19",
-            "00:22:7f:18:21:c9",
-            "58:93:96:1b:8c:d9",
-            "58:93:96:1b:91:e9",
-            "58:93:96:1b:92:19",
-            "58:93:96:1b:91:99",
-            "58:93:96:1b:8e:99",
-            "58:93:96:1b:91:49"
-        ));
-    }
 
     @Override
     public IBinder onBind(Intent intent) {
@@ -307,15 +288,35 @@ public class LoginService extends Service {
         _preferences.registerOnSharedPreferenceChangeListener(_prefChangeListener);
         _credentials.registerOnSharedPreferenceChangeListener(_prefChangeListener);
 
-        // TODO: Load database here
+        _profileDatabase = new NetworkProfileDBAdapter(this);
+        _whitelistedBssids = new HashSet<String>();
+
+        // TODO: Setup internal broadcast receiver to
+        // TODO: update whitelist when database is modified
+        loadWhitelistedBssids();
 
         Log.d(TAG, "Started login service");
     }
 
+    private void loadWhitelistedBssids() {
+        _whitelistedBssids.clear();
+        _profileDatabase.open();
+        try {
+            Cursor bssidCursor = _profileDatabase.getAllBssids(true);
+            while (bssidCursor.moveToNext()) {
+                _whitelistedBssids.add(bssidCursor.getString(2));
+            }
+        } finally {
+            _profileDatabase.close();
+        }
+
+        Log.d(TAG, "Loaded BSSID whitelist from database");
+    }
+
     private boolean isBssidWhitelisted(String bssid) {
-        // TODO: Change implementation
-        Log.d(TAG, "Checking BSSID: " + bssid);
-        return XMB_PROFILE.contains(bssid);
+        boolean whitelisted = _whitelistedBssids.contains(bssid);
+        Log.d(TAG, "Checking BSSID: " + bssid + " -> " + whitelisted);
+        return whitelisted;
     }
 
     private void checkConnectivity() {
