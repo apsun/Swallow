@@ -185,6 +185,7 @@ public class MainActivity extends Activity {
         // When disabling the receiver, it doesn't matter what the
         // current WiFi state is, since the service must be stopped
         // either way.
+        // TODO: Does the service get killed when the activity is ended?
         if (enabled) {
             if (_wifiManager.isWifiEnabled()) {
                 Intent loginIntent = new Intent(this, LoginService.class);

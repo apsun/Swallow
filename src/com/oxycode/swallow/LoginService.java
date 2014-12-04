@@ -3,13 +3,16 @@ package com.oxycode.swallow;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
+import android.net.wifi.SupplicantState;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.AsyncTask;
+import android.os.Handler;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
 import android.support.v4.app.NotificationCompat;
@@ -227,7 +230,7 @@ public class LoginService extends Service {
     public static final int EXTRA_ACTION_CHECK = 1;
     public static final int EXTRA_ACTION_LOG_IN = 2;
     public static final int EXTRA_ACTION_CONNECTED = 3;
-    public static final int EXTRA_ACTION_DISCONNECTED = 4;
+    // public static final int EXTRA_ACTION_DISCONNECTED = 4;
 
     private SharedPreferences _preferences;
     private SharedPreferences _credentials;
@@ -237,6 +240,10 @@ public class LoginService extends Service {
 
     private WifiManager _wifiManager;
     private NotificationManager _notificationManager;
+    private Handler _timerHandler;
+    private Runnable _stopSelfAction;
+    private Runnable _checkNetworkStatusAction;
+    private BroadcastReceiver _broadcastReceiver;
 
     private int _retryCount;
     private boolean _showPromptNotification;
@@ -257,6 +264,36 @@ public class LoginService extends Service {
         // Cache system services
         _wifiManager = (WifiManager)getSystemService(Context.WIFI_SERVICE);
         _notificationManager = (NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE);
+
+        // Set up timers
+        _timerHandler = new Handler();
+        _stopSelfAction = new Runnable() {
+            @Override
+            public void run() {
+                stopSelf();
+            }
+        };
+        _checkNetworkStatusAction = new Runnable() {
+            @Override
+            public void run() {
+                checkConnectivity();
+            }
+        };
+
+        _broadcastReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                String action = intent.getAction();
+                if (action.equals(WifiManager.SUPPLICANT_STATE_CHANGED_ACTION)) {
+                    SupplicantState state = intent.getParcelableExtra(WifiManager.EXTRA_NEW_STATE);
+                    if (state == SupplicantState.DISCONNECTED) {
+                        _timerHandler.postDelayed(_stopSelfAction, 5000); // TODO: Change delay
+                    }
+                } else if (action.equals("swallow.internal.dbmodified")) {
+                    loadWhitelistedBssids();
+                }
+            }
+        };
 
         // Load preferences
         _preferences = PreferenceManager.getDefaultSharedPreferences(this);
@@ -288,11 +325,10 @@ public class LoginService extends Service {
         _preferences.registerOnSharedPreferenceChangeListener(_prefChangeListener);
         _credentials.registerOnSharedPreferenceChangeListener(_prefChangeListener);
 
+        // Load profiles
         _profileDatabase = new NetworkProfileDBAdapter(this);
         _whitelistedBssids = new HashSet<String>();
 
-        // TODO: Setup internal broadcast receiver to
-        // TODO: update whitelist when database is modified
         loadWhitelistedBssids();
 
         Log.d(TAG, "Started login service");
@@ -365,16 +401,18 @@ public class LoginService extends Service {
             performLogin();
         } else if (action == EXTRA_ACTION_CONNECTED) {
             checkConnectivity();
-        } else if (action == EXTRA_ACTION_DISCONNECTED) {
+        } /* else if (action == EXTRA_ACTION_DISCONNECTED) {
             removeActionNotification();
-        }
+        } */
 
         return START_STICKY;
     }
 
     @Override
     public void onDestroy() {
-        _runningTask.cancel(true);
+    	if (_runningTask != null) {
+	        _runningTask.cancel(true);
+	    }
         _notificationManager.cancelAll();
         Log.d(TAG, "Stopping login service");
     }

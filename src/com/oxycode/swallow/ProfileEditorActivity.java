@@ -109,7 +109,7 @@ public class ProfileEditorActivity extends ListActivity {
         }
     }
 
-    private static final String TAG = ProfileEditorActivity.class.getName();
+    private static final String TAG = ProfileEditorActivity.class.getSimpleName();
     private static final String PREF_SHOW_SHS_ONLY_KEY = "pref_show_shs_only";
     private static final String PREF_SCAN_RATE_KEY = "pref_scan_rate";
     private static final String PREF_MINIMUM_SIGNAL_STRENGTH_KEY = "pref_minimum_signal_strength";

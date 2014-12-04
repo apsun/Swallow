@@ -21,10 +21,10 @@ public class WifiStateReceiver extends BroadcastReceiver {
             if (state == SupplicantState.COMPLETED) {
                 loginIntent.putExtra(LoginService.EXTRA_ACTION, LoginService.EXTRA_ACTION_CONNECTED);
                 context.startService(loginIntent);
-            } else if (state == SupplicantState.DISCONNECTED) {
+            } /* else if (state == SupplicantState.DISCONNECTED) {
                 loginIntent.putExtra(LoginService.EXTRA_ACTION, LoginService.EXTRA_ACTION_DISCONNECTED);
                 context.startService(loginIntent);
-            }
+            } */
         } else if (action.equals(WifiManager.WIFI_STATE_CHANGED_ACTION)) {
             int state = intent.getIntExtra(WifiManager.EXTRA_WIFI_STATE, -1);
             Log.d(TAG, "WiFi state -> " + state);

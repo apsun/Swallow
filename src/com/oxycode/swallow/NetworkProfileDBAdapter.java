@@ -90,9 +90,7 @@ public class NetworkProfileDBAdapter {
 
         @Override
         public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-            // We don't need this right now, but have this
-            // just for safety (in case someone downgrades the app)
-            Log.d(TAG, "Upgrading database from " + oldVersion + " to " + newVersion);
+            Log.d(TAG, "Upgrading database from v" + oldVersion + " to v" + newVersion);
             db.execSQL("DROP TABLE IF EXISTS " + PROFILE_TABLE);
             db.execSQL("DROP TABLE IF EXISTS " + ACCESS_POINT_TABLE);
             onCreate(db);
@@ -129,10 +127,8 @@ public class NetworkProfileDBAdapter {
     }
 
     private Cursor getProfilesInternal(String selection) {
-        return _database.query(
-            PROFILE_TABLE, new String[] {PROFILE_KEY_ID, PROFILE_KEY_NAME, PROFILE_KEY_ENABLED},
-            selection, null, null, null, null
-        );
+        String[] columns = {PROFILE_KEY_ID, PROFILE_KEY_NAME, PROFILE_KEY_ENABLED};
+        return _database.query(PROFILE_TABLE, columns, selection, null, null, null, null);
     }
 
     public Cursor getAllProfiles(boolean enabledOnly) {
@@ -162,10 +158,8 @@ public class NetworkProfileDBAdapter {
     }
 
     private Cursor getBssidsInternal(String selection) {
-        return _database.query(
-            ACCESS_POINT_TABLE, new String[] {ACCESS_POINT_KEY_ID, ACCESS_POINT_KEY_PROFILE_ID, ACCESS_POINT_KEY_BSSID},
-            selection, null, null, null, null
-        );
+        String[] columns = {ACCESS_POINT_KEY_ID, ACCESS_POINT_KEY_PROFILE_ID, ACCESS_POINT_KEY_BSSID};
+        return _database.query(ACCESS_POINT_TABLE, columns, selection, null, null, null, null);
     }
 
     public Cursor getAllBssids(boolean enabledProfilesOnly) {
