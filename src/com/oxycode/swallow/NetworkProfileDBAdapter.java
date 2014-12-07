@@ -14,6 +14,8 @@ import java.util.Map;
 public class NetworkProfileDBAdapter {
     private static final String TAG = NetworkProfileDBAdapter.class.getSimpleName();
 
+    public static final String DATABASE_CHANGED_ACTION = "com.oxycode.swallow.DATABASE_CHANGED";
+
     public static final String PROFILE_TABLE = "profiles";
     public static final String PROFILE_KEY_ID = "_id";
     public static final String PROFILE_KEY_NAME = "name";
@@ -27,6 +29,8 @@ public class NetworkProfileDBAdapter {
     private static class DatabaseHelper extends SQLiteOpenHelper {
         private static final String DATABASE_NAME = "com.oxycode.swallow.NetworkProfiles.db";
         private static final int DATABASE_VERSION = 1;
+
+        private static DatabaseHelper _instance = null;
 
         private static final String CREATE_PROFILE_TABLE =
             "CREATE TABLE " + PROFILE_TABLE + "(" +
@@ -44,7 +48,14 @@ public class NetworkProfileDBAdapter {
                 "REFERENCES " + PROFILE_TABLE + "(" + PROFILE_KEY_ID + ")" +
             ");";
 
-        public DatabaseHelper(Context context) {
+        public static synchronized DatabaseHelper getInstance(Context context) {
+            if (_instance == null) {
+                _instance = new DatabaseHelper(context.getApplicationContext());
+            }
+            return _instance;
+        }
+
+        private DatabaseHelper(Context context) {
             super(context, DATABASE_NAME, null, DATABASE_VERSION);
         }
 
@@ -106,7 +117,7 @@ public class NetworkProfileDBAdapter {
     }
 
     public NetworkProfileDBAdapter open() throws SQLiteException {
-        _helper = new DatabaseHelper(_context);
+        _helper = DatabaseHelper.getInstance(_context);
         _database = _helper.getWritableDatabase();
         return this;
     }
@@ -151,6 +162,10 @@ public class NetworkProfileDBAdapter {
         values.put(ACCESS_POINT_KEY_PROFILE_ID, profileRowId);
         values.put(ACCESS_POINT_KEY_BSSID, bssid);
         return _database.insert(ACCESS_POINT_TABLE, null, values);
+    }
+
+    private boolean removeAllBssidsForProfile(long profileRowId) {
+        return _database.delete(ACCESS_POINT_TABLE, ACCESS_POINT_KEY_PROFILE_ID + "=" + profileRowId, null) > 0;
     }
 
     public boolean removeBssidFromProfile(long rowId) {

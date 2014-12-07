@@ -3,6 +3,13 @@
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
     <PreferenceCategory android:title="@string/pref_category_login">
         <ListPreference
+            android:key="pref_login_status_check_interval"
+            android:title="@string/pref_login_status_check_interval_title"
+            android:summary="@string/pref_login_status_check_interval_summary"
+            android:entries="@array/pref_login_status_check_interval_entries"
+            android:entryValues="@array/pref_login_status_check_interval_values"
+            android:defaultValue="30"/>
+        <ListPreference
             android:key="pref_login_retry_count"
             android:title="@string/pref_login_retry_count_title"
             android:summary="@string/pref_login_retry_count_summary"

@@ -59,9 +59,8 @@
 
     <!-- Preferences -> Login -->
     <string name="pref_category_login">Login</string>
-    <string name="pref_auto_login_enabled_title">Enable auto-login</string>
-    <string name="pref_auto_login_enabled_summary_on">Auto-login enabled</string>
-    <string name="pref_auto_login_enabled_summary_off">Auto-login disabled</string>
+    <string name="pref_login_status_check_interval_title">Login check interval</string>
+    <string name="pref_login_status_check_interval_summary">How often to check login status</string>
     <string name="pref_login_retry_count_title">Retry count</string>
     <string name="pref_login_retry_count_summary">How many times to retry a failed login</string>
 

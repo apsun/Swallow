@@ -1,5 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string-array name="pref_login_status_check_interval_entries">
+        <item>Disable auto-check</item>
+        <item>15 seconds</item>
+        <item>30 seconds</item>
+        <item>1 minute</item>
+        <item>5 minutes</item>
+    </string-array>
+
+    <string-array name="pref_login_status_check_interval_values">
+        <item>-1</item>
+        <item>15</item>
+        <item>30</item>
+        <item>60</item>
+        <item>300</item>
+    </string-array>
+
     <string-array name="pref_scan_rate_entries">
         <item>Disable auto-scan</item>
         <item>1 second</item>
