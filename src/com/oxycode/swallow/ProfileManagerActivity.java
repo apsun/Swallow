@@ -3,9 +3,9 @@ package com.oxycode.swallow;
 import android.app.ActionBar;
 import android.app.AlertDialog;
 import android.app.ListActivity;
-import android.app.LoaderManager;
-import android.content.*;
-import android.database.Cursor;
+import android.content.DialogInterface;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.v4.app.NavUtils;
 import android.view.*;
@@ -13,21 +13,15 @@ import android.widget.AdapterView;
 import android.widget.EditText;
 import android.widget.ListView;
 
-public class ProfileManagerActivity extends ListActivity implements LoaderManager.LoaderCallbacks<Cursor> {
+public class ProfileManagerActivity extends ListActivity {
     private static interface SetProfileNameDialogHandler {
         void onSave(String name);
     }
-
-    /*private static class ProfileCursorLoader extends CursorLoader {
-
-    }*/
 
     private static final String TAG = ProfileManagerActivity.class.getSimpleName();
 
     private SharedPreferences _preferences;
     private ListView _profileListView;
-    private CursorLoader _cursorLoader;
-    private LoaderManager _loaderManager;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -43,26 +37,6 @@ public class ProfileManagerActivity extends ListActivity implements LoaderManage
 
         // Add the long-press listview context menu
         registerForContextMenu(_profileListView);
-
-        _loaderManager = getLoaderManager();
-        _loaderManager.initLoader(1, null, this);
-    }
-
-    @Override
-    public Loader<Cursor> onCreateLoader(int id, Bundle args) {
-        String[] columns = {NetworkProfileDBAdapter.PROFILE_KEY_NAME, NetworkProfileDBAdapter.PROFILE_KEY_ENABLED};
-        // _cursorLoader = new CursorLoader(this, DatabaseAccessUtility.CONTENT_URI, columns, null, null, null);
-        return _cursorLoader;
-    }
-
-    @Override
-    public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
-
-    }
-
-    @Override
-    public void onLoaderReset(Loader<Cursor> loader) {
-
     }
 
     @Override

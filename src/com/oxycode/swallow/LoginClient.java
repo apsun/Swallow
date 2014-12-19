@@ -1,5 +1,6 @@
 package com.oxycode.swallow;
 
+import android.text.TextUtils;
 import android.util.Log;
 
 import java.io.*;
@@ -117,7 +118,7 @@ public final class LoginClient {
     }
 
     public static LoginResult login(String username, String password, int trialCount, Handler handler) {
-        if (username == null || username.isEmpty() || password == null || password.isEmpty()) {
+        if (TextUtils.isEmpty(username) || TextUtils.isEmpty(password)) {
             return LoginResult.EMPTY_CREDENTIALS;
         }
 

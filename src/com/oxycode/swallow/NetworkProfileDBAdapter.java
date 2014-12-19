@@ -4,7 +4,6 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
-import android.database.sqlite.SQLiteException;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
 
@@ -110,19 +109,17 @@ public class NetworkProfileDBAdapter {
 
     private DatabaseHelper _helper;
     private SQLiteDatabase _database;
-    private Context _context;
 
     public NetworkProfileDBAdapter(Context context) {
-        _context = context;
+        _helper = DatabaseHelper.getInstance(context);
     }
 
-    public NetworkProfileDBAdapter open() throws SQLiteException {
-        _helper = DatabaseHelper.getInstance(_context);
+    public void open() {
         _database = _helper.getWritableDatabase();
-        return this;
     }
 
     public void close() {
+        _database = null;
         _helper.close();
     }
 

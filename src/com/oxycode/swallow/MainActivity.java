@@ -54,8 +54,8 @@ public class MainActivity extends Activity {
             _passwordTextBox.setText(savedInstanceState.getString(INST_PASSWORD));
             Log.d(TAG, "Loaded instance state from bundle");
         } else {
-            _usernameTextBox.setText(_preferences.getString(LoginService.PREF_USERNAME_KEY, null));
-            _passwordTextBox.setText(_preferences.getString(LoginService.PREF_PASSWORD_KEY, null));
+            _usernameTextBox.setText(_preferences.getString(LoginService.PREF_USERNAME_KEY, ""));
+            _passwordTextBox.setText(_preferences.getString(LoginService.PREF_PASSWORD_KEY, ""));
             Log.d(TAG, "Loaded instance state from preferences");
         }
 
@@ -92,26 +92,6 @@ public class MainActivity extends Activity {
             public void onClick(View v) {
                 Intent intent = new Intent(MainActivity.this, SettingsActivity.class);
                 startActivity(intent);
-            }
-        });
-
-        Button debugButton = (Button)findViewById(R.id.debug_check_button);
-        debugButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent loginIntent = new Intent(MainActivity.this, LoginService.class);
-                loginIntent.putExtra(LoginService.EXTRA_ACTION, LoginService.EXTRA_ACTION_CHECK);
-                startService(loginIntent);
-            }
-        });
-
-        Button loginButton = (Button)findViewById(R.id.debug_login_button);
-        loginButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent loginIntent = new Intent(MainActivity.this, LoginService.class);
-                loginIntent.putExtra(LoginService.EXTRA_ACTION, LoginService.EXTRA_ACTION_LOG_IN);
-                startService(loginIntent);
             }
         });
     }
@@ -179,13 +159,13 @@ public class MainActivity extends Activity {
         int status = enabled ? PackageManager.COMPONENT_ENABLED_STATE_ENABLED
                              : PackageManager.COMPONENT_ENABLED_STATE_DISABLED;
         packageManager.setComponentEnabledSetting(componentName, status, PackageManager.DONT_KILL_APP);
+        Log.d(TAG, "Set receiver enabled -> " + enabled);
 
         // Also start/stop the service as necessary.
         // For starting the service, only do so if WiFi is enabled.
         // When disabling the receiver, it doesn't matter what the
         // current WiFi state is, since the service must be stopped
         // either way.
-        // TODO: Does the service get killed when the activity is ended?
         if (enabled) {
             if (_wifiManager.isWifiEnabled()) {
                 Intent loginIntent = new Intent(this, LoginService.class);
@@ -195,8 +175,6 @@ public class MainActivity extends Activity {
             Intent loginIntent = new Intent(this, LoginService.class);
             stopService(loginIntent);
         }
-
-        Log.d(TAG, "Set receiver enabled -> " + enabled);
     }
 
     private boolean getReceiverEnabled() {
@@ -207,7 +185,6 @@ public class MainActivity extends Activity {
             case PackageManager.COMPONENT_ENABLED_STATE_ENABLED:
                 return true;
             case PackageManager.COMPONENT_ENABLED_STATE_DISABLED:
-            case PackageManager.COMPONENT_ENABLED_STATE_DISABLED_USER:
                 return false;
             case PackageManager.COMPONENT_ENABLED_STATE_DEFAULT:
                 // Note: this value must be synchronized with the value defined in

@@ -212,14 +212,13 @@ public class LoginService extends Service {
     public static final String PREF_USERNAME_KEY = "username";
     public static final String PREF_PASSWORD_KEY = "password";
 
-    public static final String EXTRA_ACTION = "action";
-    public static final int EXTRA_ACTION_DEFAULT = 0;
-    public static final int EXTRA_ACTION_CHECK = 1;
-    public static final int EXTRA_ACTION_LOG_IN = 2;
+    private static final String EXTRA_ACTION = "action";
+    private static final int EXTRA_ACTION_DEFAULT = 0;
+    private static final int EXTRA_ACTION_CHECK = 1;
+    private static final int EXTRA_ACTION_LOG_IN = 2;
 
     private SharedPreferences _preferences;
     private SharedPreferences _credentials;
-    private SharedPreferences.OnSharedPreferenceChangeListener _prefChangeListener;
     private NetworkProfileDBAdapter _profileDatabase;
     private HashSet<String> _whitelistedBssids;
 
@@ -230,6 +229,8 @@ public class LoginService extends Service {
     private BroadcastReceiver _broadcastReceiver;
     private boolean _whitelistCacheDirty;
 
+    // TODO: Remove below
+    private SharedPreferences.OnSharedPreferenceChangeListener _prefChangeListener;
     private int _retryCount;
     private boolean _showPromptNotification;
     private boolean _showProgressNotification;
@@ -286,6 +287,8 @@ public class LoginService extends Service {
         // Load preferences
         _preferences = PreferenceManager.getDefaultSharedPreferences(this);
         _credentials = getSharedPreferences(PREF_LOGIN_CREDENTIALS, MODE_PRIVATE);
+
+        // TODO: Remove below
         _retryCount = Integer.parseInt(_preferences.getString(PREF_LOGIN_RETRY_COUNT_KEY, "0"));
         _showPromptNotification = _preferences.getBoolean(PREF_SHOW_LOGIN_PROMPT_KEY, false);
         _showProgressNotification = _preferences.getBoolean(PREF_SHOW_PROGRESS_NOTIFICATION_KEY, false);
@@ -428,9 +431,11 @@ public class LoginService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         int action;
+        Log.d(TAG, String.format("%d, %d", flags, startId));
 
         // Intent can be null if the service was restarted by the system
         if (intent != null) {
+            Log.d(TAG, intent.toString());
             action = intent.getIntExtra(EXTRA_ACTION, EXTRA_ACTION_DEFAULT);
         } else {
             action = EXTRA_ACTION_DEFAULT;
@@ -448,7 +453,9 @@ public class LoginService extends Service {
                 break;
         }
 
-        // Make sure the service remains running in the background
+        // TODO: Use START_STICKY or START_NOT_STICKY here?
+        // The service is not a high-priority one, so START_NOT_STICKY might work...
+        // On the other hand, the login auto-check requires that the service be running...
         return START_STICKY;
     }
 
