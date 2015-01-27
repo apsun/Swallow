@@ -25,7 +25,7 @@ public class LoginService extends Service {
         private int _tries;
 
         public CheckLoginStatusTask() {
-            _retryCount = Integer.parseInt(_preferences.getString(PREF_LOGIN_RETRY_COUNT_KEY, "3"));
+            _retryCount = Integer.parseInt(_preferences.getString(PREF_LOGIN_RETRY_COUNT_KEY, "2"));
             _tries = 0;
         }
 
@@ -81,7 +81,7 @@ public class LoginService extends Service {
         public PerformLoginTask() {
             _username = _credentials.getString(PREF_USERNAME_KEY, "");
             _password = _credentials.getString(PREF_PASSWORD_KEY, "");
-            _retryCount = Integer.parseInt(_preferences.getString(PREF_LOGIN_RETRY_COUNT_KEY, "3"));
+            _retryCount = Integer.parseInt(_preferences.getString(PREF_LOGIN_RETRY_COUNT_KEY, "2"));
             _showProgressNotification = _preferences.getBoolean(PREF_SHOW_PROGRESS_NOTIFICATION_KEY, true);
             if (_showProgressNotification) {
                 _notification = new Notification.Builder(LoginService.this)
@@ -348,7 +348,7 @@ public class LoginService extends Service {
     }
 
     private void onLoginRequired() {
-        if (_preferences.getBoolean(PREF_SHOW_LOGIN_PROMPT_KEY, false)) {
+        if (_preferences.getBoolean(PREF_SHOW_LOGIN_PROMPT_KEY, true)) {
             showLoginPromptNotification();
         } else {
             performLogin();
