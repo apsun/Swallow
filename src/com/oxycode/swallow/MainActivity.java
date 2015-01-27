@@ -31,14 +31,11 @@ public class MainActivity extends Activity {
     private Button _settingsButton;
 
     private SharedPreferences _preferences;
-    private WifiManager _wifiManager;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main_activity);
-
-        _wifiManager = (WifiManager)getSystemService(WIFI_SERVICE);
 
         _preferences = getSharedPreferences(LoginService.PREF_LOGIN_CREDENTIALS, MODE_PRIVATE);
         PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
@@ -166,13 +163,13 @@ public class MainActivity extends Activity {
         // When disabling the receiver, it doesn't matter what the
         // current WiFi state is, since the service must be stopped
         // either way.
+        Intent loginIntent = new Intent(this, LoginService.class);
         if (enabled) {
-            if (_wifiManager.isWifiEnabled()) {
-                Intent loginIntent = new Intent(this, LoginService.class);
+            WifiManager wifiManager = (WifiManager)getSystemService(WIFI_SERVICE);
+            if (wifiManager.isWifiEnabled()) {
                 startService(loginIntent);
             }
         } else {
-            Intent loginIntent = new Intent(this, LoginService.class);
             stopService(loginIntent);
         }
     }

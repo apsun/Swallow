@@ -1,11 +1,6 @@
-// TODO: Fix potential race condition in *Task where preferences changes mid-way and notification won't get cancelled
-// TODO: Add IBinder interface to allow login from UI without showing notification
-// TODO: Unify the two notification IDs
-// TODO: Remove EXTRA_ACTION_CHECK, make actions private to this class
-// TODO: Disable login status auto-check when screen is off
-
 package com.oxycode.swallow;
 
+import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
@@ -18,7 +13,6 @@ import android.os.AsyncTask;
 import android.os.Handler;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
-import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.TaskStackBuilder;
 import android.util.Log;
 
@@ -26,14 +20,23 @@ import java.io.IOException;
 import java.util.HashSet;
 
 public class LoginService extends Service {
-    private class CheckLoginStatusTask extends AsyncTask<Void, Object, LoginClient.QueryResult> {
+    private class CheckLoginStatusTask extends AsyncTask<Void, Void, LoginClient.QueryResult> {
+        private final int _retryCount;
+        private int _tries;
+
+        public CheckLoginStatusTask() {
+            _retryCount = Integer.parseInt(_preferences.getString(PREF_LOGIN_RETRY_COUNT_KEY, "3"));
+            _tries = 0;
+        }
+
         @Override
         protected LoginClient.QueryResult doInBackground(Void... params) {
-            return LoginClient.getLoginStatus(_retryCount + 1, new LoginClient.Handler() {
+            return LoginClient.getLoginStatus(new LoginClient.Handler() {
                 @Override
-                public boolean onException(IOException e, int remainingTrialCount) {
-                    publishProgress(e, remainingTrialCount);
-                    return !isCancelled();
+                public boolean onException(IOException e) {
+                    boolean cont = !isCancelled() && _tries++ < _retryCount;
+                    publishProgress();
+                    return cont;
                 }
             });
         }
@@ -44,10 +47,8 @@ public class LoginService extends Service {
         }
 
         @Override
-        protected void onProgressUpdate(Object... values) {
-            IOException e = (IOException)values[0];
-            int remainingTrialCount = (Integer)values[1];
-            Log.d(TAG, "Exception occured while getting login status", e);
+        protected void onProgressUpdate(Void... values) {
+            int remainingTrialCount = _retryCount - _tries + 1;
             if (remainingTrialCount > 0) {
                 Log.d(TAG, "Retrying login status fetch " + remainingTrialCount + " more time(s)");
             }
@@ -62,43 +63,54 @@ public class LoginService extends Service {
                     onLoginRequired();
                     break;
                 case EXCEEDED_MAX_RETRIES:
-                    startRetryCheckTimer();
-                    break;
                 case UNKNOWN:
-                    displayUnknownLoginPageError();
+                    startRetryCheckTimer();
                     break;
             }
         }
     }
 
-    private class PerformLoginTask extends AsyncTask<Void, Object, LoginClient.LoginResult> {
-        private NotificationCompat.Builder _notification;
+    private class PerformLoginTask extends AsyncTask<Void, Void, LoginClient.LoginResult> {
+        private final String _username;
+        private final String _password;
+        private final int _retryCount;
+        private final boolean _showProgressNotification;
+        private final Notification.Builder _notification;
+        private int _tries;
+
+        public PerformLoginTask() {
+            _username = _credentials.getString(PREF_USERNAME_KEY, "");
+            _password = _credentials.getString(PREF_PASSWORD_KEY, "");
+            _retryCount = Integer.parseInt(_preferences.getString(PREF_LOGIN_RETRY_COUNT_KEY, "3"));
+            _showProgressNotification = _preferences.getBoolean(PREF_SHOW_PROGRESS_NOTIFICATION_KEY, true);
+            if (_showProgressNotification) {
+                _notification = new Notification.Builder(LoginService.this)
+                    .setSmallIcon(R.drawable.icon)
+                    .setOngoing(true)
+                    .setContentTitle(getString(R.string.noti_logging_in))
+                    .setContentText(String.format(getString(R.string.noti_logging_in_using_account), _username))
+                    .setProgress(0, 0, true);
+            } else {
+                _notification = null;
+            }
+            _tries = 0;
+        }
 
         protected LoginClient.LoginResult doInBackground(Void... params) {
-            return LoginClient.login(_username, _password, _retryCount + 1, new LoginClient.Handler() {
+            return LoginClient.login(_username, _password, new LoginClient.Handler() {
                 @Override
-                public boolean onException(IOException e, int remainingTrialCount) {
-                    publishProgress(e, remainingTrialCount);
-                    return !isCancelled();
+                public boolean onException(IOException e) {
+                    boolean cont = !isCancelled() && _tries++ < _retryCount;
+                    publishProgress();
+                    return cont;
                 }
             });
         }
 
         @Override
         protected void onPreExecute() {
-            Log.d(TAG, "Logging in to WiFi...");
-
-            _notification = new NotificationCompat.Builder(LoginService.this)
-                .setSmallIcon(R.drawable.icon);
-
             if (_showProgressNotification) {
-                _notification
-                    .setContentTitle(getString(R.string.noti_logging_in))
-                    .setContentText(String.format(getString(R.string.noti_logging_in_using_account), _username))
-                    .setOngoing(true)
-                    .setProgress(0, 0, true);
-                _notificationManager.notify(NOTI_LOGIN_PROGRESS_ID, _notification.build());
-                _notificationManager.cancel(NOTI_LOGIN_ACTION_ID);
+                _notificationManager.notify(NOTI_LOGIN_PROGRESS_ID, _notification.getNotification());
             }
         }
 
@@ -110,90 +122,40 @@ public class LoginService extends Service {
         }
 
         @Override
-        protected void onProgressUpdate(Object... values) {
-            IOException e = (IOException)values[0];
-            int remainingTrialCount = (Integer)values[1];
-
-            // Update notification with retry state
-            if (_showProgressNotification && remainingTrialCount > 0) {
-                int messageId;
-                if (remainingTrialCount == 1) {
-                    messageId = R.string.noti_logging_in_retrying_single;
-                } else {
-                    messageId = R.string.noti_logging_in_retrying_plural;
+        protected void onProgressUpdate(Void... values) {
+            int remainingTrialCount = _retryCount - _tries + 1;
+            if (remainingTrialCount > 0) {
+                Log.d(TAG, "Retrying login " + remainingTrialCount + " more time(s)");
+                if (_showProgressNotification) {
+                    int messageId;
+                    if (remainingTrialCount == 1) {
+                        messageId = R.string.noti_logging_in_retrying_single;
+                    } else {
+                        messageId = R.string.noti_logging_in_retrying_plural;
+                    }
+                    _notification.setContentText(String.format(getString(messageId), remainingTrialCount));
+                    _notificationManager.notify(NOTI_LOGIN_PROGRESS_ID, _notification.getNotification());
                 }
-                _notification.setContentText(String.format(getString(messageId), remainingTrialCount));
-                _notificationManager.notify(NOTI_LOGIN_PROGRESS_ID, _notification.build());
             }
         }
 
         @Override
         protected void onPostExecute(LoginClient.LoginResult result) {
-            Log.d(TAG, "Login result: " + result);
-
-            // Remove progress notification
             if (_showProgressNotification) {
                 _notificationManager.cancel(NOTI_LOGIN_PROGRESS_ID);
             }
 
-            // If login succeeded or no error notification is needed, remove notification and exit
-            if (result == LoginClient.LoginResult.SUCCESS ||
-                result == LoginClient.LoginResult.CANCELLED ||
-                !_showErrorNotification) {
-                return;
-            }
-
-            // Something went wrong, display an error notification
-            _notification
-                .setOngoing(false)
-                .setContentTitle(getString(R.string.noti_login_failed))
-                .setAutoCancel(true)
-                .setProgress(0, 0, false);
-
-            // Set intent to run on notification touch
-            PendingIntent pendingIntent = null;
             switch (result) {
-                case EMPTY_CREDENTIALS:
+                case SUCCESS:
+                    break;
                 case INCORRECT_CREDENTIALS:
                 case ACCOUNT_BANNED:
-                    Intent configIntent = new Intent(LoginService.this, MainActivity.class);
-                    TaskStackBuilder stackBuilder = TaskStackBuilder.create(LoginService.this);
-                    stackBuilder.addParentStack(MainActivity.class);
-                    stackBuilder.addNextIntent(configIntent);
-                    pendingIntent = stackBuilder.getPendingIntent(0, PendingIntent.FLAG_UPDATE_CURRENT);
-                    break;
+                    showLoginErrorNotification(result);
                 case EXCEEDED_MAX_RETRIES:
                 case UNKNOWN:
-                    Intent retryIntent = new Intent(LoginService.this, LoginService.class);
-                    retryIntent.putExtra(EXTRA_ACTION, EXTRA_ACTION_LOG_IN);
-                    pendingIntent = PendingIntent.getService(LoginService.this, 0, retryIntent, 0);
+                    onLoginFailedTimeout(result);
                     break;
             }
-            _notification.setContentIntent(pendingIntent);
-
-            // Set body of notification
-            int messageId = 0;
-            switch (result) {
-                case EMPTY_CREDENTIALS:
-                    messageId = R.string.noti_login_failed_unset_credentials;
-                    break;
-                case INCORRECT_CREDENTIALS:
-                    messageId = R.string.noti_login_failed_incorrect_credentials;
-                    break;
-                case ACCOUNT_BANNED:
-                    messageId = R.string.noti_login_failed_account_banned;
-                    break;
-                case EXCEEDED_MAX_RETRIES:
-                    messageId = R.string.noti_login_failed_exceeded_max_retries;
-                    break;
-                case UNKNOWN:
-                    messageId = R.string.noti_login_failed_unknown;
-                    break;
-            }
-            _notification.setContentText(getString(messageId));
-
-            // Display the error notification
-            _notificationManager.notify(NOTI_LOGIN_ACTION_ID, _notification.build());
         }
     }
 
@@ -203,10 +165,11 @@ public class LoginService extends Service {
     private static final String PREF_SHOW_LOGIN_PROMPT_KEY = "pref_show_login_prompt";
     private static final String PREF_SHOW_PROGRESS_NOTIFICATION_KEY = "pref_show_progress_notification";
     private static final String PREF_SHOW_ERROR_NOTIFICATION_KEY = "pref_show_error_notification";
+    private static final String PREF_LOGIN_STATUS_CHECK_INTERVAL_KEY = "pref_login_status_check_interval";
 
-    private static final int NOTIFICATION_ID = 0x000222;
-    private static final int NOTI_LOGIN_PROGRESS_ID = 0xdcaeee;
-    private static final int NOTI_LOGIN_ACTION_ID = 0x9f37ff;
+    private static final int NOTI_LOGIN_PROMPT_ID = 0xdcaeee;
+    private static final int NOTI_LOGIN_PROGRESS_ID = 0x222546;
+    private static final int NOTI_LOGIN_ERROR_ID = 0x233666;
 
     public static final String PREF_LOGIN_CREDENTIALS = "com.oxycode.swallow.credentials";
     public static final String PREF_USERNAME_KEY = "username";
@@ -229,15 +192,6 @@ public class LoginService extends Service {
     private BroadcastReceiver _broadcastReceiver;
     private boolean _whitelistCacheDirty;
 
-    // TODO: Remove below
-    private SharedPreferences.OnSharedPreferenceChangeListener _prefChangeListener;
-    private int _retryCount;
-    private boolean _showPromptNotification;
-    private boolean _showProgressNotification;
-    private boolean _showErrorNotification;
-    private String _username;
-    private String _password;
-
     private AsyncTask<?, ?, ?> _runningTask;
 
     @Override
@@ -247,7 +201,7 @@ public class LoginService extends Service {
 
     @Override
     public void onCreate() {
-        // Cache system services
+        // Get system services
         _wifiManager = (WifiManager)getSystemService(Context.WIFI_SERVICE);
         _notificationManager = (NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE);
 
@@ -260,15 +214,13 @@ public class LoginService extends Service {
             }
         };
 
-        // Broadcast receiver for WiFi disconnected and profile modified events
+        // Create broadcast receiver for WiFi disconnected and profile modified events
         _broadcastReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
                 String action = intent.getAction();
                 if (action.equals(WifiManager.SUPPLICANT_STATE_CHANGED_ACTION)) {
                     SupplicantState state = intent.getParcelableExtra(WifiManager.EXTRA_NEW_STATE);
-                    // SupplicantState.CONNECTED is handled by our external receiver,
-                    // only disconnect events should be handled here.
                     if (state == SupplicantState.DISCONNECTED) {
                         onNotShsNetwork();
                     }
@@ -284,37 +236,9 @@ public class LoginService extends Service {
         filter.addAction(NetworkProfileDBAdapter.DATABASE_CHANGED_ACTION);
         registerReceiver(_broadcastReceiver, filter);
 
-        // Load preferences
+        // Load preferences and credentials
         _preferences = PreferenceManager.getDefaultSharedPreferences(this);
         _credentials = getSharedPreferences(PREF_LOGIN_CREDENTIALS, MODE_PRIVATE);
-
-        // TODO: Remove below
-        _retryCount = Integer.parseInt(_preferences.getString(PREF_LOGIN_RETRY_COUNT_KEY, "0"));
-        _showPromptNotification = _preferences.getBoolean(PREF_SHOW_LOGIN_PROMPT_KEY, false);
-        _showProgressNotification = _preferences.getBoolean(PREF_SHOW_PROGRESS_NOTIFICATION_KEY, false);
-        _showErrorNotification = _preferences.getBoolean(PREF_SHOW_ERROR_NOTIFICATION_KEY, false);
-        _username = _credentials.getString(PREF_USERNAME_KEY, null);
-        _password = _credentials.getString(PREF_PASSWORD_KEY, null);
-        _prefChangeListener = new SharedPreferences.OnSharedPreferenceChangeListener() {
-            @Override
-            public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
-                if (key.equals(PREF_USERNAME_KEY)) {
-                    _username = sharedPreferences.getString(key, null);
-                } else if (key.equals(PREF_PASSWORD_KEY)) {
-                    _password = sharedPreferences.getString(key, null);
-                } else if (key.equals(PREF_LOGIN_RETRY_COUNT_KEY)) {
-                    _retryCount = Integer.parseInt(sharedPreferences.getString(PREF_LOGIN_RETRY_COUNT_KEY, "0"));
-                } else if (key.equals(PREF_SHOW_LOGIN_PROMPT_KEY)) {
-                    _showPromptNotification = sharedPreferences.getBoolean(PREF_SHOW_LOGIN_PROMPT_KEY, false);
-                } else if (key.equals(PREF_SHOW_PROGRESS_NOTIFICATION_KEY)) {
-                    _showProgressNotification = sharedPreferences.getBoolean(PREF_SHOW_PROGRESS_NOTIFICATION_KEY, false);
-                } else if (key.equals(PREF_SHOW_ERROR_NOTIFICATION_KEY)) {
-                    _showErrorNotification = sharedPreferences.getBoolean(PREF_SHOW_ERROR_NOTIFICATION_KEY, false);
-                }
-            }
-        };
-        _preferences.registerOnSharedPreferenceChangeListener(_prefChangeListener);
-        _credentials.registerOnSharedPreferenceChangeListener(_prefChangeListener);
 
         // Load profiles from database
         _profileDatabase = new NetworkProfileDBAdapter(this);
@@ -324,120 +248,13 @@ public class LoginService extends Service {
         Log.d(TAG, "Started login service");
     }
 
-    private void loadWhitelistedBssids() {
-        _whitelistedBssids.clear();
-        _profileDatabase.open();
-        int bssidCount = 0;
-        try {
-            Cursor bssidCursor = _profileDatabase.getAllBssids(true);
-            while (bssidCursor.moveToNext()) {
-                _whitelistedBssids.add(bssidCursor.getString(2));
-                ++bssidCount;
-            }
-        } finally {
-            _profileDatabase.close();
-        }
-
-        Log.d(TAG, String.format("Loaded %d BSSIDs from database whitelist", bssidCount));
-    }
-
-    private void onLoginRequired() {
-        if (!_showPromptNotification) {
-            performLogin();
-        } else {
-            // Show login confirmation notification
-            Intent loginIntent = new Intent(LoginService.this, LoginService.class);
-            loginIntent.putExtra(EXTRA_ACTION, EXTRA_ACTION_LOG_IN);
-            PendingIntent pendingIntent = PendingIntent.getService(LoginService.this, 0, loginIntent, 0);
-
-            NotificationCompat.Builder notification = new NotificationCompat.Builder(LoginService.this)
-                .setSmallIcon(R.drawable.icon)
-                .setContentTitle(getString(R.string.noti_touch_to_log_in_title))
-                .setContentText(getString(R.string.noti_touch_to_log_in_content))
-                .setAutoCancel(true)
-                .setContentIntent(pendingIntent);
-
-            _notificationManager.notify(NOTI_LOGIN_ACTION_ID, notification.build());
-        }
-    }
-
-    private void onShsNetwork() {
-        checkLoginStatus();
-    }
-
-    private void onNotShsNetwork() {
-        cancelRetryCheckTimer();
-        stopRunningTask();
-    }
-
-    private void stopRunningTask() {
-        if (_runningTask != null) {
-            _runningTask.cancel(true);
-        }
-    }
-
-    private void displayUnknownLoginPageError() {
-        // TODO: ???
-    }
-
-    private void cancelRetryCheckTimer() {
-        _timerHandler.removeCallbacks(_checkLoginStatusAction);
-    }
-
-    private void startRetryCheckTimer() {
-        _timerHandler.postDelayed(_checkLoginStatusAction, 5000 /* TODO */);
-    }
-
-    private boolean isBssidWhitelisted(String bssid) {
-        if (_whitelistCacheDirty) {
-            loadWhitelistedBssids();
-            _whitelistCacheDirty = false;
-        }
-
-        boolean whitelisted = _whitelistedBssids.contains(bssid);
-        Log.d(TAG, "Checking BSSID: " + bssid + " -> " + whitelisted);
-        return whitelisted;
-    }
-
-    private void checkConnectivity() {
-        Log.d(TAG, "Checking connectivity");
-        WifiInfo wifiInfo = _wifiManager.getConnectionInfo();
-        String bssid = wifiInfo.getBSSID();
-        if (bssid != null && isBssidWhitelisted(bssid)) {
-            onShsNetwork();
-        } else {
-            onNotShsNetwork();
-        }
-    }
-
-    private void removeNotification() {
-        _notificationManager.cancel(NOTIFICATION_ID);
-    }
-
-    private void checkLoginStatus() {
-        if (_runningTask != null) {
-            _runningTask.cancel(true);
-        }
-        _runningTask = new CheckLoginStatusTask().execute();
-    }
-
-    private void performLogin() {
-        if (_runningTask != null) {
-            _runningTask.cancel(true);
-        }
-        _runningTask = new PerformLoginTask().execute();
-    }
-
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         int action;
-        Log.d(TAG, String.format("%d, %d", flags, startId));
-
-        // Intent can be null if the service was restarted by the system
         if (intent != null) {
-            Log.d(TAG, intent.toString());
             action = intent.getIntExtra(EXTRA_ACTION, EXTRA_ACTION_DEFAULT);
         } else {
+            // Intent can be null if the service was restarted by the system
             action = EXTRA_ACTION_DEFAULT;
         }
 
@@ -453,9 +270,6 @@ public class LoginService extends Service {
                 break;
         }
 
-        // TODO: Use START_STICKY or START_NOT_STICKY here?
-        // The service is not a high-priority one, so START_NOT_STICKY might work...
-        // On the other hand, the login auto-check requires that the service be running...
         return START_STICKY;
     }
 
@@ -463,7 +277,166 @@ public class LoginService extends Service {
     public void onDestroy() {
         Log.d(TAG, "Stopping login service");
         stopRunningTask();
-        removeNotification();
+        removeNotifications();
         unregisterReceiver(_broadcastReceiver);
+    }
+
+    private void loadWhitelistedBssids() {
+        _whitelistedBssids.clear();
+        _profileDatabase.open();
+        int bssidCount = 0;
+        try {
+            Cursor bssidCursor = _profileDatabase.getAllBssids(true);
+            while (bssidCursor.moveToNext()) {
+                _whitelistedBssids.add(bssidCursor.getString(2));
+                ++bssidCount;
+            }
+        } finally {
+            _profileDatabase.close();
+        }
+        _whitelistCacheDirty = false;
+        Log.d(TAG, String.format("Loaded %d BSSIDs from database whitelist", bssidCount));
+    }
+
+    private boolean isBssidWhitelisted(String bssid) {
+        if (_whitelistCacheDirty) {
+            loadWhitelistedBssids();
+        }
+
+        boolean whitelisted = _whitelistedBssids.contains(bssid);
+        Log.d(TAG, "Checking BSSID: " + bssid + " -> " + whitelisted);
+        return whitelisted;
+    }
+
+    private void checkConnectivity() {
+        Log.d(TAG, "Checking connectivity");
+        WifiInfo wifiInfo = _wifiManager.getConnectionInfo();
+        String ssid = wifiInfo.getSSID();
+        Log.d(TAG, "Current SSID: " + ssid);
+        String bssid = wifiInfo.getBSSID();
+        if (bssid != null && isBssidWhitelisted(bssid)) {
+            onShsNetwork();
+        } else {
+            onNotShsNetwork();
+        }
+    }
+
+    private void onShsNetwork() {
+        checkLoginStatus();
+    }
+
+    private void onNotShsNetwork() {
+        stopRetryCheckTimer();
+        stopRunningTask();
+    }
+
+    private void checkLoginStatus() {
+        stopRunningTask();
+        _runningTask = new CheckLoginStatusTask().execute();
+    }
+
+    private void performLogin() {
+        stopRunningTask();
+        _runningTask = new PerformLoginTask().execute();
+    }
+
+    private void stopRunningTask() {
+        if (_runningTask != null) {
+            _runningTask.cancel(true);
+            _runningTask = null;
+        }
+    }
+
+    private void onLoginRequired() {
+        if (_preferences.getBoolean(PREF_SHOW_LOGIN_PROMPT_KEY, false)) {
+            showLoginPromptNotification();
+        } else {
+            performLogin();
+        }
+    }
+
+    private void onLoginFailedTimeout(LoginClient.LoginResult result) {
+        if (_preferences.getBoolean(PREF_SHOW_ERROR_NOTIFICATION_KEY, true)) {
+            showLoginErrorNotification(result);
+        } else {
+            startRetryCheckTimer();
+        }
+    }
+
+    private void showLoginErrorNotification(LoginClient.LoginResult result) {
+        PendingIntent pendingIntent = null;
+        switch (result) {
+            case INCORRECT_CREDENTIALS:
+            case ACCOUNT_BANNED:
+                Intent configIntent = new Intent(this, MainActivity.class);
+                TaskStackBuilder stackBuilder = TaskStackBuilder.create(this);
+                stackBuilder.addParentStack(MainActivity.class);
+                stackBuilder.addNextIntent(configIntent);
+                pendingIntent = stackBuilder.getPendingIntent(0, PendingIntent.FLAG_UPDATE_CURRENT);
+                break;
+            case EXCEEDED_MAX_RETRIES:
+            case UNKNOWN:
+                Intent retryIntent = new Intent(this, LoginService.class);
+                retryIntent.putExtra(EXTRA_ACTION, EXTRA_ACTION_LOG_IN);
+                pendingIntent = PendingIntent.getService(this, 0, retryIntent, 0);
+                break;
+        }
+
+        int messageId = 0;
+        switch (result) {
+            case INCORRECT_CREDENTIALS:
+                messageId = R.string.noti_login_failed_incorrect_credentials;
+                break;
+            case ACCOUNT_BANNED:
+                messageId = R.string.noti_login_failed_account_banned;
+                break;
+            case EXCEEDED_MAX_RETRIES:
+                messageId = R.string.noti_login_failed_exceeded_max_retries;
+                break;
+            case UNKNOWN:
+                messageId = R.string.noti_login_failed_unknown;
+                break;
+        }
+
+        Notification.Builder notification = new Notification.Builder(this)
+            .setSmallIcon(R.drawable.icon)
+            .setAutoCancel(true)
+            .setContentTitle(getString(R.string.noti_login_failed))
+            .setContentText(getString(messageId))
+            .setContentIntent(pendingIntent);
+
+        _notificationManager.notify(NOTI_LOGIN_ERROR_ID, notification.getNotification());
+    }
+
+    private void showLoginPromptNotification() {
+        Intent loginIntent = new Intent(this, LoginService.class);
+        loginIntent.putExtra(EXTRA_ACTION, EXTRA_ACTION_LOG_IN);
+        PendingIntent pendingIntent = PendingIntent.getService(this, 0, loginIntent, 0);
+
+        Notification.Builder notification = new Notification.Builder(this)
+            .setSmallIcon(R.drawable.icon)
+            .setAutoCancel(true)
+            .setContentTitle(getString(R.string.noti_touch_to_log_in_title))
+            .setContentText(getString(R.string.noti_touch_to_log_in_content))
+            .setContentIntent(pendingIntent);
+
+        _notificationManager.notify(NOTI_LOGIN_PROMPT_ID, notification.getNotification());
+    }
+
+    private void removeNotifications() {
+        _notificationManager.cancel(NOTI_LOGIN_PROMPT_ID);
+        _notificationManager.cancel(NOTI_LOGIN_ERROR_ID);
+        _notificationManager.cancel(NOTI_LOGIN_PROGRESS_ID);
+    }
+
+    private void startRetryCheckTimer() {
+        int delay = Integer.parseInt(_preferences.getString(PREF_LOGIN_STATUS_CHECK_INTERVAL_KEY, "30"));
+        Log.d(TAG, "Starting WiFi status retry check timer with interval: " + delay + "s");
+        _timerHandler.postDelayed(_checkLoginStatusAction, delay * 1000);
+    }
+
+    private void stopRetryCheckTimer() {
+        Log.d(TAG, "Stopping WiFi status retry check timer");
+        _timerHandler.removeCallbacks(_checkLoginStatusAction);
     }
 }
