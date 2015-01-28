@@ -20,7 +20,11 @@
     <string name="username">Username</string>
     <string name="password">Password</string>
     <string name="save_login_credentials">Save login credentials</string>
+    <string name="no_changes_detected">No changes detected</string>
     <string name="credentials_saved">Credentials saved</string>
+    <string name="enter_credentials">Enter a username and password</string>
+    <string name="enabled_autologin">Enabled auto-login</string>
+    <string name="disabled_autologin">Disabled auto-login</string>
 
     <string name="unsaved_credentials_title">Unsaved credentials</string>
     <string name="unsaved_credentials_message">You have unsaved changes to your login credentials.\n\nExit without saving?</string>
@@ -61,6 +65,8 @@
     <string name="noti_login_failed_unknown">Unknown error occurred. Touch to retry</string>
     <string name="noti_touch_to_log_in_title">Swallow</string>
     <string name="noti_touch_to_log_in_content">Touch to log in to WiFi</string>
+    <string name="noti_setup_required_title">Swallow</string>
+    <string name="noti_setup_required_message">Touch to set up account</string>
 
     <!-- Toast messages -->
     <string name="login_start">Logging in to school WiFi…</string>

@@ -14,6 +14,7 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
 import android.support.v4.app.TaskStackBuilder;
+import android.text.TextUtils;
 import android.util.Log;
 
 import java.io.IOException;
@@ -167,9 +168,10 @@ public class LoginService extends Service {
     private static final String PREF_SHOW_ERROR_NOTIFICATION_KEY = "pref_show_error_notification";
     private static final String PREF_LOGIN_STATUS_CHECK_INTERVAL_KEY = "pref_login_status_check_interval";
 
-    private static final int NOTI_LOGIN_PROMPT_ID = 0xdcaeee;
-    private static final int NOTI_LOGIN_PROGRESS_ID = 0x222546;
-    private static final int NOTI_LOGIN_ERROR_ID = 0x233666;
+    private static final int NOTI_SETUP_ID = 0;
+    private static final int NOTI_LOGIN_PROMPT_ID = 1;
+    private static final int NOTI_LOGIN_PROGRESS_ID = 2;
+    private static final int NOTI_LOGIN_ERROR_ID = 3;
 
     public static final String PREF_LOGIN_CREDENTIALS = "com.oxycode.swallow.credentials";
     public static final String PREF_USERNAME_KEY = "username";
@@ -330,14 +332,28 @@ public class LoginService extends Service {
         stopRunningTask();
     }
 
+    private boolean requiresSetup() {
+        String username = _credentials.getString(PREF_USERNAME_KEY, "");
+        String password = _credentials.getString(PREF_PASSWORD_KEY, "");
+        return TextUtils.isEmpty(username) || TextUtils.isEmpty(password);
+    }
+
     private void checkLoginStatus() {
-        stopRunningTask();
-        _runningTask = new CheckLoginStatusTask().execute();
+        if (requiresSetup()) {
+            showSetupRequiredNotification();
+        } else {
+            stopRunningTask();
+            _runningTask = new CheckLoginStatusTask().execute();
+        }
     }
 
     private void performLogin() {
-        stopRunningTask();
-        _runningTask = new PerformLoginTask().execute();
+        if (requiresSetup()) {
+            showSetupRequiredNotification();
+        } else {
+            stopRunningTask();
+            _runningTask = new PerformLoginTask().execute();
+        }
     }
 
     private void stopRunningTask() {
@@ -361,6 +377,22 @@ public class LoginService extends Service {
         } else {
             startRetryCheckTimer();
         }
+    }
+
+    private void showSetupRequiredNotification() {
+        Intent configIntent = new Intent(this, MainActivity.class);
+        TaskStackBuilder stackBuilder = TaskStackBuilder.create(this);
+        stackBuilder.addParentStack(MainActivity.class);
+        stackBuilder.addNextIntent(configIntent);
+        PendingIntent pendingIntent = stackBuilder.getPendingIntent(0, PendingIntent.FLAG_UPDATE_CURRENT);
+        Notification.Builder notification = new Notification.Builder(this)
+            .setSmallIcon(R.drawable.icon)
+            .setAutoCancel(true)
+            .setContentTitle(getString(R.string.noti_setup_required_title))
+            .setContentText(getString(R.string.noti_setup_required_message))
+            .setContentIntent(pendingIntent);
+
+        _notificationManager.notify(NOTI_SETUP_ID, notification.getNotification());
     }
 
     private void showLoginErrorNotification(LoginClient.LoginResult result) {
@@ -424,6 +456,7 @@ public class LoginService extends Service {
     }
 
     private void removeNotifications() {
+        _notificationManager.cancel(NOTI_SETUP_ID);
         _notificationManager.cancel(NOTI_LOGIN_PROMPT_ID);
         _notificationManager.cancel(NOTI_LOGIN_ERROR_ID);
         _notificationManager.cancel(NOTI_LOGIN_PROGRESS_ID);

@@ -13,6 +13,7 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -112,8 +113,8 @@ public class MainActivity extends Activity {
             _passwordTextBox.setText(savedInstanceState.getString(INST_PASSWORD));
             Log.d(TAG, "Loaded instance state from bundle");
         } else {
-            _usernameTextBox.setText(_credentials.getString(LoginService.PREF_USERNAME_KEY, ""));
-            _passwordTextBox.setText(_credentials.getString(LoginService.PREF_PASSWORD_KEY, ""));
+            _usernameTextBox.setText(getPreferencesUsername());
+            _passwordTextBox.setText(getPreferencesPassword());
             Log.d(TAG, "Loaded instance state from preferences");
         }
 
@@ -123,7 +124,16 @@ public class MainActivity extends Activity {
                 String username = getTextboxUsername();
                 String password = getTextboxPassword();
 
-                _runningTask = new CheckCredentialsTask(username, password).execute();
+                String preferencesUsername = getPreferencesUsername();
+                String preferencesPassword = getPreferencesPassword();
+
+                if (TextUtils.isEmpty(username) || TextUtils.isEmpty(password)) {
+                    Toast.makeText(MainActivity.this, R.string.enter_credentials, Toast.LENGTH_SHORT).show();
+                } else if (username.equals(preferencesUsername) && password.equals(preferencesPassword)) {
+                    Toast.makeText(MainActivity.this, R.string.no_changes_detected, Toast.LENGTH_SHORT).show();
+                } else {
+                    _runningTask = new CheckCredentialsTask(username, password).execute();
+                }
             }
         });
 
@@ -158,8 +168,8 @@ public class MainActivity extends Activity {
         String username = getTextboxUsername();
         String password = getTextboxPassword();
 
-        String prefUsername = _credentials.getString(LoginService.PREF_USERNAME_KEY, "");
-        String prefPassword = _credentials.getString(LoginService.PREF_PASSWORD_KEY, "");
+        String prefUsername = getPreferencesUsername();
+        String prefPassword = getPreferencesPassword();
 
         if (!username.equals(prefUsername) || !password.equals(prefPassword)) {
             AlertDialog.Builder builder = new AlertDialog.Builder(this)
@@ -209,6 +219,14 @@ public class MainActivity extends Activity {
 
     private String getTextboxPassword() {
         return _passwordTextBox.getText().toString();
+    }
+
+    private String getPreferencesUsername() {
+        return _credentials.getString(LoginService.PREF_USERNAME_KEY, "");
+    }
+
+    private String getPreferencesPassword() {
+        return _credentials.getString(LoginService.PREF_PASSWORD_KEY, "");
     }
 
     private void saveCredentials(String username, String password) {
@@ -270,8 +288,8 @@ public class MainActivity extends Activity {
         packageManager.setComponentEnabledSetting(componentName, status, PackageManager.DONT_KILL_APP);
         Log.d(TAG, "Set receiver enabled -> " + enabled);
 
-        String message = enabled ? "Enabled auto-login" : "Disabled auto-login";
-        Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+        int messageId = enabled ? R.string.enabled_autologin : R.string.disabled_autologin;
+        Toast.makeText(this, messageId, Toast.LENGTH_SHORT).show();
 
         // Also start/stop the service as necessary.
         // For starting the service, only do so if WiFi is enabled.
@@ -296,9 +314,9 @@ public class MainActivity extends Activity {
             case PackageManager.COMPONENT_ENABLED_STATE_DISABLED:
                 return false;
             case PackageManager.COMPONENT_ENABLED_STATE_DEFAULT:
-                // Note: this value must be synchronized with the value defined in
-                // the manifest file.
-                return false;
+                // Note: this value must be synchronized with the
+                // value defined in the manifest file.
+                return true;
             default:
                 Log.w(TAG, "Unknown receiver state: " + status);
                 return false;
