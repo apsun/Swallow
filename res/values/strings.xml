@@ -12,6 +12,7 @@
     <string name="settings">Settings</string>
     <string name="yes">Yes</string>
     <string name="no">No</string>
+    <string name="exit">Exit</string>
 
     <!-- Activities -> Main -->
     <string name="app_name">Swallow</string>
@@ -19,9 +20,19 @@
     <string name="username">Username</string>
     <string name="password">Password</string>
     <string name="save_login_credentials">Save login credentials</string>
-    <string name="credentials_saved">Credentials saved!</string>
-    <string name="unsaved_credentials_title">Unsaved login credentials</string>
-    <string name="unsaved_credentials_message">Are you sure you want to exit without saving?</string>
+    <string name="credentials_saved">Credentials saved</string>
+
+    <string name="unsaved_credentials_title">Unsaved credentials</string>
+    <string name="unsaved_credentials_message">You have unsaved changes to your login credentials.\n\nExit without saving?</string>
+
+    <string name="checking_credentials_message">Checking login credentials…</string>
+
+    <string name="confirm_save_title">Confirm save</string>
+    <string name="confirm_save_message_incorrect_credentials">Your username or password is incorrect.</string>
+    <string name="confirm_save_message_account_banned">Your account is banned.</string>
+    <string name="confirm_save_message_unknown_result">The server sent a message that we didn\'t understand.</string>
+    <string name="confirm_save_message_exceeded_max_retries">Cannot connect to server. This is normal if you are not connected to the school WiFi.</string>
+    <string name="confirm_save_message_footer">Do you want to save your credentials anyways?</string>
 
     <!-- Activities -> Profile manager -->
     <string name="profile_manager">Profiles</string>
