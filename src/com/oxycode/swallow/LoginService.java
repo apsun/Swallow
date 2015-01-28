@@ -26,7 +26,7 @@ public class LoginService extends Service {
         private int _tries;
 
         public CheckLoginStatusTask() {
-            _retryCount = Integer.parseInt(_preferences.getString(PREF_LOGIN_RETRY_COUNT_KEY, "2"));
+            _retryCount = Integer.parseInt(_preferences.getString(PREF_KEY_LOGIN_RETRY_COUNT, "2"));
             _tries = 0;
         }
 
@@ -80,10 +80,10 @@ public class LoginService extends Service {
         private int _tries;
 
         public PerformLoginTask() {
-            _username = _credentials.getString(PREF_USERNAME_KEY, "");
-            _password = _credentials.getString(PREF_PASSWORD_KEY, "");
-            _retryCount = Integer.parseInt(_preferences.getString(PREF_LOGIN_RETRY_COUNT_KEY, "2"));
-            _showProgressNotification = _preferences.getBoolean(PREF_SHOW_PROGRESS_NOTIFICATION_KEY, true);
+            _username = _credentials.getString(PREF_KEY_USERNAME, "");
+            _password = _credentials.getString(PREF_KEY_PASSWORD, "");
+            _retryCount = Integer.parseInt(_preferences.getString(PREF_KEY_LOGIN_RETRY_COUNT, "2"));
+            _showProgressNotification = _preferences.getBoolean(PREF_KEY_SHOW_PROGRESS_NOTIFICATION, true);
             if (_showProgressNotification) {
                 _notification = new Notification.Builder(LoginService.this)
                     .setSmallIcon(R.drawable.icon)
@@ -111,14 +111,14 @@ public class LoginService extends Service {
         @Override
         protected void onPreExecute() {
             if (_showProgressNotification) {
-                _notificationManager.notify(NOTI_LOGIN_PROGRESS_ID, _notification.getNotification());
+                _notificationManager.notify(NOTI_ID_LOGIN_PROGRESS, _notification.getNotification());
             }
         }
 
         @Override
         protected void onCancelled(LoginClient.LoginResult result) {
             if (_showProgressNotification) {
-                _notificationManager.cancel(NOTI_LOGIN_PROGRESS_ID);
+                _notificationManager.cancel(NOTI_ID_LOGIN_PROGRESS);
             }
         }
 
@@ -135,7 +135,7 @@ public class LoginService extends Service {
                         messageId = R.string.noti_logging_in_retrying_plural;
                     }
                     _notification.setContentText(String.format(getString(messageId), remainingTrialCount));
-                    _notificationManager.notify(NOTI_LOGIN_PROGRESS_ID, _notification.getNotification());
+                    _notificationManager.notify(NOTI_ID_LOGIN_PROGRESS, _notification.getNotification());
                 }
             }
         }
@@ -143,7 +143,7 @@ public class LoginService extends Service {
         @Override
         protected void onPostExecute(LoginClient.LoginResult result) {
             if (_showProgressNotification) {
-                _notificationManager.cancel(NOTI_LOGIN_PROGRESS_ID);
+                _notificationManager.cancel(NOTI_ID_LOGIN_PROGRESS);
             }
 
             switch (result) {
@@ -163,20 +163,20 @@ public class LoginService extends Service {
 
     private static final String TAG = LoginService.class.getSimpleName();
 
-    private static final String PREF_LOGIN_RETRY_COUNT_KEY = "pref_login_retry_count";
-    private static final String PREF_SHOW_LOGIN_PROMPT_KEY = "pref_show_login_prompt";
-    private static final String PREF_SHOW_PROGRESS_NOTIFICATION_KEY = "pref_show_progress_notification";
-    private static final String PREF_SHOW_ERROR_NOTIFICATION_KEY = "pref_show_error_notification";
-    private static final String PREF_LOGIN_STATUS_CHECK_INTERVAL_KEY = "pref_login_status_check_interval";
-
-    private static final int NOTI_SETUP_ID = 0;
-    private static final int NOTI_LOGIN_PROMPT_ID = 1;
-    private static final int NOTI_LOGIN_PROGRESS_ID = 2;
-    private static final int NOTI_LOGIN_ERROR_ID = 3;
-
     public static final String PREF_LOGIN_CREDENTIALS = "com.oxycode.swallow.credentials";
-    public static final String PREF_USERNAME_KEY = "username";
-    public static final String PREF_PASSWORD_KEY = "password";
+    public static final String PREF_KEY_USERNAME = "username";
+    public static final String PREF_KEY_PASSWORD = "password";
+
+    private static final String PREF_KEY_LOGIN_RETRY_COUNT = "pref_login_retry_count";
+    private static final String PREF_KEY_SHOW_LOGIN_PROMPT = "pref_show_login_prompt";
+    private static final String PREF_KEY_SHOW_PROGRESS_NOTIFICATION = "pref_show_progress_notification";
+    private static final String PREF_KEY_SHOW_ERROR_NOTIFICATION = "pref_show_error_notification";
+    private static final String PREF_KEY_LOGIN_STATUS_CHECK_INTERVAL = "pref_login_status_check_interval";
+
+    private static final int NOTI_ID_SETUP = 0;
+    private static final int NOTI_ID_LOGIN_PROMPT = 1;
+    private static final int NOTI_ID_LOGIN_PROGRESS = 2;
+    private static final int NOTI_ID_LOGIN_ERROR = 3;
 
     private static final String EXTRA_ACTION = "action";
     private static final int EXTRA_ACTION_DEFAULT = 0;
@@ -328,8 +328,8 @@ public class LoginService extends Service {
     }
 
     private boolean requiresSetup() {
-        String username = _credentials.getString(PREF_USERNAME_KEY, "");
-        String password = _credentials.getString(PREF_PASSWORD_KEY, "");
+        String username = _credentials.getString(PREF_KEY_USERNAME, "");
+        String password = _credentials.getString(PREF_KEY_PASSWORD, "");
         return TextUtils.isEmpty(username) || TextUtils.isEmpty(password);
     }
 
@@ -369,7 +369,7 @@ public class LoginService extends Service {
     }
 
     private void onLoginRequired() {
-        if (_preferences.getBoolean(PREF_SHOW_LOGIN_PROMPT_KEY, true)) {
+        if (_preferences.getBoolean(PREF_KEY_SHOW_LOGIN_PROMPT, true)) {
             showLoginPromptNotification();
         } else {
             startLoginTask();
@@ -377,7 +377,7 @@ public class LoginService extends Service {
     }
 
     private void onLoginFailedTimeout(LoginClient.LoginResult result) {
-        if (_preferences.getBoolean(PREF_SHOW_ERROR_NOTIFICATION_KEY, true)) {
+        if (_preferences.getBoolean(PREF_KEY_SHOW_ERROR_NOTIFICATION, true)) {
             showLoginErrorNotification(result);
         }
     }
@@ -395,7 +395,7 @@ public class LoginService extends Service {
             .setContentText(getString(R.string.noti_setup_required_message))
             .setContentIntent(pendingIntent);
 
-        _notificationManager.notify(NOTI_SETUP_ID, notification.getNotification());
+        _notificationManager.notify(NOTI_ID_SETUP, notification.getNotification());
     }
 
     private void showLoginErrorNotification(LoginClient.LoginResult result) {
@@ -440,7 +440,7 @@ public class LoginService extends Service {
             .setContentText(getString(messageId))
             .setContentIntent(pendingIntent);
 
-        _notificationManager.notify(NOTI_LOGIN_ERROR_ID, notification.getNotification());
+        _notificationManager.notify(NOTI_ID_LOGIN_ERROR, notification.getNotification());
     }
 
     private void showLoginPromptNotification() {
@@ -455,20 +455,20 @@ public class LoginService extends Service {
             .setContentText(getString(R.string.noti_touch_to_log_in_content))
             .setContentIntent(pendingIntent);
 
-        _notificationManager.notify(NOTI_LOGIN_PROMPT_ID, notification.getNotification());
+        _notificationManager.notify(NOTI_ID_LOGIN_PROMPT, notification.getNotification());
     }
 
     private void removeNotifications() {
-        _notificationManager.cancel(NOTI_SETUP_ID);
-        _notificationManager.cancel(NOTI_LOGIN_PROMPT_ID);
-        _notificationManager.cancel(NOTI_LOGIN_ERROR_ID);
-        _notificationManager.cancel(NOTI_LOGIN_PROGRESS_ID);
+        _notificationManager.cancel(NOTI_ID_SETUP);
+        _notificationManager.cancel(NOTI_ID_LOGIN_PROMPT);
+        _notificationManager.cancel(NOTI_ID_LOGIN_ERROR);
+        _notificationManager.cancel(NOTI_ID_LOGIN_PROGRESS);
     }
 
     private void enqueueDelayedLoginStatusCheck() {
-        // We don't need to worry about running this while the screen is off: 
+        // We don't need to worry about running this while the screen is off:
         // Handler#postDelayed() will not run tasks while the device is in deep sleep
-        int delay = Integer.parseInt(_preferences.getString(PREF_LOGIN_STATUS_CHECK_INTERVAL_KEY, "30"));
+        int delay = Integer.parseInt(_preferences.getString(PREF_KEY_LOGIN_STATUS_CHECK_INTERVAL, "30"));
         Log.d(TAG, "Enqueued login status check with delay " + delay + " seconds");
         _timerHandler.postDelayed(_checkLoginStatusAction, delay * 1000);
     }

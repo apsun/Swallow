@@ -230,17 +230,17 @@ public class MainActivity extends Activity {
     }
 
     private String getPreferencesUsername() {
-        return _credentials.getString(LoginService.PREF_USERNAME_KEY, "");
+        return _credentials.getString(LoginService.PREF_KEY_USERNAME, "");
     }
 
     private String getPreferencesPassword() {
-        return _credentials.getString(LoginService.PREF_PASSWORD_KEY, "");
+        return _credentials.getString(LoginService.PREF_KEY_PASSWORD, "");
     }
 
     private void saveCredentials(String username, String password) {
         SharedPreferences.Editor editor = _credentials.edit();
-        editor.putString(LoginService.PREF_USERNAME_KEY, username);
-        editor.putString(LoginService.PREF_PASSWORD_KEY, password);
+        editor.putString(LoginService.PREF_KEY_USERNAME, username);
+        editor.putString(LoginService.PREF_KEY_PASSWORD, password);
         editor.apply();
 
         Toast.makeText(this, R.string.credentials_saved, Toast.LENGTH_SHORT).show();
