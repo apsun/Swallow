@@ -173,7 +173,7 @@ public class MainActivity extends Activity {
 
         if (!username.equals(prefUsername) || !password.equals(prefPassword)) {
             AlertDialog.Builder builder = new AlertDialog.Builder(this)
-                .setIcon(android.R.drawable.stat_sys_warning)
+                .setIcon(R.drawable.ic_action_warning)
                 .setTitle(getString(R.string.unsaved_credentials_title))
                 .setMessage(getString(R.string.unsaved_credentials_message))
                 .setPositiveButton(R.string.exit, new DialogInterface.OnClickListener() {
@@ -257,9 +257,8 @@ public class MainActivity extends Activity {
                 break;
         }
 
-
         AlertDialog.Builder builder = new AlertDialog.Builder(this)
-            .setIcon(android.R.drawable.stat_sys_warning)
+            .setIcon(R.drawable.ic_action_warning)
             .setTitle(R.string.confirm_save_title)
             .setMessage(getString(titleId) + "\n\n" + getString(R.string.confirm_save_message_footer))
             .setPositiveButton(R.string.save, new DialogInterface.OnClickListener() {
