@@ -68,12 +68,6 @@
     <string name="noti_setup_required_title">Swallow</string>
     <string name="noti_setup_required_message">Touch to set up account</string>
 
-    <!-- Toast messages -->
-    <string name="login_start">Logging in to school WiFi…</string>
-    <string name="login_retry">WiFi login failed, retrying %d more time(s)…</string>
-    <string name="login_failed">WiFi login failed: %s</string>
-    <string name="login_succeeded">Logged in to school WiFi!</string>
-
     <!-- Preferences -> Login -->
     <string name="pref_category_login">Login</string>
     <string name="pref_login_status_check_interval_title">Login check interval</string>
@@ -83,6 +77,9 @@
 
     <!-- Preferences -> Notifications -->
     <string name="pref_category_notifications">Notifications</string>
+    <string name="pref_show_login_prompt_title">Show login prompt</string>
+    <string name="pref_show_login_prompt_summary_on">Show confirmation notification before logging in</string>
+    <string name="pref_show_login_prompt_summary_off">Do not show confirmation notification before logging in</string>
     <string name="pref_show_progress_notification_title">Show progress notification</string>
     <string name="pref_show_progress_notification_summary_on">Display login progress notification</string>
     <string name="pref_show_progress_notification_summary_off">Do not display login progress notification</string>
@@ -99,7 +96,4 @@
     <string name="pref_scan_rate_summary">How often to refresh the list of WiFi networks</string>
     <string name="pref_minimum_signal_strength_title">Minimum signal strength</string>
     <string name="pref_minimum_signal_strength_summary">The minimum strength for displayed WiFi networks</string>
-    <string name="pref_show_login_prompt_title">Show login prompt</string>
-    <string name="pref_show_login_prompt_summary_on">Show notification prompt before logging in</string>
-    <string name="pref_show_login_prompt_summary_off">Do not show login prompt (recommended if you only have one device)</string>
 </resources>

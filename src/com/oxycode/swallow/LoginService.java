@@ -468,9 +468,11 @@ public class LoginService extends Service {
     private void enqueueDelayedLoginStatusCheck() {
         // We don't need to worry about running this while the screen is off:
         // Handler#postDelayed() will not run tasks while the device is in deep sleep
-        int delay = Integer.parseInt(_preferences.getString(PREF_KEY_LOGIN_STATUS_CHECK_INTERVAL, "30"));
-        Log.d(TAG, "Enqueued login status check with delay " + delay + " seconds");
-        _timerHandler.postDelayed(_checkLoginStatusAction, delay * 1000);
+        int delay = Integer.parseInt(_preferences.getString(PREF_KEY_LOGIN_STATUS_CHECK_INTERVAL, "60"));
+        if (delay > 0) {
+            Log.d(TAG, "Enqueued login status check with delay " + delay + " seconds");
+            _timerHandler.postDelayed(_checkLoginStatusAction, delay * 1000);
+        }
     }
 
     private void cancelDelayedLoginStatusCheck() {
