@@ -65,7 +65,7 @@ public class LoginService extends Service {
                     break;
                 case EXCEEDED_MAX_RETRIES:
                 case UNKNOWN:
-                    startRetryCheckTimer();
+                    Log.w(TAG, "Login status check returned result: " + result);
                     break;
             }
         }
@@ -154,6 +154,7 @@ public class LoginService extends Service {
                     showLoginErrorNotification(result);
                 case EXCEEDED_MAX_RETRIES:
                 case UNKNOWN:
+                    Log.w(TAG, "Login returned result: " + result);
                     onLoginFailedTimeout(result);
                     break;
             }
@@ -212,7 +213,9 @@ public class LoginService extends Service {
         _checkLoginStatusAction = new Runnable() {
             @Override
             public void run() {
-                checkLoginStatus();
+                Log.d(TAG, "Timer -> checking login status");
+                startCheckLoginStatusTask();
+                enqueueDelayedLoginStatusCheck();
             }
         };
 
@@ -262,13 +265,13 @@ public class LoginService extends Service {
 
         switch (action) {
             case EXTRA_ACTION_DEFAULT:
-                checkConnectivity();
+                checkIfOnShsNetwork();
                 break;
             case EXTRA_ACTION_CHECK:
-                checkLoginStatus();
+                startCheckLoginStatusTask();
                 break;
             case EXTRA_ACTION_LOG_IN:
-                performLogin();
+                startLoginTask();
                 break;
         }
 
@@ -278,12 +281,17 @@ public class LoginService extends Service {
     @Override
     public void onDestroy() {
         Log.d(TAG, "Stopping login service");
+        cancelDelayedLoginStatusCheck();
         stopRunningTask();
         removeNotifications();
         unregisterReceiver(_broadcastReceiver);
     }
 
-    private void loadWhitelistedBssids() {
+    private void ensureCleanBssidCache() {
+        if (!_whitelistCacheDirty) {
+            return;
+        }
+
         _whitelistedBssids.clear();
         _profileDatabase.open();
         int bssidCount = 0;
@@ -301,17 +309,13 @@ public class LoginService extends Service {
     }
 
     private boolean isBssidWhitelisted(String bssid) {
-        if (_whitelistCacheDirty) {
-            loadWhitelistedBssids();
-        }
-
+        ensureCleanBssidCache();
         boolean whitelisted = _whitelistedBssids.contains(bssid);
         Log.d(TAG, "Checking BSSID: " + bssid + " -> " + whitelisted);
         return whitelisted;
     }
 
-    private void checkConnectivity() {
-        Log.d(TAG, "Checking connectivity");
+    private void checkIfOnShsNetwork() {
         WifiInfo wifiInfo = _wifiManager.getConnectionInfo();
         String ssid = wifiInfo.getSSID();
         Log.d(TAG, "Current SSID: " + ssid);
@@ -323,22 +327,13 @@ public class LoginService extends Service {
         }
     }
 
-    private void onShsNetwork() {
-        checkLoginStatus();
-    }
-
-    private void onNotShsNetwork() {
-        stopRetryCheckTimer();
-        stopRunningTask();
-    }
-
     private boolean requiresSetup() {
         String username = _credentials.getString(PREF_USERNAME_KEY, "");
         String password = _credentials.getString(PREF_PASSWORD_KEY, "");
         return TextUtils.isEmpty(username) || TextUtils.isEmpty(password);
     }
 
-    private void checkLoginStatus() {
+    private void startCheckLoginStatusTask() {
         if (requiresSetup()) {
             showSetupRequiredNotification();
         } else {
@@ -347,7 +342,7 @@ public class LoginService extends Service {
         }
     }
 
-    private void performLogin() {
+    private void startLoginTask() {
         if (requiresSetup()) {
             showSetupRequiredNotification();
         } else {
@@ -363,19 +358,27 @@ public class LoginService extends Service {
         }
     }
 
+    private void onShsNetwork() {
+        startCheckLoginStatusTask();
+        enqueueDelayedLoginStatusCheck();
+    }
+
+    private void onNotShsNetwork() {
+        cancelDelayedLoginStatusCheck();
+        stopRunningTask();
+    }
+
     private void onLoginRequired() {
         if (_preferences.getBoolean(PREF_SHOW_LOGIN_PROMPT_KEY, true)) {
             showLoginPromptNotification();
         } else {
-            performLogin();
+            startLoginTask();
         }
     }
 
     private void onLoginFailedTimeout(LoginClient.LoginResult result) {
         if (_preferences.getBoolean(PREF_SHOW_ERROR_NOTIFICATION_KEY, true)) {
             showLoginErrorNotification(result);
-        } else {
-            startRetryCheckTimer();
         }
     }
 
@@ -462,14 +465,15 @@ public class LoginService extends Service {
         _notificationManager.cancel(NOTI_LOGIN_PROGRESS_ID);
     }
 
-    private void startRetryCheckTimer() {
+    private void enqueueDelayedLoginStatusCheck() {
+        // We don't need to worry about running this while the screen is off: 
+        // Handler#postDelayed() will not run tasks while the device is in deep sleep
         int delay = Integer.parseInt(_preferences.getString(PREF_LOGIN_STATUS_CHECK_INTERVAL_KEY, "30"));
-        Log.d(TAG, "Starting WiFi status retry check timer with interval: " + delay + "s");
+        Log.d(TAG, "Enqueued login status check with delay " + delay + " seconds");
         _timerHandler.postDelayed(_checkLoginStatusAction, delay * 1000);
     }
 
-    private void stopRetryCheckTimer() {
-        Log.d(TAG, "Stopping WiFi status retry check timer");
+    private void cancelDelayedLoginStatusCheck() {
         _timerHandler.removeCallbacks(_checkLoginStatusAction);
     }
 }

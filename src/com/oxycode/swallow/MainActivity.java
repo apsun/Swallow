@@ -152,6 +152,14 @@ public class MainActivity extends Activity {
                 startActivity(intent);
             }
         });
+
+        // Start the login service when starting the activity
+        // This is useful when the user has just installed the
+        // app, in case WiFi events don't happen any time soon
+        if (getReceiverEnabled()) {
+            Intent loginIntent = new Intent(this, LoginService.class);
+            conditionalStartLoginService(loginIntent);
+        }
     }
 
     @Override
