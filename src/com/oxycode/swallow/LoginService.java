@@ -5,7 +5,9 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.*;
+import android.database.ContentObserver;
 import android.database.Cursor;
+import android.net.Uri;
 import android.net.wifi.SupplicantState;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
@@ -16,6 +18,7 @@ import android.preference.PreferenceManager;
 import android.support.v4.app.TaskStackBuilder;
 import android.text.TextUtils;
 import android.util.Log;
+import com.oxycode.swallow.provider.NetworkProfileContract;
 
 import java.io.IOException;
 import java.util.HashSet;
@@ -185,14 +188,14 @@ public class LoginService extends Service {
 
     private SharedPreferences _preferences;
     private SharedPreferences _credentials;
-    private NetworkProfileDBAdapter _profileDatabase;
     private HashSet<String> _whitelistedBssids;
 
     private WifiManager _wifiManager;
     private NotificationManager _notificationManager;
-    private Handler _timerHandler;
+    private Handler _handler;
     private Runnable _checkLoginStatusAction;
     private BroadcastReceiver _broadcastReceiver;
+    private ContentObserver _contentObserver;
     private boolean _whitelistCacheDirty;
 
     private AsyncTask<?, ?, ?> _runningTask;
@@ -209,7 +212,7 @@ public class LoginService extends Service {
         _notificationManager = (NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE);
 
         // Set up timers
-        _timerHandler = new Handler();
+        _handler = new Handler();
         _checkLoginStatusAction = new Runnable() {
             @Override
             public void run() {
@@ -229,8 +232,6 @@ public class LoginService extends Service {
                     if (state == SupplicantState.DISCONNECTED) {
                         onNotShsNetwork();
                     }
-                } else if (action.equals(NetworkProfileDBAdapter.DATABASE_CHANGED_ACTION)) {
-                    _whitelistCacheDirty = true;
                 }
             }
         };
@@ -238,15 +239,28 @@ public class LoginService extends Service {
         // Register broadcast receiver
         IntentFilter filter = new IntentFilter();
         filter.addAction(WifiManager.SUPPLICANT_STATE_CHANGED_ACTION);
-        filter.addAction(NetworkProfileDBAdapter.DATABASE_CHANGED_ACTION);
         registerReceiver(_broadcastReceiver, filter);
+
+        _contentObserver = new ContentObserver(_handler) {
+            @Override
+            public boolean deliverSelfNotifications() {
+                return true;
+            }
+
+            @Override
+            public void onChange(boolean selfChange) {
+                _whitelistCacheDirty = true;
+            }
+        };
+
+        ContentResolver contentResolver = getContentResolver();
+        contentResolver.registerContentObserver(NetworkProfileContract.Bssids.CONTENT_URI, true, _contentObserver);
 
         // Load preferences and credentials
         _preferences = PreferenceManager.getDefaultSharedPreferences(this);
         _credentials = getSharedPreferences(PREF_LOGIN_CREDENTIALS, MODE_PRIVATE);
 
         // Load profiles from database
-        _profileDatabase = new NetworkProfileDBAdapter(this);
         _whitelistedBssids = new HashSet<String>();
         _whitelistCacheDirty = true;
 
@@ -285,6 +299,8 @@ public class LoginService extends Service {
         stopRunningTask();
         removeNotifications();
         unregisterReceiver(_broadcastReceiver);
+        ContentResolver contentResolver = getContentResolver();
+        contentResolver.unregisterContentObserver(_contentObserver);
     }
 
     private void ensureCleanBssidCache() {
@@ -292,19 +308,26 @@ public class LoginService extends Service {
             return;
         }
 
+        // Clear cached BSSID whitelist
         _whitelistedBssids.clear();
-        _profileDatabase.open();
-        int bssidCount = 0;
-        try {
-            Cursor bssidCursor = _profileDatabase.getAllBssids(true);
-            while (bssidCursor.moveToNext()) {
-                _whitelistedBssids.add(bssidCursor.getString(2));
-                ++bssidCount;
-            }
-        } finally {
-            _profileDatabase.close();
+
+        // Query database through content provider
+        ContentResolver resolver = getContentResolver();
+        Uri uri = NetworkProfileContract.ProfilesJoinBssids.CONTENT_URI;
+        String[] projection = {NetworkProfileContract.ProfilesJoinBssids.BSSID};
+        String selection = NetworkProfileContract.ProfilesJoinBssids.PROFILE_ENABLED + "=1";
+        Cursor bssidCursor = resolver.query(uri, projection, selection, null, null);
+
+        int bssidCount;
+        for (bssidCount = 0; bssidCursor.moveToNext(); ++bssidCount) {
+            Log.d(TAG, "Loaded whitelisted BSSID: " + bssidCursor.getString(0));
+            _whitelistedBssids.add(bssidCursor.getString(0));
         }
+
+        bssidCursor.close();
+
         _whitelistCacheDirty = false;
+
         Log.d(TAG, String.format("Loaded %d BSSIDs from database whitelist", bssidCount));
     }
 
@@ -471,11 +494,11 @@ public class LoginService extends Service {
         int delay = Integer.parseInt(_preferences.getString(PREF_KEY_LOGIN_STATUS_CHECK_INTERVAL, "60"));
         if (delay > 0) {
             Log.d(TAG, "Enqueued login status check with delay " + delay + " seconds");
-            _timerHandler.postDelayed(_checkLoginStatusAction, delay * 1000);
+            _handler.postDelayed(_checkLoginStatusAction, delay * 1000);
         }
     }
 
     private void cancelDelayedLoginStatusCheck() {
-        _timerHandler.removeCallbacks(_checkLoginStatusAction);
+        _handler.removeCallbacks(_checkLoginStatusAction);
     }
 }

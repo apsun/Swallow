@@ -55,5 +55,7 @@
         <service
             android:name="com.oxycode.swallow.LoginService">
         </service>
+        <provider android:authorities="com.oxycode.swallow.provider.NetworkProfileProvider"
+                  android:name=".provider.NetworkProfileProvider" />
     </application>
 </manifest>

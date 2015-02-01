@@ -146,7 +146,7 @@ public class ProfileEditorActivity extends ListActivity {
         }
 
         // Get the profile we're editing from the intent
-        String profileName = getIntent().getStringExtra("profile");
+        String profileName = getIntent().getStringExtra(EXTRA_PROFILE_NAME);
         // NetworkProfile profile = null /* get profile somehow */;
         // _profile = profile.edit();
 

@@ -3,17 +3,21 @@ package com.oxycode.swallow;
 import android.app.ActionBar;
 import android.app.AlertDialog;
 import android.app.ListActivity;
+import android.app.LoaderManager;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.Loader;
 import android.content.SharedPreferences;
+import android.database.Cursor;
 import android.os.Bundle;
 import android.support.v4.app.NavUtils;
 import android.view.*;
 import android.widget.AdapterView;
 import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.SimpleCursorAdapter;
 
-public class ProfileManagerActivity extends ListActivity {
+public class ProfileManagerActivity extends ListActivity implements LoaderManager.LoaderCallbacks<Cursor> {
     private static interface SetProfileNameDialogHandler {
         void onSave(String name);
     }
@@ -22,6 +26,7 @@ public class ProfileManagerActivity extends ListActivity {
 
     private SharedPreferences _preferences;
     private ListView _profileListView;
+    private SimpleCursorAdapter _cursorAdapter;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -34,6 +39,9 @@ public class ProfileManagerActivity extends ListActivity {
         }
 
         _profileListView = getListView();
+        //_database = new NetworkProfileDBAdapter(this);
+
+        getLoaderManager().initLoader(0, null, this);
 
         // Add the long-press listview context menu
         registerForContextMenu(_profileListView);
@@ -46,9 +54,9 @@ public class ProfileManagerActivity extends ListActivity {
         return super.onCreateOptionsMenu(menu);
     }
 
-    private void showNetworkScanner() {
+    private void showNetworkScanner(String profileName) {
         Intent intent = new Intent(this, ProfileEditorActivity.class);
-        intent.putExtra(ProfileEditorActivity.EXTRA_PROFILE_NAME, "" /* todo */);
+        intent.putExtra(ProfileEditorActivity.EXTRA_PROFILE_NAME, profileName);
         startActivity(intent);
     }
 
@@ -87,8 +95,8 @@ public class ProfileManagerActivity extends ListActivity {
                 showSetProfileNameDialog(new SetProfileNameDialogHandler() {
                     @Override
                     public void onSave(String name) {
-                        // TODO: create profile, then show scanner
-                        showNetworkScanner();
+                        //_database.createProfile(name, true);
+                        showNetworkScanner(name);
                     }
                 });
                 return true;
@@ -107,6 +115,7 @@ public class ProfileManagerActivity extends ListActivity {
     @Override
     public boolean onContextItemSelected(MenuItem item) {
         AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo)item.getMenuInfo();
+        final long rowId = info.id;
         switch (item.getItemId()) {
             case R.id.profile_context_menu_edit:
                 // do something
@@ -118,6 +127,7 @@ public class ProfileManagerActivity extends ListActivity {
                 showSetProfileNameDialog(new SetProfileNameDialogHandler() {
                     @Override
                     public void onSave(String name) {
+                        //_database.updateProfile(rowId, name, true);
                         // TODO: update profile name
                     }
                 });
@@ -125,5 +135,20 @@ public class ProfileManagerActivity extends ListActivity {
             default:
                 return super.onContextItemSelected(item);
         }
+    }
+
+    @Override
+    public Loader<Cursor> onCreateLoader(int id, Bundle args) {
+        return null;
+    }
+
+    @Override
+    public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
+
+    }
+
+    @Override
+    public void onLoaderReset(Loader<Cursor> loader) {
+
     }
 }
