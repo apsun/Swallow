@@ -113,7 +113,7 @@ public class ProfileEditorActivity extends ListActivity {
     private static final String PREF_SHOW_SHS_ONLY_KEY = "pref_show_shs_only";
     private static final String PREF_SCAN_RATE_KEY = "pref_scan_rate";
     private static final String PREF_MINIMUM_SIGNAL_STRENGTH_KEY = "pref_minimum_signal_strength";
-    public static final String EXTRA_PROFILE_NAME = "profileName";
+    public static final String EXTRA_PROFILE_ROW_ID = "profileId";
 
     private Timer _scanTimer;
     private TimerTask _scanTask;
@@ -146,9 +146,7 @@ public class ProfileEditorActivity extends ListActivity {
         }
 
         // Get the profile we're editing from the intent
-        String profileName = getIntent().getStringExtra(EXTRA_PROFILE_NAME);
-        // NetworkProfile profile = null /* get profile somehow */;
-        // _profile = profile.edit();
+        long profileRowId = getIntent().getLongExtra(EXTRA_PROFILE_ROW_ID, -1);
 
         // Get the system WiFi manager for scanning
         _wifiManager = (WifiManager)getSystemService(Context.WIFI_SERVICE);

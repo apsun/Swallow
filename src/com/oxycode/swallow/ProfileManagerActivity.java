@@ -4,29 +4,84 @@ import android.app.ActionBar;
 import android.app.AlertDialog;
 import android.app.ListActivity;
 import android.app.LoaderManager;
-import android.content.DialogInterface;
-import android.content.Intent;
-import android.content.Loader;
-import android.content.SharedPreferences;
+import android.content.*;
 import android.database.Cursor;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.NavUtils;
 import android.view.*;
-import android.widget.AdapterView;
-import android.widget.EditText;
-import android.widget.ListView;
-import android.widget.SimpleCursorAdapter;
+import android.widget.*;
+import com.oxycode.swallow.provider.NetworkProfileContract;
 
 public class ProfileManagerActivity extends ListActivity implements LoaderManager.LoaderCallbacks<Cursor> {
     private static interface SetProfileNameDialogHandler {
         void onSave(String name);
     }
 
+    // This custom adapter adds support for our checkbox view.
+    // TODO: Change this to directly extend ResourceCursorAdapter,
+    // TODO: so that we can do things like cursor.getCount()
+    private static class MyCursorAdapter extends SimpleCursorAdapter {
+        static int l = android.R.layout.simple_list_item_2;
+        private static final int LAYOUT = R.layout.profile_listitem;
+        private static final String[] FROM = {
+            NetworkProfileContract.Profiles.NAME,
+            NetworkProfileContract.Profiles.ENABLED,
+            //NetworkProfileContract.Profiles._ID
+        };
+        private static final int[] TO = {
+            android.R.id.text1,
+            android.R.id.text2
+            //R.id.profile_name_textview,
+            //R.id.profile_enabled_checkbox,
+            //R.id.profile_detail_textview
+        };
+
+        public MyCursorAdapter(Context context) {
+            super(context, l, null, FROM, TO, 0);
+            setViewBinder(new SimpleCursorAdapter.ViewBinder() {
+                @Override
+                public boolean setViewValue(View view, Cursor cursor, int columnIndex) {
+                    if (view.getId() == R.id.profile_enabled_checkbox) {
+                        boolean enabled = cursor.getLong(columnIndex) != 0;
+                        CheckBox checkBox = (CheckBox)view;
+                        checkBox.setChecked(enabled);
+                        return true;
+                    }
+                    return false;
+                }
+            });
+        }
+
+        @Override
+        public View newView(final Context context, Cursor cursor, ViewGroup parent) {
+            View view = super.newView(context, cursor, parent);
+            final long rowId = cursor.getLong(cursor.getColumnIndexOrThrow(NetworkProfileContract.Profiles._ID));
+            /*final CheckBox enabledCheckBox = (CheckBox)view.findViewById(R.id.profile_enabled_checkbox);
+            enabledCheckBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+                @Override
+                public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                    ContentValues values = new ContentValues();
+                    values.put(NetworkProfileContract.Profiles.ENABLED, isChecked ? 1L : 0L);
+                    Uri uri = ContentUris.withAppendedId(NetworkProfileContract.Profiles.CONTENT_URI, rowId);
+                    context.getContentResolver().update(uri, values, null, null);
+                }
+            });
+
+            view.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    enabledCheckBox.performClick();
+                }
+            });
+*/
+            return view;
+        }
+    }
+
     private static final String TAG = ProfileManagerActivity.class.getSimpleName();
 
-    private SharedPreferences _preferences;
-    private ListView _profileListView;
-    private SimpleCursorAdapter _cursorAdapter;
+    private CursorAdapter _cursorAdapter;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -38,13 +93,18 @@ public class ProfileManagerActivity extends ListActivity implements LoaderManage
             actionBar.setDisplayHomeAsUpEnabled(true);
         }
 
-        _profileListView = getListView();
-        //_database = new NetworkProfileDBAdapter(this);
+        // Initialize cursor loader
+        LoaderManager loaderManager = getLoaderManager();
+        loaderManager.initLoader(0, null, this);
 
-        getLoaderManager().initLoader(0, null, this);
+        // Initialize content adapter
+        CursorAdapter cursorAdapter = new MyCursorAdapter(this);
+        setListAdapter(cursorAdapter);
+        _cursorAdapter = cursorAdapter;
 
-        // Add the long-press listview context menu
-        registerForContextMenu(_profileListView);
+        // Register content menu
+        ListView listView = getListView();
+        registerForContextMenu(listView);
     }
 
     @Override
@@ -54,9 +114,9 @@ public class ProfileManagerActivity extends ListActivity implements LoaderManage
         return super.onCreateOptionsMenu(menu);
     }
 
-    private void showNetworkScanner(String profileName) {
+    private void showNetworkScanner(long profileRowId) {
         Intent intent = new Intent(this, ProfileEditorActivity.class);
-        intent.putExtra(ProfileEditorActivity.EXTRA_PROFILE_NAME, profileName);
+        intent.putExtra(ProfileEditorActivity.EXTRA_PROFILE_ROW_ID, profileRowId);
         startActivity(intent);
     }
 
@@ -70,7 +130,11 @@ public class ProfileManagerActivity extends ListActivity implements LoaderManage
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
                     String profileName = editText.getText().toString();
-                    handler.onSave(profileName);
+                    if (profileName.equals("")) {
+                        showEmptyNameErrorDialog();
+                    } else {
+                        handler.onSave(profileName);
+                    }
                 }
             })
             .setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
@@ -85,6 +149,26 @@ public class ProfileManagerActivity extends ListActivity implements LoaderManage
         alert.show();
     }
 
+    private void showEmptyNameErrorDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this)
+            .setTitle("Empty name")
+            .setMessage("Enter a name!")
+            .setNeutralButton("OK", null);
+
+        AlertDialog alert = builder.create();
+        alert.show();
+    }
+
+    private void showDuplicateNameErrorDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this)
+            .setTitle("Duplicate name")
+            .setMessage("There already exists a profile with that name!")
+            .setNeutralButton("OK", null);
+
+        AlertDialog alert = builder.create();
+        alert.show();
+    }
+
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
@@ -95,8 +179,18 @@ public class ProfileManagerActivity extends ListActivity implements LoaderManage
                 showSetProfileNameDialog(new SetProfileNameDialogHandler() {
                     @Override
                     public void onSave(String name) {
-                        //_database.createProfile(name, true);
-                        showNetworkScanner(name);
+                        ContentValues values = new ContentValues();
+                        values.put(NetworkProfileContract.Profiles.NAME, name);
+                        values.put(NetworkProfileContract.Profiles.ENABLED, true);
+                        Uri uri = getContentResolver().insert(NetworkProfileContract.Profiles.CONTENT_URI, values);
+                        long profileRowId = ContentUris.parseId(uri);
+                        // TODO: This is an ugly hack, rewrite this to use exceptions instead
+                        // TODO: Yes, we know an error occurred, but *which one*, exactly?
+                        if (profileRowId < 0) {
+                            showDuplicateNameErrorDialog();
+                        } else {
+                            showNetworkScanner(profileRowId);
+                        }
                     }
                 });
                 return true;
@@ -110,6 +204,9 @@ public class ProfileManagerActivity extends ListActivity implements LoaderManage
         super.onCreateContextMenu(menu, v, menuInfo);
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.profile_context_menu, menu);
+
+        View item = ((AdapterView.AdapterContextMenuInfo)menuInfo).targetView;
+        menu.setHeaderTitle(((TextView)item.findViewById(android.R.id.text1)).getText());
     }
 
     @Override
@@ -118,17 +215,20 @@ public class ProfileManagerActivity extends ListActivity implements LoaderManage
         final long rowId = info.id;
         switch (item.getItemId()) {
             case R.id.profile_context_menu_edit:
-                // do something
+                showNetworkScanner(rowId);
                 return true;
             case R.id.profile_context_menu_delete:
-                // do something
+                Uri uri = ContentUris.withAppendedId(NetworkProfileContract.Profiles.CONTENT_URI, rowId);
+                getContentResolver().delete(uri, null, null);
                 return true;
             case R.id.profile_context_menu_rename:
                 showSetProfileNameDialog(new SetProfileNameDialogHandler() {
                     @Override
                     public void onSave(String name) {
-                        //_database.updateProfile(rowId, name, true);
-                        // TODO: update profile name
+                        ContentValues values = new ContentValues();
+                        values.put(NetworkProfileContract.Profiles.NAME, name);
+                        Uri uri = ContentUris.withAppendedId(NetworkProfileContract.Profiles.CONTENT_URI, rowId);
+                        getContentResolver().update(uri, values, null, null);
                     }
                 });
                 return true;
@@ -139,16 +239,22 @@ public class ProfileManagerActivity extends ListActivity implements LoaderManage
 
     @Override
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
-        return null;
+        String[] from = new String[] {
+            NetworkProfileContract.Profiles._ID,
+            NetworkProfileContract.Profiles.NAME,
+            NetworkProfileContract.Profiles.ENABLED
+        };
+        Uri uri = NetworkProfileContract.Profiles.CONTENT_URI;
+        return new CursorLoader(this, uri, from, null, null, null);
     }
 
     @Override
     public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
-
+        _cursorAdapter.swapCursor(data);
     }
 
     @Override
     public void onLoaderReset(Loader<Cursor> loader) {
-
+        _cursorAdapter.swapCursor(null);
     }
 }

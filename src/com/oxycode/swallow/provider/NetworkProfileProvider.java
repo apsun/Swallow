@@ -9,8 +9,11 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteQueryBuilder;
 import android.net.Uri;
 import android.text.TextUtils;
+import android.util.Log;
 
 public class NetworkProfileProvider extends ContentProvider {
+    private static final String TAG = NetworkProfileProvider.class.getSimpleName();
+
     private static final UriMatcher URI_MATCHER;
 
     private static final int PROFILES_ID = 100;
@@ -81,7 +84,7 @@ public class NetworkProfileProvider extends ContentProvider {
             case BSSIDS_ID:
                 return NetworkProfileContract.Bssids.CONTENT_TYPE;
             default:
-                throw new IllegalArgumentException("Unknown URI: " + uri);
+                return null;
         }
     }
 
@@ -130,10 +133,11 @@ public class NetworkProfileProvider extends ContentProvider {
         // (but it still deletes all rows)
         if (selection == null || deletedRows > 0) {
             getContext().getContentResolver().notifyChange(uri, null);
-            if (uriType == BSSID_ID || uriType == BSSIDS_ID) {
+            if (uriType == PROFILE_ID || uriType == PROFILES_ID) {
                 // Also notify BSSID URI's, because deleting a profile
                 // deletes the BSSID's within it
                 // TODO: Implement this
+                Log.w(TAG, "Need update!");
             }
         }
         return deletedRows;
@@ -161,9 +165,10 @@ public class NetworkProfileProvider extends ContentProvider {
 
         if (updatedRows > 0) {
             getContext().getContentResolver().notifyChange(uri, null);
-            if (uriType == BSSID_ID || uriType == BSSIDS_ID) {
+            if (uriType == PROFILE_ID || uriType == PROFILES_ID) {
                 // Also notify BSSID URI's, when 'enabled' flag is updated
                 // TODO: Implement this
+                Log.w(TAG, "Need update!");
             }
         }
         return updatedRows;

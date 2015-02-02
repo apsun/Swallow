@@ -222,7 +222,9 @@ public class LoginService extends Service {
             }
         };
 
-        // Create broadcast receiver for WiFi disconnected and profile modified events
+        // Create broadcast receiver for WiFi disconnected event
+        // This is not in the extrnal WifiStateReceiver class because
+        // it should not start nor stop the service.
         _broadcastReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
@@ -241,6 +243,7 @@ public class LoginService extends Service {
         filter.addAction(WifiManager.SUPPLICANT_STATE_CHANGED_ACTION);
         registerReceiver(_broadcastReceiver, filter);
 
+        // ...
         _contentObserver = new ContentObserver(_handler) {
             @Override
             public boolean deliverSelfNotifications() {
@@ -249,20 +252,19 @@ public class LoginService extends Service {
 
             @Override
             public void onChange(boolean selfChange) {
+                Log.d(TAG, "Database modified, marking whitelist as dirty");
                 _whitelistCacheDirty = true;
             }
         };
 
         ContentResolver contentResolver = getContentResolver();
         contentResolver.registerContentObserver(NetworkProfileContract.Bssids.CONTENT_URI, true, _contentObserver);
+        _whitelistedBssids = new HashSet<String>();
+        _whitelistCacheDirty = true;
 
         // Load preferences and credentials
         _preferences = PreferenceManager.getDefaultSharedPreferences(this);
         _credentials = getSharedPreferences(PREF_LOGIN_CREDENTIALS, MODE_PRIVATE);
-
-        // Load profiles from database
-        _whitelistedBssids = new HashSet<String>();
-        _whitelistCacheDirty = true;
 
         Log.d(TAG, "Started login service");
     }
@@ -389,6 +391,7 @@ public class LoginService extends Service {
     private void onNotShsNetwork() {
         cancelDelayedLoginStatusCheck();
         stopRunningTask();
+        _notificationManager.cancel(NOTI_ID_LOGIN_PROMPT);
     }
 
     private void onLoginRequired() {

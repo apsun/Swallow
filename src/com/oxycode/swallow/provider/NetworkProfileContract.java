@@ -4,7 +4,7 @@ import android.content.ContentResolver;
 import android.net.Uri;
 import android.provider.BaseColumns;
 
-public class NetworkProfileContract {
+public final class NetworkProfileContract {
     public static final String AUTHORITY = "com.oxycode.swallow.provider.NetworkProfileProvider";
     public static final Uri CONTENT_URI = Uri.parse("content://" + AUTHORITY);
 
