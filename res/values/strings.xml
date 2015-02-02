@@ -44,6 +44,8 @@
     <string name="profile_name">Profile name</string>
     <string name="duplicate_name_title">Duplicate name</string>
     <string name="duplicate_name_message">A profile with that name already exists!</string>
+    <string name="confirm_delete_profile_title">Delete this profile?</string>
+    <string name="confirm_delete_profile_message">It will be gone forever (a very long time)!</string>
 
     <!-- Activities -> Profile editor -->
     <string name="profile_editor">Profile editor</string>

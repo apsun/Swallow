@@ -182,8 +182,8 @@ public class MainActivity extends Activity {
         if (!username.equals(prefUsername) || !password.equals(prefPassword)) {
             AlertDialog.Builder builder = new AlertDialog.Builder(this)
                 .setIcon(R.drawable.ic_action_warning)
-                .setTitle(getString(R.string.unsaved_credentials_title))
-                .setMessage(getString(R.string.unsaved_credentials_message))
+                .setTitle(R.string.unsaved_credentials_title)
+                .setMessage(R.string.unsaved_credentials_message)
                 .setPositiveButton(R.string.exit, new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {

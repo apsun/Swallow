@@ -167,8 +167,7 @@ public class ProfileManagerActivity extends ListActivity implements LoaderManage
                 showNetworkScanner(rowId);
                 return true;
             case R.id.profile_context_menu_delete:
-                Uri uri = ContentUris.withAppendedId(NetworkProfileContract.Profiles.CONTENT_URI, rowId);
-                getContentResolver().delete(uri, null, null);
+                showConfirmDeleteDialog(rowId);
                 return true;
             case R.id.profile_context_menu_rename:
                 showSetProfileNameDialog(new SetProfileNameDialogHandler() {
@@ -269,6 +268,23 @@ public class ProfileManagerActivity extends ListActivity implements LoaderManage
             .setMessage(R.string.duplicate_name_message)
             .setNeutralButton(R.string.ok, null);
 
+        AlertDialog alert = builder.create();
+        alert.show();
+    }
+
+    private void showConfirmDeleteDialog(final long rowId) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this)
+            .setIcon(R.drawable.ic_action_warning)
+            .setTitle(R.string.confirm_delete_profile_title)
+            .setMessage(R.string.confirm_delete_profile_message)
+            .setPositiveButton(R.string.delete, new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    Uri uri = ContentUris.withAppendedId(NetworkProfileContract.Profiles.CONTENT_URI, rowId);
+                    getContentResolver().delete(uri, null, null);
+                }
+            })
+            .setNegativeButton(R.string.cancel, null);
         AlertDialog alert = builder.create();
         alert.show();
     }
