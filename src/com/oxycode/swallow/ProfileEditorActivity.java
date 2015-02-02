@@ -4,16 +4,26 @@ import android.app.ActionBar;
 import android.app.AlertDialog;
 import android.app.ListActivity;
 import android.content.*;
+import android.net.Uri;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
+import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.support.v4.app.NavUtils;
+import android.text.Editable;
+import android.text.TextUtils;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.*;
 import android.widget.*;
+import com.oxycode.swallow.provider.NetworkProfileContract;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class ProfileEditorActivity extends ListActivity {
     private static class ScanResultViewHolder {
@@ -110,29 +120,25 @@ public class ProfileEditorActivity extends ListActivity {
     }
 
     private static final String TAG = ProfileEditorActivity.class.getSimpleName();
-    private static final String PREF_SHOW_SHS_ONLY_KEY = "pref_show_shs_only";
-    private static final String PREF_SCAN_RATE_KEY = "pref_scan_rate";
-    private static final String PREF_MINIMUM_SIGNAL_STRENGTH_KEY = "pref_minimum_signal_strength";
+    private static final String PREF_KEY_SHOW_SHS_ONLY = "pref_show_shs_only";
+    private static final String PREF_KEY_SCAN_RATE = "pref_scan_rate";
+    private static final String PREF_KEY_MINIMUM_SIGNAL_STRENGTH = "pref_minimum_signal_strength";
+
     public static final String EXTRA_PROFILE_ROW_ID = "profileId";
 
-    private Timer _scanTimer;
-    private TimerTask _scanTask;
+    private static final Pattern BSSID_PATTERN = Pattern.compile("^([0-9a-f]{2}:){5}([0-9a-f]{2})$");
+
+    private Handler _handler;
+    private Runnable _scanWifiNetworksTask;
     private WifiManager _wifiManager;
     private BroadcastReceiver _scanReceiver;
 
-    // private NetworkProfile.Editor _profile;
-
-    private ListView _bssidListView;
     private Button _addManuallyButton;
     private Button _addAllInRangeButton;
-    private MenuItem _refreshMenuItem;
 
     private SharedPreferences _preferences;
-    private SharedPreferences.OnSharedPreferenceChangeListener _preferenceChangedListener;
 
-    private int _minimumSignalStrength;
-    private int _scanRate;
-    private boolean _showShsOnly;
+    private long _profileRowId;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -146,14 +152,18 @@ public class ProfileEditorActivity extends ListActivity {
         }
 
         // Get the profile we're editing from the intent
-        long profileRowId = getIntent().getLongExtra(EXTRA_PROFILE_ROW_ID, -1);
+        _profileRowId = getIntent().getLongExtra(EXTRA_PROFILE_ROW_ID, -1);
 
         // Get the system WiFi manager for scanning
         _wifiManager = (WifiManager)getSystemService(Context.WIFI_SERVICE);
 
-        // Timer used to periodically initiate network scans
-        _scanTimer = new Timer();
-        _scanTask = null;
+        _handler = new Handler();
+        _scanWifiNetworksTask = new Runnable() {
+            @Override
+            public void run() {
+                startWifiScan();
+            }
+        };
 
         // Broadcast receiver that notifies us when a
         // WiFi scan has completed
@@ -167,8 +177,6 @@ public class ProfileEditorActivity extends ListActivity {
             }
         };
 
-        // Get inner views
-        _bssidListView = getListView();
         _addManuallyButton = (Button)findViewById(R.id.add_manually_button);
         _addAllInRangeButton = (Button)findViewById(R.id.add_all_in_range_button);
 
@@ -183,180 +191,21 @@ public class ProfileEditorActivity extends ListActivity {
         _addAllInRangeButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                // TODO: Handle "add all in range" button click
+                addAllNetworksInRange();
             }
         });
 
         // Get shared preferences (we only read the scanner preferences)
-        // TODO: Refactor scanner preferences into a separate menu
         _preferences = PreferenceManager.getDefaultSharedPreferences(this);
-
-        // Attatch our preference change listener so we can update
-        // the preference fields here as soon as they are set
-        _preferenceChangedListener = new SharedPreferences.OnSharedPreferenceChangeListener() {
-            @Override
-            public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
-                if (PREF_MINIMUM_SIGNAL_STRENGTH_KEY.equals(key)) {
-                    _minimumSignalStrength = readPrefMinimumStrength();
-                } else if (PREF_SCAN_RATE_KEY.equals(key)) {
-                    _scanRate = readPrefScanRate();
-                    stopScanTimer();
-                    startScanTimer();
-                } else if (PREF_SHOW_SHS_ONLY_KEY.equals(key)) {
-                    _showShsOnly = readPrefShowShsOnly();
-                }
-            }
-        };
-    }
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        MenuInflater inflater = getMenuInflater();
-        inflater.inflate(R.menu.network_scanner_options_menu, menu);
-        _refreshMenuItem = menu.findItem(R.id.refresh_networks_button);
-        return super.onCreateOptionsMenu(menu);
-    }
-
-    private void showAddBssidDialog() {
-        View promptView = getLayoutInflater().inflate(R.layout.textedit_dialog, null);
-        final EditText editText = (EditText)promptView.findViewById(R.id.textedit_dialog_edittext);
-        AlertDialog.Builder builder = new AlertDialog.Builder(this)
-            .setView(promptView)
-            .setTitle(R.string.enter_bssid)
-            .setPositiveButton(R.string.add, new DialogInterface.OnClickListener() {
-                @Override
-                public void onClick(DialogInterface dialog, int which) {
-                    onAddBssidDialogFinished(editText.getText().toString());
-                }
-            })
-            .setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
-                @Override
-                public void onClick(DialogInterface dialog, int which) {
-                    dialog.cancel();
-                }
-            });
-
-        AlertDialog alert = builder.create();
-        alert.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE);
-        alert.show();
-    }
-
-    private void onAddBssidDialogFinished(String bssidText) {
-        // Bssid bssid;
-        try {
-            // bssid = new Bssid(bssidText);
-        } catch (IllegalArgumentException e) {
-            AlertDialog.Builder builder = new AlertDialog.Builder(this)
-                .setTitle(R.string.invalid_bssid_title)
-                .setMessage(R.string.invalid_bssid_message)
-                .setNeutralButton(R.string.ok, new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        dialog.dismiss();
-                    }
-                });
-
-            AlertDialog alert = builder.create();
-            alert.show();
-            return;
-        }
-
-        // _profile.put(bssid, true);
-    }
-
-    private void startWifiScan() {
-        _wifiManager.startScan();
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                if (_refreshMenuItem.getActionView() == null) {
-                    _refreshMenuItem.setActionView(R.layout.refresh_layout);
-                }
-            }
-        });
-    }
-
-    private void onWifiScanCompleted() {
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                _refreshMenuItem.setActionView(null);
-            }
-        });
-
-        // TODO: Remove below, actually implement listview stuff
-        List<ScanResult> results = _wifiManager.getScanResults();
-        Collections.sort(results, new Comparator<ScanResult>() {
-            @Override
-            public int compare(ScanResult lhs, ScanResult rhs) {
-                // Compare by subtracting lhs from rhs, since we want
-                // the higher strength networks to come first
-                return rhs.level - lhs.level;
-            }
-        });
-
-        Log.d(TAG, "--BEGIN WIFI LIST--");
-        for (ScanResult result : results) {
-            if (_showShsOnly && !"shs".equalsIgnoreCase(result.SSID)) continue;
-            if (_minimumSignalStrength > result.level) continue;
-            Log.d(TAG, String.format("[%s] %s -> %d", result.SSID, result.BSSID, result.level));
-        }
-        Log.d(TAG, "--END WIFI LIST--");
-    }
-
-    private int readPrefMinimumStrength() {
-        return Integer.parseInt(_preferences.getString(PREF_MINIMUM_SIGNAL_STRENGTH_KEY, null));
-    }
-
-    private int readPrefScanRate() {
-        return Integer.parseInt(_preferences.getString(PREF_SCAN_RATE_KEY, null));
-    }
-
-    private boolean readPrefShowShsOnly() {
-        return _preferences.getBoolean(PREF_SHOW_SHS_ONLY_KEY, false);
-    }
-
-    private void stopScanTimer() {
-        if (_scanTask != null) {
-            _scanTask.cancel();
-            _scanTask = null;
-        }
-    }
-
-    private void startScanTimer() {
-        if (_scanRate >= 0) {
-            _scanTask = new TimerTask() {
-                @Override
-                public void run() {
-                    startWifiScan();
-                }
-            };
-
-            // TODO: Fix this hack!
-            // For some reason onCreateOptionsMenu is called AFTER onResume
-            // This means that if we scan with 0 delay, we will crash with a NPE
-            // since the refresh menu item hasn't been set yet.
-            _scanTimer.scheduleAtFixedRate(_scanTask, _scanRate * 1000, _scanRate * 1000);
-        }
     }
 
     @Override
     protected void onResume() {
         super.onResume();
 
-        // Reload preferences
-        // This is necessary because we don't listen for
-        // preference change events when the activity is paused.
-        _minimumSignalStrength = readPrefMinimumStrength();
-        _scanRate = readPrefScanRate();
-        _showShsOnly = readPrefShowShsOnly();
-
-        // Start listening for preference change events
-        _preferences.registerOnSharedPreferenceChangeListener(_preferenceChangedListener);
-
         // Begin scanning for WiFi networks
         registerReceiver(_scanReceiver, new IntentFilter(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION));
-        startScanTimer();
+        startWifiScan();
     }
 
     @Override
@@ -366,11 +215,15 @@ public class ProfileEditorActivity extends ListActivity {
         // Stop scanning for WiFi networks
         // This saves battery, since we are not uselessly
         // refreshing the WiFi list in the background.
-        stopScanTimer();
+        cancelEnqueuedWifiScan();
         unregisterReceiver(_scanReceiver);
+    }
 
-        // Stop listening for preference change events
-        _preferences.unregisterOnSharedPreferenceChangeListener(_preferenceChangedListener);
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.network_scanner_options_menu, menu);
+        return super.onCreateOptionsMenu(menu);
     }
 
     @Override
@@ -385,5 +238,128 @@ public class ProfileEditorActivity extends ListActivity {
             default:
                 return super.onOptionsItemSelected(item);
         }
+    }
+
+    private void showAddBssidDialog() {
+        View promptView = getLayoutInflater().inflate(R.layout.textedit_dialog, null);
+        final EditText editText = (EditText)promptView.findViewById(R.id.textedit_dialog_edittext);
+        AlertDialog.Builder builder = new AlertDialog.Builder(this)
+            .setView(promptView)
+            .setTitle(R.string.network_bssid)
+            .setPositiveButton(R.string.add, new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    onAddBssidDialogFinished(editText.getText().toString());
+                }
+            })
+            .setNegativeButton(R.string.cancel, null);
+
+
+        final AlertDialog alert = builder.create();
+
+        // Initially disable the add button (since the textbox is empty)
+        alert.setOnShowListener(new DialogInterface.OnShowListener() {
+            @Override
+            public void onShow(DialogInterface dialog) {
+                Button button = alert.getButton(DialogInterface.BUTTON_POSITIVE);
+                button.setEnabled(false);
+            }
+        });
+
+        // Enable/disable the save button depending on whether the textbox is empty
+        editText.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) { }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                Button button = alert.getButton(DialogInterface.BUTTON_POSITIVE);
+                boolean hasText = !TextUtils.isEmpty(s);
+                button.setEnabled(hasText);
+            }
+        });
+
+        // Display the keyboard when the alert is shown
+        alert.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE);
+        alert.show();
+    }
+
+    private void showInvalidBssidDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this)
+            .setTitle(R.string.invalid_bssid_title)
+            .setMessage(R.string.invalid_bssid_message)
+            .setNeutralButton(R.string.ok, null);
+
+        AlertDialog alert = builder.create();
+        alert.show();
+    }
+
+    private void onAddBssidDialogFinished(String bssid) {
+        bssid = bssid.toLowerCase();
+        Matcher matcher = BSSID_PATTERN.matcher(bssid);
+        if (matcher.matches()) {
+            ContentValues values = new ContentValues();
+            values.put(NetworkProfileContract.Bssids.PROFILE_ID, _profileRowId);
+            values.put(NetworkProfileContract.Bssids.BSSID, bssid);
+            Uri uri = getContentResolver().insert(NetworkProfileContract.Bssids.CONTENT_URI, values);
+            long bssidRowId = ContentUris.parseId(uri);
+            if (bssidRowId < 0) {
+                // TODO: Can this happen? (Does ON CONFLICT IGNORE return -1 as a row?)
+                Log.e(TAG, "WTF!");
+            }
+        } else {
+            showInvalidBssidDialog();
+        }
+    }
+
+    private void addAllNetworksInRange() {
+        // TODO: Implement
+    }
+
+    private void startWifiScan() {
+        _wifiManager.startScan();
+    }
+
+    private void onWifiScanCompleted() {
+        List<ScanResult> results = _wifiManager.getScanResults();
+        Collections.sort(results, new Comparator<ScanResult>() {
+            @Override
+            public int compare(ScanResult lhs, ScanResult rhs) {
+                // Compare by subtracting lhs from rhs, since we want
+                // the higher strength networks to come first
+                return rhs.level - lhs.level;
+            }
+        });
+
+        boolean showShsOnly = _preferences.getBoolean(PREF_KEY_SHOW_SHS_ONLY, true);
+        int minSignalStrength = Integer.parseInt(_preferences.getString(PREF_KEY_MINIMUM_SIGNAL_STRENGTH, "-80"));
+
+        Log.d(TAG, "Found WiFi networks:");
+        for (ScanResult result : results) {
+            if (showShsOnly && !"shs".equalsIgnoreCase(result.SSID)) continue;
+            if (minSignalStrength > result.level) continue;
+            Log.d(TAG, String.format("> %s (%s): %d", result.SSID, result.BSSID, result.level));
+            // TODO: Add to list
+        }
+
+        enqueueWifiScan();
+    }
+
+    private void enqueueWifiScan() {
+        // Make sure we don't try to scan multiple times
+        cancelEnqueuedWifiScan();
+
+        int delay = Integer.parseInt(_preferences.getString(PREF_KEY_SCAN_RATE, "2"));
+        if (delay > 0) {
+            Log.d(TAG, "Enqueued WiFi scan with delay " + delay + " seconds");
+            _handler.postDelayed(_scanWifiNetworksTask, delay * 1000);
+        }
+    }
+
+    private void cancelEnqueuedWifiScan() {
+        _handler.removeCallbacks(_scanWifiNetworksTask);
     }
 }

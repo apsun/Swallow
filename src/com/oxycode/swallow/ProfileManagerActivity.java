@@ -116,72 +116,6 @@ public class ProfileManagerActivity extends ListActivity implements LoaderManage
         return super.onCreateOptionsMenu(menu);
     }
 
-    private void showNetworkScanner(long profileRowId) {
-        Intent intent = new Intent(this, ProfileEditorActivity.class);
-        intent.putExtra(ProfileEditorActivity.EXTRA_PROFILE_ROW_ID, profileRowId);
-        startActivity(intent);
-    }
-
-    private void showSetProfileNameDialog(final SetProfileNameDialogHandler handler) {
-        View promptView = getLayoutInflater().inflate(R.layout.textedit_dialog, null);
-        final EditText editText = (EditText)promptView.findViewById(R.id.textedit_dialog_edittext);
-        AlertDialog.Builder builder = new AlertDialog.Builder(this)
-            .setView(promptView)
-            .setTitle(R.string.profile_name)
-            .setPositiveButton(R.string.save, new DialogInterface.OnClickListener() {
-                @Override
-                public void onClick(DialogInterface dialog, int which) {
-                    String profileName = editText.getText().toString();
-                    handler.onSave(profileName);
-                }
-            })
-            .setNegativeButton(R.string.cancel, null);
-
-        final AlertDialog alert = builder.create();
-
-        // Initially disable the save button (since the textbox is empty)
-        // This must be done after the call to alert.show();
-        // before then alert.getButton() will return null.
-        alert.setOnShowListener(new DialogInterface.OnShowListener() {
-            @Override
-            public void onShow(DialogInterface dialog) {
-                Button button = alert.getButton(DialogInterface.BUTTON_POSITIVE);
-                button.setEnabled(false);
-            }
-        });
-
-        // Enable/disable the save button depending on whether the
-        // textbox is empty
-        editText.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
-
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) { }
-
-            @Override
-            public void afterTextChanged(Editable s) {
-                Button button = alert.getButton(DialogInterface.BUTTON_POSITIVE);
-                boolean hasText = !TextUtils.isEmpty(s);
-                button.setEnabled(hasText);
-            }
-        });
-
-        // Display the keyboard when the alert is shown
-        alert.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE);
-        alert.show();
-    }
-
-    private void showDuplicateNameErrorDialog() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this)
-            .setTitle(R.string.duplicate_name_title)
-            .setMessage(R.string.duplicate_name_message)
-            .setNeutralButton(R.string.ok, null);
-
-        AlertDialog alert = builder.create();
-        alert.show();
-    }
-
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
@@ -271,5 +205,71 @@ public class ProfileManagerActivity extends ListActivity implements LoaderManage
     @Override
     public void onLoaderReset(Loader<Cursor> loader) {
         _cursorAdapter.swapCursor(null);
+    }
+
+    private void showNetworkScanner(long profileRowId) {
+        Intent intent = new Intent(this, ProfileEditorActivity.class);
+        intent.putExtra(ProfileEditorActivity.EXTRA_PROFILE_ROW_ID, profileRowId);
+        startActivity(intent);
+    }
+
+    private void showSetProfileNameDialog(final SetProfileNameDialogHandler handler) {
+        View promptView = getLayoutInflater().inflate(R.layout.textedit_dialog, null);
+        final EditText editText = (EditText)promptView.findViewById(R.id.textedit_dialog_edittext);
+        AlertDialog.Builder builder = new AlertDialog.Builder(this)
+            .setView(promptView)
+            .setTitle(R.string.profile_name)
+            .setPositiveButton(R.string.save, new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    String profileName = editText.getText().toString();
+                    handler.onSave(profileName);
+                }
+            })
+            .setNegativeButton(R.string.cancel, null);
+
+        final AlertDialog alert = builder.create();
+
+        // Initially disable the save button (since the textbox is empty)
+        // This must be done after the call to alert.show();
+        // before then alert.getButton() will return null.
+        alert.setOnShowListener(new DialogInterface.OnShowListener() {
+            @Override
+            public void onShow(DialogInterface dialog) {
+                Button button = alert.getButton(DialogInterface.BUTTON_POSITIVE);
+                button.setEnabled(false);
+            }
+        });
+
+        // Enable/disable the save button depending on whether the
+        // textbox is empty
+        editText.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) { }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                Button button = alert.getButton(DialogInterface.BUTTON_POSITIVE);
+                boolean hasText = !TextUtils.isEmpty(s);
+                button.setEnabled(hasText);
+            }
+        });
+
+        // Display the keyboard when the alert is shown
+        alert.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE);
+        alert.show();
+    }
+
+    private void showDuplicateNameErrorDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this)
+            .setTitle(R.string.duplicate_name_title)
+            .setMessage(R.string.duplicate_name_message)
+            .setNeutralButton(R.string.ok, null);
+
+        AlertDialog alert = builder.create();
+        alert.show();
     }
 }

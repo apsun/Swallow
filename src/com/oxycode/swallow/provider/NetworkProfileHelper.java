@@ -23,7 +23,7 @@ public class NetworkProfileHelper extends SQLiteOpenHelper {
     public static final String BSSID_KEY_BSSID = "bssid";
 
     private static final String DATABASE_NAME = "com.oxycode.swallow.NetworkProfiles.db";
-    private static final int DATABASE_VERSION = 2;
+    private static final int DATABASE_VERSION = 5;
 
     private static final String CREATE_PROFILE_TABLE =
         "CREATE TABLE " + PROFILE_TABLE + "(" +
@@ -37,8 +37,9 @@ public class NetworkProfileHelper extends SQLiteOpenHelper {
             BSSID_KEY_ID + " INTEGER PRIMARY KEY AUTOINCREMENT," +
             BSSID_KEY_PROFILE_ID + " INTEGER NOT NULL," +
             BSSID_KEY_BSSID + " TEXT NOT NULL," +
-            "FOREIGN KEY(" + BSSID_KEY_PROFILE_ID + ") " +
-            "REFERENCES " + PROFILE_TABLE + "(" + PROFILE_KEY_ID + ") ON DELETE CASCADE" +
+            "FOREIGN KEY(" + BSSID_KEY_PROFILE_ID + ")" +
+                "REFERENCES " + PROFILE_TABLE + "(" + PROFILE_KEY_ID + ") ON DELETE CASCADE," +
+            "UNIQUE(" + BSSID_KEY_PROFILE_ID + "," + BSSID_KEY_BSSID + ") ON CONFLICT IGNORE" +
         ");";
 
     public NetworkProfileHelper(Context context) {
