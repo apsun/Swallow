@@ -9,6 +9,9 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.NavUtils;
+import android.text.Editable;
+import android.text.TextUtils;
+import android.text.TextWatcher;
 import android.view.*;
 import android.widget.*;
 import com.oxycode.swallow.provider.NetworkProfileContract;
@@ -22,23 +25,20 @@ public class ProfileManagerActivity extends ListActivity implements LoaderManage
     // TODO: Change this to directly extend ResourceCursorAdapter,
     // TODO: so that we can do things like cursor.getCount()
     private static class MyCursorAdapter extends SimpleCursorAdapter {
-        static int l = android.R.layout.simple_list_item_2;
         private static final int LAYOUT = R.layout.profile_listitem;
         private static final String[] FROM = {
             NetworkProfileContract.Profiles.NAME,
             NetworkProfileContract.Profiles.ENABLED,
-            //NetworkProfileContract.Profiles._ID
+            NetworkProfileContract.Profiles._ID
         };
         private static final int[] TO = {
-            android.R.id.text1,
-            android.R.id.text2
-            //R.id.profile_name_textview,
-            //R.id.profile_enabled_checkbox,
-            //R.id.profile_detail_textview
+            R.id.profile_name_textview,
+            R.id.profile_enabled_checkbox,
+            R.id.profile_detail_textview
         };
 
         public MyCursorAdapter(Context context) {
-            super(context, l, null, FROM, TO, 0);
+            super(context, LAYOUT, null, FROM, TO, 0);
             setViewBinder(new SimpleCursorAdapter.ViewBinder() {
                 @Override
                 public boolean setViewValue(View view, Cursor cursor, int columnIndex) {
@@ -56,8 +56,8 @@ public class ProfileManagerActivity extends ListActivity implements LoaderManage
         @Override
         public View newView(final Context context, Cursor cursor, ViewGroup parent) {
             View view = super.newView(context, cursor, parent);
+            CheckBox enabledCheckBox = (CheckBox)view.findViewById(R.id.profile_enabled_checkbox);
             final long rowId = cursor.getLong(cursor.getColumnIndexOrThrow(NetworkProfileContract.Profiles._ID));
-            /*final CheckBox enabledCheckBox = (CheckBox)view.findViewById(R.id.profile_enabled_checkbox);
             enabledCheckBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
                 @Override
                 public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
@@ -68,13 +68,6 @@ public class ProfileManagerActivity extends ListActivity implements LoaderManage
                 }
             });
 
-            view.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    enabledCheckBox.performClick();
-                }
-            });
-*/
             return view;
         }
     }
@@ -105,6 +98,15 @@ public class ProfileManagerActivity extends ListActivity implements LoaderManage
         // Register content menu
         ListView listView = getListView();
         registerForContextMenu(listView);
+
+        // Make clicking on the list item toggle the checkbox
+        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                CheckBox enabledCheckBox = (CheckBox)view.findViewById(R.id.profile_enabled_checkbox);
+                enabledCheckBox.performClick();
+            }
+        });
     }
 
     @Override
@@ -125,45 +127,56 @@ public class ProfileManagerActivity extends ListActivity implements LoaderManage
         final EditText editText = (EditText)promptView.findViewById(R.id.textedit_dialog_edittext);
         AlertDialog.Builder builder = new AlertDialog.Builder(this)
             .setView(promptView)
-            .setTitle(R.string.enter_profile_name)
+            .setTitle(R.string.profile_name)
             .setPositiveButton(R.string.save, new DialogInterface.OnClickListener() {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
                     String profileName = editText.getText().toString();
-                    if (profileName.equals("")) {
-                        showEmptyNameErrorDialog();
-                    } else {
-                        handler.onSave(profileName);
-                    }
+                    handler.onSave(profileName);
                 }
             })
-            .setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
-                @Override
-                public void onClick(DialogInterface dialog, int which) {
-                    dialog.cancel();
-                }
-            });
+            .setNegativeButton(R.string.cancel, null);
 
-        AlertDialog alert = builder.create();
+        final AlertDialog alert = builder.create();
+
+        // Initially disable the save button (since the textbox is empty)
+        // This must be done after the call to alert.show();
+        // before then alert.getButton() will return null.
+        alert.setOnShowListener(new DialogInterface.OnShowListener() {
+            @Override
+            public void onShow(DialogInterface dialog) {
+                Button button = alert.getButton(DialogInterface.BUTTON_POSITIVE);
+                button.setEnabled(false);
+            }
+        });
+
+        // Enable/disable the save button depending on whether the
+        // textbox is empty
+        editText.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) { }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                Button button = alert.getButton(DialogInterface.BUTTON_POSITIVE);
+                boolean hasText = !TextUtils.isEmpty(s);
+                button.setEnabled(hasText);
+            }
+        });
+
+        // Display the keyboard when the alert is shown
         alert.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE);
-        alert.show();
-    }
-
-    private void showEmptyNameErrorDialog() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this)
-            .setTitle("Empty name")
-            .setMessage("Enter a name!")
-            .setNeutralButton("OK", null);
-
-        AlertDialog alert = builder.create();
         alert.show();
     }
 
     private void showDuplicateNameErrorDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this)
-            .setTitle("Duplicate name")
-            .setMessage("There already exists a profile with that name!")
-            .setNeutralButton("OK", null);
+            .setTitle(R.string.duplicate_name_title)
+            .setMessage(R.string.duplicate_name_message)
+            .setNeutralButton(R.string.ok, null);
 
         AlertDialog alert = builder.create();
         alert.show();
@@ -205,8 +218,10 @@ public class ProfileManagerActivity extends ListActivity implements LoaderManage
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.profile_context_menu, menu);
 
+        // Set context menu title to the name of the profile
         View item = ((AdapterView.AdapterContextMenuInfo)menuInfo).targetView;
-        menu.setHeaderTitle(((TextView)item.findViewById(android.R.id.text1)).getText());
+        TextView nameTextView = (TextView)item.findViewById(R.id.profile_name_textview);
+        menu.setHeaderTitle(nameTextView.getText());
     }
 
     @Override

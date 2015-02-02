@@ -10,8 +10,11 @@
         android:layout_height="fill_parent"
         android:layout_alignParentBottom="true"
         android:layout_alignParentTop="true"
-        android:checked="true"/>
-
+        android:layout_marginRight="6dp"
+        android:checked="true"
+        android:focusable="false"
+        android:focusableInTouchMode="false"
+        android:clickable="false"/>
     <TextView
         android:id="@+id/profile_detail_textview"
         android:layout_width="fill_parent"

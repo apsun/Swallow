@@ -41,7 +41,9 @@
     <!-- Activities -> Profile manager -->
     <string name="profile_manager">Profiles</string>
     <string name="create_profile">Create profile</string>
-    <string name="enter_profile_name">Enter profile name</string>
+    <string name="profile_name">Profile name</string>
+    <string name="duplicate_name_title">Duplicate name</string>
+    <string name="duplicate_name_message">A profile with that name already exists!</string>
 
     <!-- Activities -> Profile editor -->
     <string name="profile_editor">Profile editor</string>
