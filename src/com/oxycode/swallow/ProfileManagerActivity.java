@@ -8,6 +8,7 @@ import android.content.*;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.v4.app.NavUtils;
 import android.text.Editable;
 import android.text.TextUtils;
@@ -54,9 +55,15 @@ public class ProfileManagerActivity extends ListActivity implements LoaderManage
         }
 
         @Override
-        public View newView(final Context context, Cursor cursor, ViewGroup parent) {
-            View view = super.newView(context, cursor, parent);
+        public void bindView(@NonNull View view, final Context context, @NonNull Cursor cursor) {
             CheckBox enabledCheckBox = (CheckBox)view.findViewById(R.id.profile_enabled_checkbox);
+
+            // super.bindView() will update the state of the checkbox to
+            // that of a different row, so make sure we aren't handling that
+            enabledCheckBox.setOnCheckedChangeListener(null);
+
+            super.bindView(view, context, cursor);
+
             final long rowId = cursor.getLong(cursor.getColumnIndexOrThrow(NetworkProfileContract.Profiles._ID));
             enabledCheckBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
                 @Override
@@ -67,8 +74,6 @@ public class ProfileManagerActivity extends ListActivity implements LoaderManage
                     context.getContentResolver().update(uri, values, null, null);
                 }
             });
-
-            return view;
         }
     }
 
