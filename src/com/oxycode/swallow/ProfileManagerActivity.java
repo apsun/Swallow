@@ -1,7 +1,6 @@
 package com.oxycode.swallow;
 
 import android.app.ActionBar;
-import android.app.AlertDialog;
 import android.app.ListActivity;
 import android.app.LoaderManager;
 import android.content.*;
@@ -10,17 +9,12 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.NavUtils;
-import android.text.Editable;
-import android.text.TextUtils;
-import android.text.TextWatcher;
 import android.view.*;
 import android.widget.*;
 import com.oxycode.swallow.provider.NetworkProfileContract;
+import com.oxycode.swallow.utils.DialogUtils;
 
 public class ProfileManagerActivity extends ListActivity implements LoaderManager.LoaderCallbacks<Cursor> {
-    private static interface SetProfileNameDialogHandler {
-        void onSave(String name);
-    }
 
     // This custom adapter adds support for our checkbox view.
     // TODO: Change this to directly extend ResourceCursorAdapter,
@@ -128,23 +122,7 @@ public class ProfileManagerActivity extends ListActivity implements LoaderManage
                 NavUtils.navigateUpFromSameTask(this);
                 return true;
             case R.id.add_profile_button:
-                showSetProfileNameDialog(new SetProfileNameDialogHandler() {
-                    @Override
-                    public void onSave(String name) {
-                        ContentValues values = new ContentValues();
-                        values.put(NetworkProfileContract.Profiles.NAME, name);
-                        values.put(NetworkProfileContract.Profiles.ENABLED, true);
-                        Uri uri = getContentResolver().insert(NetworkProfileContract.Profiles.CONTENT_URI, values);
-                        long profileRowId = ContentUris.parseId(uri);
-                        // TODO: This is an ugly hack, rewrite this to use exceptions instead
-                        // TODO: Yes, we know an error occurred, but *which one*, exactly?
-                        if (profileRowId < 0) {
-                            showDuplicateNameErrorDialog();
-                        } else {
-                            showNetworkScanner(profileRowId);
-                        }
-                    }
-                });
+                showCreateProfileDialog();
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
@@ -175,15 +153,7 @@ public class ProfileManagerActivity extends ListActivity implements LoaderManage
                 showConfirmDeleteDialog(rowId);
                 return true;
             case R.id.profile_context_menu_rename:
-                showSetProfileNameDialog(new SetProfileNameDialogHandler() {
-                    @Override
-                    public void onSave(String name) {
-                        ContentValues values = new ContentValues();
-                        values.put(NetworkProfileContract.Profiles.NAME, name);
-                        Uri uri = ContentUris.withAppendedId(NetworkProfileContract.Profiles.CONTENT_URI, rowId);
-                        getContentResolver().update(uri, values, null, null);
-                    }
-                });
+                showRenameProfileDialog(rowId);
                 return true;
             default:
                 return super.onContextItemSelected(item);
@@ -217,80 +187,69 @@ public class ProfileManagerActivity extends ListActivity implements LoaderManage
         startActivity(intent);
     }
 
-    private void showSetProfileNameDialog(final SetProfileNameDialogHandler handler) {
-        View promptView = getLayoutInflater().inflate(R.layout.textedit_dialog, null);
-        final EditText editText = (EditText)promptView.findViewById(R.id.textedit_dialog_edittext);
-        AlertDialog.Builder builder = new AlertDialog.Builder(this)
-            .setView(promptView)
-            .setTitle(R.string.profile_name)
-            .setPositiveButton(R.string.save, new DialogInterface.OnClickListener() {
+    private void showRenameProfileDialog(final long rowId) {
+        DialogUtils.showTextEntryDialog(this,
+            0,
+            getString(R.string.profile_name),
+            getString(R.string.save),
+            new DialogUtils.TextEntryDialogHandler() {
                 @Override
-                public void onClick(DialogInterface dialog, int which) {
-                    String profileName = editText.getText().toString();
-                    handler.onSave(profileName);
+                public void onSubmit(String text) {
+                    ContentValues values = new ContentValues();
+                    values.put(NetworkProfileContract.Profiles.NAME, text);
+                    Uri uri = ContentUris.withAppendedId(NetworkProfileContract.Profiles.CONTENT_URI, rowId);
+                    getContentResolver().update(uri, values, null, null);
                 }
-            })
-            .setNegativeButton(R.string.cancel, null);
-
-        final AlertDialog alert = builder.create();
-
-        // Initially disable the save button (since the textbox is empty)
-        // This must be done after the call to alert.show();
-        // before then alert.getButton() will return null.
-        alert.setOnShowListener(new DialogInterface.OnShowListener() {
-            @Override
-            public void onShow(DialogInterface dialog) {
-                Button button = alert.getButton(DialogInterface.BUTTON_POSITIVE);
-                button.setEnabled(false);
             }
-        });
+        );
+    }
 
-        // Enable/disable the save button depending on whether the
-        // textbox is empty
-        editText.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
-
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) { }
-
-            @Override
-            public void afterTextChanged(Editable s) {
-                Button button = alert.getButton(DialogInterface.BUTTON_POSITIVE);
-                boolean hasText = !TextUtils.isEmpty(s);
-                button.setEnabled(hasText);
+    private void showCreateProfileDialog() {
+        DialogUtils.showTextEntryDialog(this,
+            0,
+            getString(R.string.profile_name),
+            getString(R.string.save),
+            new DialogUtils.TextEntryDialogHandler() {
+                @Override
+                public void onSubmit(String text) {
+                    ContentValues values = new ContentValues();
+                    values.put(NetworkProfileContract.Profiles.NAME, text);
+                    values.put(NetworkProfileContract.Profiles.ENABLED, true);
+                    Uri uri = getContentResolver().insert(NetworkProfileContract.Profiles.CONTENT_URI, values);
+                    long profileRowId = ContentUris.parseId(uri);
+                    // TODO: This is an ugly hack, rewrite this to use exceptions instead
+                    // TODO: Yes, we know an error occurred, but *which one*, exactly?
+                    if (profileRowId < 0) {
+                        showDuplicateNameErrorDialog();
+                    } else {
+                        showNetworkScanner(profileRowId);
+                    }
+                }
             }
-        });
-
-        // Display the keyboard when the alert is shown
-        alert.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE);
-        alert.show();
+        );
     }
 
     private void showDuplicateNameErrorDialog() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this)
-            .setTitle(R.string.duplicate_name_title)
-            .setMessage(R.string.duplicate_name_message)
-            .setNeutralButton(R.string.ok, null);
-
-        AlertDialog alert = builder.create();
-        alert.show();
+        DialogUtils.showMessageDialog(this,
+            0,
+            getString(R.string.duplicate_name_title),
+            getString(R.string.duplicate_name_message)
+        );
     }
 
     private void showConfirmDeleteDialog(final long rowId) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this)
-            .setIcon(R.drawable.ic_action_warning)
-            .setTitle(R.string.confirm_delete_profile_title)
-            .setMessage(R.string.confirm_delete_profile_message)
-            .setPositiveButton(R.string.delete, new DialogInterface.OnClickListener() {
+        DialogUtils.showConfirmationDialog(this,
+            R.drawable.ic_action_warning,
+            getString(R.string.confirm_delete_profile_title),
+            getString(R.string.confirm_delete_profile_message),
+            getString(R.string.delete),
+            new DialogUtils.ConfirmationDialogHandler() {
                 @Override
-                public void onClick(DialogInterface dialog, int which) {
+                public void onConfirm() {
                     Uri uri = ContentUris.withAppendedId(NetworkProfileContract.Profiles.CONTENT_URI, rowId);
                     getContentResolver().delete(uri, null, null);
                 }
-            })
-            .setNegativeButton(R.string.cancel, null);
-        AlertDialog alert = builder.create();
-        alert.show();
+            }
+        );
     }
 }

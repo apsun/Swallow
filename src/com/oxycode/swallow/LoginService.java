@@ -19,6 +19,7 @@ import android.support.v4.app.TaskStackBuilder;
 import android.text.TextUtils;
 import android.util.Log;
 import com.oxycode.swallow.provider.NetworkProfileContract;
+import com.oxycode.swallow.utils.PreferenceUtils;
 
 import java.io.IOException;
 import java.util.HashSet;
@@ -29,7 +30,7 @@ public class LoginService extends Service {
         private int _tries;
 
         public CheckLoginStatusTask() {
-            _retryCount = Integer.parseInt(_preferences.getString(PREF_KEY_LOGIN_RETRY_COUNT, "2"));
+            _retryCount = PreferenceUtils.getInt(_preferences, PREF_KEY_LOGIN_RETRY_COUNT, 2);
             _tries = 0;
         }
 
@@ -85,7 +86,7 @@ public class LoginService extends Service {
         public PerformLoginTask() {
             _username = _credentials.getString(PREF_KEY_USERNAME, "");
             _password = _credentials.getString(PREF_KEY_PASSWORD, "");
-            _retryCount = Integer.parseInt(_preferences.getString(PREF_KEY_LOGIN_RETRY_COUNT, "2"));
+            _retryCount = PreferenceUtils.getInt(_preferences, PREF_KEY_LOGIN_RETRY_COUNT, 2);
             _showProgressNotification = _preferences.getBoolean(PREF_KEY_SHOW_PROGRESS_NOTIFICATION, true);
             if (_showProgressNotification) {
                 _notification = new Notification.Builder(LoginService.this)
@@ -166,7 +167,7 @@ public class LoginService extends Service {
 
     private static final String TAG = LoginService.class.getSimpleName();
 
-    public static final String PREF_LOGIN_CREDENTIALS = "com.oxycode.swallow.credentials";
+    public static final String PREF_LOGIN_CREDENTIALS = "credentials";
     public static final String PREF_KEY_USERNAME = "username";
     public static final String PREF_KEY_PASSWORD = "password";
 
@@ -494,7 +495,7 @@ public class LoginService extends Service {
     private void enqueueDelayedLoginStatusCheck() {
         // We don't need to worry about running this while the screen is off:
         // Handler#postDelayed() will not run tasks while the device is in deep sleep
-        int delay = Integer.parseInt(_preferences.getString(PREF_KEY_LOGIN_STATUS_CHECK_INTERVAL, "60"));
+        int delay = PreferenceUtils.getInt(_preferences, PREF_KEY_LOGIN_STATUS_CHECK_INTERVAL, 60);
         if (delay > 0) {
             Log.d(TAG, "Enqueued login status check with delay " + delay + " seconds");
             _handler.postDelayed(_checkLoginStatusAction, delay * 1000);

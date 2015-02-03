@@ -1,7 +1,6 @@
 package com.oxycode.swallow;
 
 import android.app.ActionBar;
-import android.app.AlertDialog;
 import android.app.ListActivity;
 import android.content.*;
 import android.net.Uri;
@@ -11,13 +10,12 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.support.v4.app.NavUtils;
-import android.text.Editable;
-import android.text.TextUtils;
-import android.text.TextWatcher;
 import android.util.Log;
 import android.view.*;
 import android.widget.*;
 import com.oxycode.swallow.provider.NetworkProfileContract;
+import com.oxycode.swallow.utils.DialogUtils;
+import com.oxycode.swallow.utils.PreferenceUtils;
 
 import java.util.Collections;
 import java.util.Comparator;
@@ -50,7 +48,7 @@ public class ProfileEditorActivity extends ListActivity {
         }
 
         public ScanResultListAdapter(Comparator<ScanResult> sorter) {
-            _layoutInflater = (LayoutInflater)ProfileEditorActivity.this.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+            _layoutInflater = (LayoutInflater)getSystemService(Context.LAYOUT_INFLATER_SERVICE);
             _resultSorter = sorter;
         }
 
@@ -240,64 +238,7 @@ public class ProfileEditorActivity extends ListActivity {
         }
     }
 
-    private void showAddBssidDialog() {
-        View promptView = getLayoutInflater().inflate(R.layout.textedit_dialog, null);
-        final EditText editText = (EditText)promptView.findViewById(R.id.textedit_dialog_edittext);
-        AlertDialog.Builder builder = new AlertDialog.Builder(this)
-            .setView(promptView)
-            .setTitle(R.string.network_bssid)
-            .setPositiveButton(R.string.add, new DialogInterface.OnClickListener() {
-                @Override
-                public void onClick(DialogInterface dialog, int which) {
-                    onAddBssidDialogFinished(editText.getText().toString());
-                }
-            })
-            .setNegativeButton(R.string.cancel, null);
-
-
-        final AlertDialog alert = builder.create();
-
-        // Initially disable the add button (since the textbox is empty)
-        alert.setOnShowListener(new DialogInterface.OnShowListener() {
-            @Override
-            public void onShow(DialogInterface dialog) {
-                Button button = alert.getButton(DialogInterface.BUTTON_POSITIVE);
-                button.setEnabled(false);
-            }
-        });
-
-        // Enable/disable the save button depending on whether the textbox is empty
-        editText.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) { }
-
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) { }
-
-            @Override
-            public void afterTextChanged(Editable s) {
-                Button button = alert.getButton(DialogInterface.BUTTON_POSITIVE);
-                boolean hasText = !TextUtils.isEmpty(s);
-                button.setEnabled(hasText);
-            }
-        });
-
-        // Display the keyboard when the alert is shown
-        alert.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE);
-        alert.show();
-    }
-
-    private void showInvalidBssidDialog() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this)
-            .setTitle(R.string.invalid_bssid_title)
-            .setMessage(R.string.invalid_bssid_message)
-            .setNeutralButton(R.string.ok, null);
-
-        AlertDialog alert = builder.create();
-        alert.show();
-    }
-
-    private void onAddBssidDialogFinished(String bssid) {
+    private void addBssid(String bssid) {
         bssid = bssid.toLowerCase();
         Matcher matcher = BSSID_PATTERN.matcher(bssid);
         if (matcher.matches()) {
@@ -307,8 +248,7 @@ public class ProfileEditorActivity extends ListActivity {
             Uri uri = getContentResolver().insert(NetworkProfileContract.Bssids.CONTENT_URI, values);
             long bssidRowId = ContentUris.parseId(uri);
             if (bssidRowId < 0) {
-                // TODO: Can this happen? (Does ON CONFLICT IGNORE return -1 as a row?)
-                Log.e(TAG, "WTF!");
+                Log.d(TAG, "BSSID database insert returned " + bssidRowId + ", probably duplicate");
             }
         } else {
             showInvalidBssidDialog();
@@ -335,7 +275,7 @@ public class ProfileEditorActivity extends ListActivity {
         });
 
         boolean showShsOnly = _preferences.getBoolean(PREF_KEY_SHOW_SHS_ONLY, true);
-        int minSignalStrength = Integer.parseInt(_preferences.getString(PREF_KEY_MINIMUM_SIGNAL_STRENGTH, "-80"));
+        int minSignalStrength = PreferenceUtils.getInt(_preferences, PREF_KEY_MINIMUM_SIGNAL_STRENGTH, -80);
 
         Log.d(TAG, "Found WiFi networks:");
         for (ScanResult result : results) {
@@ -352,7 +292,7 @@ public class ProfileEditorActivity extends ListActivity {
         // Make sure we don't try to scan multiple times
         cancelEnqueuedWifiScan();
 
-        int delay = Integer.parseInt(_preferences.getString(PREF_KEY_SCAN_RATE, "2"));
+        int delay = PreferenceUtils.getInt(_preferences, PREF_KEY_SCAN_RATE, 2);
         if (delay > 0) {
             Log.d(TAG, "Enqueued WiFi scan with delay " + delay + " seconds");
             _handler.postDelayed(_scanWifiNetworksTask, delay * 1000);
@@ -361,5 +301,27 @@ public class ProfileEditorActivity extends ListActivity {
 
     private void cancelEnqueuedWifiScan() {
         _handler.removeCallbacks(_scanWifiNetworksTask);
+    }
+
+    private void showAddBssidDialog() {
+        DialogUtils.showTextEntryDialog(this,
+            0,
+            getString(R.string.network_bssid),
+            getString(R.string.add),
+            new DialogUtils.TextEntryDialogHandler() {
+                @Override
+                public void onSubmit(String text) {
+                    addBssid(text);
+                }
+            }
+        );
+    }
+
+    private void showInvalidBssidDialog() {
+        DialogUtils.showMessageDialog(this,
+            0,
+            getString(R.string.invalid_bssid_title),
+            getString(R.string.invalid_bssid_message)
+        );
     }
 }

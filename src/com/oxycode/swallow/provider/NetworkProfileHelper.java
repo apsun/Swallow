@@ -22,8 +22,8 @@ public class NetworkProfileHelper extends SQLiteOpenHelper {
     public static final String BSSID_KEY_PROFILE_ID = "profile_id";
     public static final String BSSID_KEY_BSSID = "bssid";
 
-    private static final String DATABASE_NAME = "com.oxycode.swallow.NetworkProfiles.db";
-    private static final int DATABASE_VERSION = 5;
+    private static final String DATABASE_NAME = "networkprofiles.db";
+    private static final int DATABASE_VERSION = 1;
 
     private static final String CREATE_PROFILE_TABLE =
         "CREATE TABLE " + PROFILE_TABLE + "(" +

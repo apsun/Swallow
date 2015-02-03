@@ -1,7 +1,6 @@
 package com.oxycode.swallow;
 
 import android.app.Activity;
-import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.ComponentName;
 import android.content.DialogInterface;
@@ -19,6 +18,7 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.View;
 import android.widget.*;
+import com.oxycode.swallow.utils.DialogUtils;
 
 import java.io.IOException;
 
@@ -172,39 +172,6 @@ public class MainActivity extends Activity {
     }
 
     @Override
-    public void onBackPressed() {
-        String username = getTextboxUsername();
-        String password = getTextboxPassword();
-
-        String prefUsername = getPreferencesUsername();
-        String prefPassword = getPreferencesPassword();
-
-        if (!username.equals(prefUsername) || !password.equals(prefPassword)) {
-            AlertDialog.Builder builder = new AlertDialog.Builder(this)
-                .setIcon(R.drawable.ic_action_warning)
-                .setTitle(R.string.unsaved_credentials_title)
-                .setMessage(R.string.unsaved_credentials_message)
-                .setPositiveButton(R.string.exit, new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        if (_runningTask != null) {
-                            _runningTask.cancel(true);
-                        }
-                        MainActivity.super.onBackPressed();
-                    }
-                })
-                .setNegativeButton(R.string.cancel, null);
-            AlertDialog alert = builder.create();
-            alert.show();
-        } else {
-            if (_runningTask != null) {
-                _runningTask.cancel(true);
-            }
-            super.onBackPressed();
-        }
-    }
-
-    @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.main_options_menu, menu);
@@ -219,6 +186,21 @@ public class MainActivity extends Activity {
             }
         });
         return super.onCreateOptionsMenu(menu);
+    }
+
+    @Override
+    public void onBackPressed() {
+        String username = getTextboxUsername();
+        String password = getTextboxPassword();
+
+        String prefUsername = getPreferencesUsername();
+        String prefPassword = getPreferencesPassword();
+
+        if (!username.equals(prefUsername) || !password.equals(prefPassword)) {
+            showConfirmExitDialog();
+        } else {
+            exit();
+        }
     }
 
     private String getTextboxUsername() {
@@ -248,36 +230,11 @@ public class MainActivity extends Activity {
         Log.d(TAG, "Saved login credentials");
     }
 
-    private void showSaveAnywaysDialog(LoginClient.LoginResult result, final String username, final String password) {
-        int titleId = 0;
-        switch (result) {
-            case ACCOUNT_BANNED:
-                titleId = R.string.confirm_save_message_account_banned;
-                break;
-            case INCORRECT_CREDENTIALS:
-                titleId = R.string.confirm_save_message_incorrect_credentials;
-                break;
-            case UNKNOWN:
-                titleId = R.string.confirm_save_message_unknown_result;
-                break;
-            case EXCEEDED_MAX_RETRIES:
-                titleId = R.string.confirm_save_message_exceeded_max_retries;
-                break;
+    private void exit() {
+        if (_runningTask != null) {
+            _runningTask.cancel(true);
         }
-
-        AlertDialog.Builder builder = new AlertDialog.Builder(this)
-            .setIcon(R.drawable.ic_action_warning)
-            .setTitle(R.string.confirm_save_title)
-            .setMessage(getString(titleId) + "\n\n" + getString(R.string.confirm_save_message_footer))
-            .setPositiveButton(R.string.save, new DialogInterface.OnClickListener() {
-                @Override
-                public void onClick(DialogInterface dialog, int which) {
-                    saveCredentials(username, password);
-                }
-            })
-            .setNegativeButton(R.string.cancel, null);
-        AlertDialog alert = builder.create();
-        alert.show();
+        super.onBackPressed();
     }
 
     private void conditionalStartLoginService(Intent loginIntent) {
@@ -328,5 +285,51 @@ public class MainActivity extends Activity {
                 Log.w(TAG, "Unknown receiver state: " + status);
                 return false;
         }
+    }
+
+    private void showConfirmExitDialog() {
+        DialogUtils.showConfirmationDialog(this,
+            R.drawable.ic_action_warning,
+            getString(R.string.unsaved_credentials_title),
+            getString(R.string.unsaved_credentials_message),
+            getString(R.string.exit),
+            new DialogUtils.ConfirmationDialogHandler() {
+                @Override
+                public void onConfirm() {
+                    exit();
+                }
+            }
+        );
+    }
+
+    private void showSaveAnywaysDialog(LoginClient.LoginResult result, final String username, final String password) {
+        int titleId = 0;
+        switch (result) {
+            case ACCOUNT_BANNED:
+                titleId = R.string.confirm_save_message_account_banned;
+                break;
+            case INCORRECT_CREDENTIALS:
+                titleId = R.string.confirm_save_message_incorrect_credentials;
+                break;
+            case UNKNOWN:
+                titleId = R.string.confirm_save_message_unknown_result;
+                break;
+            case EXCEEDED_MAX_RETRIES:
+                titleId = R.string.confirm_save_message_exceeded_max_retries;
+                break;
+        }
+
+        DialogUtils.showConfirmationDialog(this,
+            R.drawable.ic_action_warning,
+            getString(R.string.confirm_save_title),
+            getString(titleId) + "\n\n" + getString(R.string.confirm_save_message_footer),
+            getString(R.string.save),
+            new DialogUtils.ConfirmationDialogHandler() {
+                @Override
+                public void onConfirm() {
+                    saveCredentials(username, password);
+                }
+            }
+        );
     }
 }
