@@ -70,7 +70,7 @@ public class MainActivity extends Activity {
                 case ACCOUNT_BANNED:
                 case EXCEEDED_MAX_RETRIES:
                 case UNKNOWN:
-                    showSaveAnywaysDialog(result, _username, _password);
+                    showConfirmSaveDialog(result, _username, _password);
                     break;
             }
         }
@@ -302,7 +302,7 @@ public class MainActivity extends Activity {
         );
     }
 
-    private void showSaveAnywaysDialog(LoginClient.LoginResult result, final String username, final String password) {
+    private void showConfirmSaveDialog(LoginClient.LoginResult result, final String username, final String password) {
         int titleId = 0;
         switch (result) {
             case ACCOUNT_BANNED:

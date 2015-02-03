@@ -101,7 +101,6 @@ public final class DialogUtils {
 
         final AlertDialog alert = builder.create();
 
-        // Initially disable the positive button (since the textbox is empty)
         alert.setOnShowListener(new DialogInterface.OnShowListener() {
             @Override
             public void onShow(DialogInterface dialog) {
@@ -111,7 +110,6 @@ public final class DialogUtils {
             }
         });
 
-        // Enable/disable the positive button depending on whether the textbox is empty
         editText.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) { }

@@ -104,8 +104,13 @@ public class NetworkProfileProvider extends ContentProvider {
                 throw new IllegalArgumentException("Unknown URI: " + uri);
         }
 
-        Uri newUri = ContentUris.withAppendedId(NetworkProfileContract.CONTENT_URI, row);
-        getContext().getContentResolver().notifyChange(newUri, null);
+        Uri newUri = ContentUris.withAppendedId(NetworkProfileContract.Bssids.CONTENT_URI, row);
+
+        // Only notify change if insert succeeded
+        if (row >= 0) {
+            getContext().getContentResolver().notifyChange(newUri, null);
+        }
+
         return newUri;
     }
 
