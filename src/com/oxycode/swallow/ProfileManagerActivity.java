@@ -15,7 +15,6 @@ import com.oxycode.swallow.provider.NetworkProfileContract;
 import com.oxycode.swallow.utils.DialogUtils;
 
 public class ProfileManagerActivity extends ListActivity implements LoaderManager.LoaderCallbacks<Cursor> {
-
     // This custom adapter adds support for our checkbox view.
     // TODO: Change this to directly extend ResourceCursorAdapter,
     // TODO: so that we can do things like cursor.getCount()

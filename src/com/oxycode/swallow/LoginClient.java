@@ -39,6 +39,7 @@ public final class LoginClient {
     }
 
     private static final String TAG = LoginClient.class.getSimpleName();
+
     private static final String LOGIN_PAGE_URL = "http://192.255.255.94/";
     private static final String LOGOUT_PAGE_URL = "http://192.255.255.94/F.htm";
     private static final String PAGE_ENCODING = "GB2312";

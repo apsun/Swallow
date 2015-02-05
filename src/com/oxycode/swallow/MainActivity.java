@@ -81,15 +81,9 @@ public class MainActivity extends Activity {
     private static final String INST_USERNAME = "username";
     private static final String INST_PASSWORD = "password";
 
-    private Switch _enabledSwitch;
+    private SharedPreferences _credentials;
     private EditText _usernameTextBox;
     private EditText _passwordTextBox;
-    private Button _saveCredentialsButton;
-    private Button _profileManagerButton;
-    private Button _settingsButton;
-
-    private SharedPreferences _preferences;
-    private SharedPreferences _credentials;
 
     private AsyncTask<?, ?, ?> _runningTask;
 
@@ -99,14 +93,10 @@ public class MainActivity extends Activity {
         setContentView(R.layout.main_activity);
 
         PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
-        _preferences = PreferenceManager.getDefaultSharedPreferences(this);
         _credentials = getSharedPreferences(LoginService.PREF_LOGIN_CREDENTIALS, MODE_PRIVATE);
 
         _usernameTextBox = (EditText)findViewById(R.id.username_edittext);
         _passwordTextBox = (EditText)findViewById(R.id.password_edittext);
-        _saveCredentialsButton = (Button)findViewById(R.id.save_credentials_button);
-        _profileManagerButton = (Button)findViewById(R.id.profile_manager_button);
-        _settingsButton = (Button)findViewById(R.id.settings_button);
 
         if (savedInstanceState != null) {
             _usernameTextBox.setText(savedInstanceState.getString(INST_USERNAME));
@@ -118,7 +108,8 @@ public class MainActivity extends Activity {
             Log.d(TAG, "Loaded instance state from preferences");
         }
 
-        _saveCredentialsButton.setOnClickListener(new View.OnClickListener() {
+        Button saveCredentialsButton = (Button)findViewById(R.id.save_credentials_button);
+        saveCredentialsButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 String username = getTextboxUsername();
@@ -137,7 +128,8 @@ public class MainActivity extends Activity {
             }
         });
 
-        _profileManagerButton.setOnClickListener(new View.OnClickListener() {
+        Button profileManagerButton = (Button)findViewById(R.id.profile_manager_button);
+        profileManagerButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 Intent intent = new Intent(MainActivity.this, ProfileManagerActivity.class);
@@ -145,7 +137,8 @@ public class MainActivity extends Activity {
             }
         });
 
-        _settingsButton.setOnClickListener(new View.OnClickListener() {
+        Button settingsButton = (Button)findViewById(R.id.settings_button);
+        settingsButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 Intent intent = new Intent(MainActivity.this, SettingsActivity.class);
@@ -177,9 +170,9 @@ public class MainActivity extends Activity {
         inflater.inflate(R.menu.main_options_menu, menu);
 
         View switchView = menu.findItem(R.id.enable_switch_view).getActionView();
-        _enabledSwitch = (Switch)switchView.findViewById(R.id.enable_auto_login_switch);
-        _enabledSwitch.setChecked(getReceiverEnabled());
-        _enabledSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+        Switch enabledSwitch = (Switch)switchView.findViewById(R.id.enable_auto_login_switch);
+        enabledSwitch.setChecked(getReceiverEnabled());
+        enabledSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 setReceiverEnabled(isChecked);

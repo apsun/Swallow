@@ -189,16 +189,15 @@ public class LoginService extends Service {
 
     private SharedPreferences _preferences;
     private SharedPreferences _credentials;
-    private HashSet<String> _whitelistedBssids;
-
     private WifiManager _wifiManager;
     private NotificationManager _notificationManager;
     private Handler _handler;
     private Runnable _checkLoginStatusAction;
     private BroadcastReceiver _broadcastReceiver;
     private ContentObserver _contentObserver;
-    private boolean _whitelistCacheDirty;
 
+    private HashSet<String> _whitelistedBssids;
+    private boolean _whitelistCacheDirty;
     private AsyncTask<?, ?, ?> _runningTask;
 
     @Override
@@ -208,6 +207,10 @@ public class LoginService extends Service {
 
     @Override
     public void onCreate() {
+        // Load preferences and credentials
+        _preferences = PreferenceManager.getDefaultSharedPreferences(this);
+        _credentials = getSharedPreferences(PREF_LOGIN_CREDENTIALS, MODE_PRIVATE);
+
         // Get system services
         _wifiManager = (WifiManager)getSystemService(Context.WIFI_SERVICE);
         _notificationManager = (NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE);
@@ -260,12 +263,9 @@ public class LoginService extends Service {
 
         ContentResolver contentResolver = getContentResolver();
         contentResolver.registerContentObserver(NetworkProfileContract.Bssids.CONTENT_URI, true, _contentObserver);
+
         _whitelistedBssids = new HashSet<String>();
         _whitelistCacheDirty = true;
-
-        // Load preferences and credentials
-        _preferences = PreferenceManager.getDefaultSharedPreferences(this);
-        _credentials = getSharedPreferences(PREF_LOGIN_CREDENTIALS, MODE_PRIVATE);
 
         Log.d(TAG, "Started login service");
     }
