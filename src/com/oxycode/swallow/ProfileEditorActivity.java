@@ -17,6 +17,7 @@ import com.oxycode.swallow.provider.NetworkProfileContract;
 import com.oxycode.swallow.utils.DialogUtils;
 import com.oxycode.swallow.utils.PreferenceUtils;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -33,9 +34,8 @@ public class ProfileEditorActivity extends ListActivity {
     }
 
     private class ScanResultListAdapter extends BaseAdapter implements CompoundButton.OnCheckedChangeListener {
-        private LayoutInflater _layoutInflater;
         private Comparator<ScanResult> _resultSorter;
-        private List<ScanResult> _results;
+        private ArrayList<ScanResult> _results;
 
         public ScanResultListAdapter() {
             this(new Comparator<ScanResult>() {
@@ -48,14 +48,33 @@ public class ProfileEditorActivity extends ListActivity {
         }
 
         public ScanResultListAdapter(Comparator<ScanResult> sorter) {
-            _layoutInflater = (LayoutInflater)getSystemService(Context.LAYOUT_INFLATER_SERVICE);
             _resultSorter = sorter;
+            _results = new ArrayList<ScanResult>();
         }
 
         public void updateResults(List<ScanResult> results) {
             _results.clear();
-            _results.addAll(results);
+
+            boolean showShsOnly = _preferences.getBoolean(PREF_KEY_SHOW_SHS_ONLY, true);
+            int minSignalStrength = PreferenceUtils.getInt(_preferences, PREF_KEY_MINIMUM_SIGNAL_STRENGTH, -80);
+
+            for (ScanResult result : results) {
+                // Ignore non-shs networks?
+                if (showShsOnly && !"shs".equalsIgnoreCase(result.SSID)) {
+                    continue;
+                }
+
+                // Is network signal strong enough?
+                if (minSignalStrength > result.level) {
+                    continue;
+                }
+
+                _results.add(result);
+            }
+
+            // Sort the networks by signal strength
             Collections.sort(_results, _resultSorter);
+
             notifyDataSetChanged();
         }
 
@@ -78,7 +97,8 @@ public class ProfileEditorActivity extends ListActivity {
         public View getView(int position, View convertView, ViewGroup parent) {
             ScanResultViewHolder viewHolder;
             if (convertView == null) {
-                convertView = _layoutInflater.inflate(R.layout.network_scanresult_listitem, null);
+                LayoutInflater layoutInflater = getLayoutInflater();
+                convertView = layoutInflater.inflate(R.layout.network_scanresult_listitem, null);
                 viewHolder = new ScanResultViewHolder();
                 viewHolder.enabledCheckBox = (CheckBox)convertView.findViewById(R.id.network_scan_enabled_checkbox);
                 viewHolder.enabledCheckBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
@@ -132,6 +152,7 @@ public class ProfileEditorActivity extends ListActivity {
     private Runnable _scanWifiNetworksTask;
     private WifiManager _wifiManager;
     private BroadcastReceiver _scanReceiver;
+    private ScanResultListAdapter _listAdapter;
     private long _profileRowId;
 
     @Override
@@ -171,6 +192,9 @@ public class ProfileEditorActivity extends ListActivity {
                 }
             }
         };
+
+        _listAdapter = new ScanResultListAdapter();
+        setListAdapter(_listAdapter);
 
         Button addManuallyButton = (Button)findViewById(R.id.add_manually_button);
         addManuallyButton.setOnClickListener(new View.OnClickListener() {
@@ -258,26 +282,7 @@ public class ProfileEditorActivity extends ListActivity {
 
     private void onWifiScanCompleted() {
         List<ScanResult> results = _wifiManager.getScanResults();
-        Collections.sort(results, new Comparator<ScanResult>() {
-            @Override
-            public int compare(ScanResult lhs, ScanResult rhs) {
-                // Compare by subtracting lhs from rhs, since we want
-                // the higher strength networks to come first
-                return rhs.level - lhs.level;
-            }
-        });
-
-        boolean showShsOnly = _preferences.getBoolean(PREF_KEY_SHOW_SHS_ONLY, true);
-        int minSignalStrength = PreferenceUtils.getInt(_preferences, PREF_KEY_MINIMUM_SIGNAL_STRENGTH, -80);
-
-        Log.d(TAG, "Found WiFi networks:");
-        for (ScanResult result : results) {
-            if (showShsOnly && !"shs".equalsIgnoreCase(result.SSID)) continue;
-            if (minSignalStrength > result.level) continue;
-            Log.d(TAG, String.format("> %s (%s): %d", result.SSID, result.BSSID, result.level));
-            // TODO: Add to list
-        }
-
+        _listAdapter.updateResults(results);
         enqueueWifiScan();
     }
 

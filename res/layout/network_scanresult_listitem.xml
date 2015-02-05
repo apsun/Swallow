@@ -11,7 +11,6 @@
         android:layout_alignParentBottom="true"
         android:layout_alignParentTop="true"
         android:checked="true"/>
-
     <TextView
         android:id="@+id/network_scan_detail_textview"
         android:layout_width="fill_parent"
@@ -20,18 +19,15 @@
         android:layout_toRightOf="@+id/network_scan_enabled_checkbox"
         android:layout_toLeftOf="@+id/network_scan_level_textview"
         android:singleLine="true"
-        android:textSize="16sp"
         android:textColor="@android:color/secondary_text_dark"/>
     <TextView
+        android:id="@+id/network_scan_bssid_textview"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:layout_above="@+id/network_scan_detail_textview"
-        android:layout_toRightOf="@+id/network_scan_enabled_checkbox"
         android:layout_alignParentTop="true"
+        android:layout_toRightOf="@+id/network_scan_enabled_checkbox"
         android:layout_toLeftOf="@+id/network_scan_level_imageview"
-        android:textSize="20sp"
-        android:gravity="center_vertical"
-        android:id="@+id/network_scan_bssid_textview"
+        android:singleLine="true"
         android:textColor="@android:color/primary_text_dark"/>
     <ImageView
         android:id="@+id/network_scan_level_imageview"
@@ -49,6 +45,5 @@
         android:layout_alignParentRight="false"
         android:layout_alignLeft="@+id/network_scan_level_imageview"
         android:layout_alignRight="@+id/network_scan_level_imageview"
-        android:gravity="center_horizontal"
         android:textAppearance="?android:attr/textAppearanceSmall"/>
 </RelativeLayout>
