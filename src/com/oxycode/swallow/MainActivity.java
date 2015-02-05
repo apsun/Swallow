@@ -84,7 +84,6 @@ public class MainActivity extends Activity {
     private SharedPreferences _credentials;
     private EditText _usernameTextBox;
     private EditText _passwordTextBox;
-
     private AsyncTask<?, ?, ?> _runningTask;
 
     @Override

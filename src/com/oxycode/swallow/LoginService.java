@@ -195,7 +195,6 @@ public class LoginService extends Service {
     private Runnable _checkLoginStatusAction;
     private BroadcastReceiver _broadcastReceiver;
     private ContentObserver _contentObserver;
-
     private HashSet<String> _whitelistedBssids;
     private boolean _whitelistCacheDirty;
     private AsyncTask<?, ?, ?> _runningTask;

@@ -118,24 +118,20 @@ public class ProfileEditorActivity extends ListActivity {
     }
 
     private static final String TAG = ProfileEditorActivity.class.getSimpleName();
+
+    public static final String EXTRA_PROFILE_ROW_ID = "profileId";
+
     private static final String PREF_KEY_SHOW_SHS_ONLY = "pref_show_shs_only";
     private static final String PREF_KEY_SCAN_RATE = "pref_scan_rate";
     private static final String PREF_KEY_MINIMUM_SIGNAL_STRENGTH = "pref_minimum_signal_strength";
 
-    public static final String EXTRA_PROFILE_ROW_ID = "profileId";
-
     private static final Pattern BSSID_PATTERN = Pattern.compile("^([0-9a-f]{2}:){5}([0-9a-f]{2})$");
 
+    private SharedPreferences _preferences;
     private Handler _handler;
     private Runnable _scanWifiNetworksTask;
     private WifiManager _wifiManager;
     private BroadcastReceiver _scanReceiver;
-
-    private Button _addManuallyButton;
-    private Button _addAllInRangeButton;
-
-    private SharedPreferences _preferences;
-
     private long _profileRowId;
 
     @Override
@@ -148,6 +144,8 @@ public class ProfileEditorActivity extends ListActivity {
         if (actionBar != null) {
             actionBar.setDisplayHomeAsUpEnabled(true);
         }
+
+        _preferences = PreferenceManager.getDefaultSharedPreferences(this);
 
         // Get the profile we're editing from the intent
         _profileRowId = getIntent().getLongExtra(EXTRA_PROFILE_ROW_ID, -1);
@@ -163,8 +161,7 @@ public class ProfileEditorActivity extends ListActivity {
             }
         };
 
-        // Broadcast receiver that notifies us when a
-        // WiFi scan has completed
+        // Broadcast receiver that notifies us when a WiFi scan has completed
         _scanReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
@@ -175,26 +172,21 @@ public class ProfileEditorActivity extends ListActivity {
             }
         };
 
-        _addManuallyButton = (Button)findViewById(R.id.add_manually_button);
-        _addAllInRangeButton = (Button)findViewById(R.id.add_all_in_range_button);
-
-        // Hook up the "add manually" button to the BSSID entry dialog
-        _addManuallyButton.setOnClickListener(new View.OnClickListener() {
+        Button addManuallyButton = (Button)findViewById(R.id.add_manually_button);
+        addManuallyButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 showAddBssidDialog();
             }
         });
 
-        _addAllInRangeButton.setOnClickListener(new View.OnClickListener() {
+        Button addAllInRangeButton = (Button)findViewById(R.id.add_all_in_range_button);
+        addAllInRangeButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 addAllNetworksInRange();
             }
         });
-
-        // Get shared preferences (we only read the scanner preferences)
-        _preferences = PreferenceManager.getDefaultSharedPreferences(this);
     }
 
     @Override
@@ -202,7 +194,8 @@ public class ProfileEditorActivity extends ListActivity {
         super.onResume();
 
         // Begin scanning for WiFi networks
-        registerReceiver(_scanReceiver, new IntentFilter(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION));
+        IntentFilter filter = new IntentFilter(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION);
+        registerReceiver(_scanReceiver, filter);
         startWifiScan();
     }
 
