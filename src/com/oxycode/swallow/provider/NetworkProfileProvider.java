@@ -1,26 +1,23 @@
 package com.oxycode.swallow.provider;
 
-import android.content.ContentProvider;
-import android.content.ContentUris;
-import android.content.ContentValues;
-import android.content.UriMatcher;
+import android.content.*;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteQueryBuilder;
 import android.net.Uri;
 import android.text.TextUtils;
-import android.util.Log;
 
 public class NetworkProfileProvider extends ContentProvider {
     private static final String TAG = NetworkProfileProvider.class.getSimpleName();
 
     private static final UriMatcher URI_MATCHER;
 
-    private static final int PROFILES_ID = 100;
-    private static final int PROFILE_ID = 110;
-    private static final int BSSIDS_ID = 200;
-    private static final int BSSID_ID = 210;
-    private static final int PROFILES_JOIN_BSSIDS_ID = 300;
+    private static final int PROFILES_ID = 0;
+    private static final int PROFILE_ID = 1;
+    private static final int BSSIDS_ID = 2;
+    private static final int BSSID_ID = 3;
+    private static final int PROFILE_BSSIDS_ID = 4;
+    private static final int PROFILE_BSSID_ID = 5;
 
     static {
         URI_MATCHER = new UriMatcher(UriMatcher.NO_MATCH);
@@ -28,7 +25,8 @@ public class NetworkProfileProvider extends ContentProvider {
         URI_MATCHER.addURI(NetworkProfileContract.AUTHORITY, NetworkProfileContract.Profiles.TABLE + "/#", PROFILE_ID);
         URI_MATCHER.addURI(NetworkProfileContract.AUTHORITY, NetworkProfileContract.Bssids.TABLE, BSSIDS_ID);
         URI_MATCHER.addURI(NetworkProfileContract.AUTHORITY, NetworkProfileContract.Bssids.TABLE + "/#", BSSID_ID);
-        URI_MATCHER.addURI(NetworkProfileContract.AUTHORITY, NetworkProfileContract.ProfilesJoinBssids.TABLE, PROFILES_JOIN_BSSIDS_ID);
+        URI_MATCHER.addURI(NetworkProfileContract.AUTHORITY, NetworkProfileContract.ProfileBssids.TABLE, PROFILE_BSSIDS_ID);
+        URI_MATCHER.addURI(NetworkProfileContract.AUTHORITY, NetworkProfileContract.ProfileBssids.TABLE + "/#", PROFILE_BSSID_ID);
     }
 
     private NetworkProfileHelper _databaseHelper;
@@ -55,7 +53,9 @@ public class NetworkProfileProvider extends ContentProvider {
             case BSSIDS_ID:
                 queryBuilder.setTables(NetworkProfileContract.Bssids.TABLE);
                 break;
-            case PROFILES_JOIN_BSSIDS_ID:
+            case PROFILE_BSSID_ID:
+                queryBuilder.appendWhere(NetworkProfileContract.ProfileBssids.BSSID_ID + "=" + uri.getLastPathSegment());
+            case PROFILE_BSSIDS_ID:
                 queryBuilder.setTables(
                     NetworkProfileContract.Bssids.TABLE + " INNER JOIN " + NetworkProfileContract.Profiles.TABLE + " ON " +
                     NetworkProfileContract.Profiles.TABLE + "." + NetworkProfileContract.Profiles._ID + "=" +
@@ -63,29 +63,12 @@ public class NetworkProfileProvider extends ContentProvider {
                 );
                 break;
             default:
-                throw new IllegalArgumentException("Unknown URI: " + uri);
+                throw new IllegalArgumentException("Invalid query URI: " + uri);
         }
 
         Cursor cursor = queryBuilder.query(db, projection, selection, selectionArgs, null, null, sortOrder);
         cursor.setNotificationUri(getContext().getContentResolver(), uri);
         return cursor;
-    }
-
-    @Override
-    public String getType(Uri uri) {
-        int uriType = URI_MATCHER.match(uri);
-        switch (uriType) {
-            case PROFILE_ID:
-                return NetworkProfileContract.Profiles.CONTENT_ITEM_TYPE;
-            case PROFILES_ID:
-                return NetworkProfileContract.Profiles.CONTENT_TYPE;
-            case BSSID_ID:
-                return NetworkProfileContract.Bssids.CONTENT_ITEM_TYPE;
-            case BSSIDS_ID:
-                return NetworkProfileContract.Bssids.CONTENT_TYPE;
-            default:
-                return null;
-        }
     }
 
     @Override
@@ -101,14 +84,17 @@ public class NetworkProfileProvider extends ContentProvider {
                 row = db.insert(NetworkProfileContract.Bssids.TABLE, null, values);
                 break;
             default:
-                throw new IllegalArgumentException("Unknown URI: " + uri);
+                throw new IllegalArgumentException("Invalid insert URI: " + uri);
         }
 
         Uri newUri = ContentUris.withAppendedId(NetworkProfileContract.Bssids.CONTENT_URI, row);
 
         // Only notify change if insert succeeded
+        // No need to care about notifying BSSID URI,
+        // since a newly-created profile must be empty.
         if (row >= 0) {
-            getContext().getContentResolver().notifyChange(newUri, null);
+            ContentResolver contentResolver = getContext().getContentResolver();
+            contentResolver.notifyChange(newUri, null);
         }
 
         return newUri;
@@ -131,18 +117,20 @@ public class NetworkProfileProvider extends ContentProvider {
                 deletedRows = db.delete(NetworkProfileContract.Bssids.TABLE, selection, selectionArgs);
                 break;
             default:
-                throw new IllegalArgumentException("Unknown URI: " + uri);
+                throw new IllegalArgumentException("Invalid delete URI: " + uri);
         }
 
         // db.delete() returns 0 when selection is null
         // (but it still deletes all rows)
         if (selection == null || deletedRows > 0) {
-            getContext().getContentResolver().notifyChange(uri, null);
+            ContentResolver contentResolver = getContext().getContentResolver();
+            contentResolver.notifyChange(uri, null);
+
+            // If a profile was deleted, notify observers that
+            // the list of BSSIDs has also changed
             if (uriType == PROFILE_ID || uriType == PROFILES_ID) {
-                // Also notify BSSID URI's, because deleting a profile
-                // deletes the BSSID's within it
-                // TODO: Implement this
-                Log.w(TAG, "Need update!");
+                Uri bssidsUri = NetworkProfileContract.Bssids.CONTENT_URI;
+                contentResolver.notifyChange(bssidsUri, null);
             }
         }
         return deletedRows;
@@ -165,18 +153,42 @@ public class NetworkProfileProvider extends ContentProvider {
                 updatedRows = db.update(NetworkProfileContract.Bssids.TABLE, values, selection, selectionArgs);
                 break;
             default:
-                throw new IllegalArgumentException("Unknown URI: " + uri);
+                throw new IllegalArgumentException("Invalid update URI: " + uri);
         }
 
         if (updatedRows > 0) {
-            getContext().getContentResolver().notifyChange(uri, null);
+            ContentResolver contentResolver = getContext().getContentResolver();
+            contentResolver.notifyChange(uri, null);
+
+            // If a profile was updated, notify observers that
+            // the list of BSSIDs has also changed
             if (uriType == PROFILE_ID || uriType == PROFILES_ID) {
-                // Also notify BSSID URI's, when 'enabled' flag is updated
-                // TODO: Implement this
-                Log.w(TAG, "Need update!");
+                Uri bssidsUri = NetworkProfileContract.Bssids.CONTENT_URI;
+                contentResolver.notifyChange(bssidsUri, null);
             }
         }
         return updatedRows;
+    }
+
+    @Override
+    public String getType(Uri uri) {
+        int uriType = URI_MATCHER.match(uri);
+        switch (uriType) {
+            case PROFILE_ID:
+                return NetworkProfileContract.Profiles.CONTENT_ITEM_TYPE;
+            case PROFILES_ID:
+                return NetworkProfileContract.Profiles.CONTENT_TYPE;
+            case BSSID_ID:
+                return NetworkProfileContract.Bssids.CONTENT_ITEM_TYPE;
+            case BSSIDS_ID:
+                return NetworkProfileContract.Bssids.CONTENT_TYPE;
+            case PROFILE_BSSID_ID:
+                return NetworkProfileContract.ProfileBssids.CONTENT_ITEM_TYPE;
+            case PROFILE_BSSIDS_ID:
+                return NetworkProfileContract.ProfileBssids.CONTENT_TYPE;
+            default:
+                return null;
+        }
     }
 
     private String getCombinedSelectionString(String idColumnName, String rowId, String selection) {

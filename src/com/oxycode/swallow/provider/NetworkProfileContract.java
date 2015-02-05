@@ -30,16 +30,21 @@ public final class NetworkProfileContract {
         public static final Uri CONTENT_URI = Uri.withAppendedPath(NetworkProfileContract.CONTENT_URI, Bssids.TABLE);
     }
 
-    public static final class ProfilesJoinBssids implements BaseColumns {
-        public static final String CONTENT_TYPE = ContentResolver.CURSOR_DIR_BASE_TYPE + "/bssid2";
-        public static final String CONTENT_ITEM_TYPE = ContentResolver.CURSOR_ITEM_BASE_TYPE + "/bssid2";
+    public static final class ProfileBssids implements BaseColumns {
+        public static final String CONTENT_TYPE = ContentResolver.CURSOR_DIR_BASE_TYPE + "/profile-bssid";
+        public static final String CONTENT_ITEM_TYPE = ContentResolver.CURSOR_ITEM_BASE_TYPE + "/profile-bssid";
 
-        public static final String TABLE = "profiles_plus_bssids";
+        // These values are for convenience only! They do not represent any
+        // real table columns; they are shortcuts to the respective columns
+        // in the Profiles and Bssids classes. Be sure to use those when iterating
+        // the returned cursor!
+        public static final String TABLE = "profile_bssids";
         public static final String PROFILE_ID = Bssids.TABLE + "." + Bssids.PROFILE_ID;
         public static final String PROFILE_NAME = Profiles.TABLE + "." + Profiles.NAME;
         public static final String PROFILE_ENABLED = Profiles.TABLE + "." + Profiles.ENABLED;
+        public static final String BSSID_ID = Bssids.TABLE + "." + Bssids._ID;
         public static final String BSSID = Bssids.TABLE + "." + Bssids.BSSID;
 
-        public static final Uri CONTENT_URI = Uri.withAppendedPath(NetworkProfileContract.CONTENT_URI, ProfilesJoinBssids.TABLE);
+        public static final Uri CONTENT_URI = Uri.withAppendedPath(NetworkProfileContract.CONTENT_URI, ProfileBssids.TABLE);
     }
 }

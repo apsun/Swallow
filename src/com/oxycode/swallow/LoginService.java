@@ -243,17 +243,11 @@ public class LoginService extends Service {
         };
 
         // Register broadcast receiver
-        IntentFilter filter = new IntentFilter();
-        filter.addAction(WifiManager.SUPPLICANT_STATE_CHANGED_ACTION);
+        IntentFilter filter = new IntentFilter(WifiManager.SUPPLICANT_STATE_CHANGED_ACTION);
         registerReceiver(_broadcastReceiver, filter);
 
-        // ...
+        // Create content observer for database modified event
         _contentObserver = new ContentObserver(_handler) {
-            @Override
-            public boolean deliverSelfNotifications() {
-                return true;
-            }
-
             @Override
             public void onChange(boolean selfChange) {
                 Log.d(TAG, "Database modified, marking whitelist as dirty");
@@ -261,6 +255,7 @@ public class LoginService extends Service {
             }
         };
 
+        // Register content observer
         ContentResolver contentResolver = getContentResolver();
         contentResolver.registerContentObserver(NetworkProfileContract.Bssids.CONTENT_URI, true, _contentObserver);
 
@@ -311,23 +306,29 @@ public class LoginService extends Service {
             return;
         }
 
-        // Clear cached BSSID whitelist
         _whitelistedBssids.clear();
 
-        // Query database through content provider
+        Uri uri = NetworkProfileContract.ProfileBssids.CONTENT_URI;
+        String[] projection = {NetworkProfileContract.ProfileBssids.BSSID};
+        String selection = NetworkProfileContract.ProfileBssids.PROFILE_ENABLED + "=1";
         ContentResolver resolver = getContentResolver();
-        Uri uri = NetworkProfileContract.ProfilesJoinBssids.CONTENT_URI;
-        String[] projection = {NetworkProfileContract.ProfilesJoinBssids.BSSID};
-        String selection = NetworkProfileContract.ProfilesJoinBssids.PROFILE_ENABLED + "=1";
-        Cursor bssidCursor = resolver.query(uri, projection, selection, null, null);
+        Cursor cursor = resolver.query(uri, projection, selection, null, null);
+
+        // This should be 0, since we specified only 1 item in projection
+        // Anyways, we use .Bssids.BSSID instead of .ProfileBssids.BSSID because
+        // the result of the query should not have table qualifiers.
+        // (Actually, .ProfileBssids.BSSID works too, but it shows an ugly error
+        // in logcat, and we're trying to avoid that :p)
+        int bssidColumn = cursor.getColumnIndex(NetworkProfileContract.Bssids.BSSID);
 
         int bssidCount;
-        for (bssidCount = 0; bssidCursor.moveToNext(); ++bssidCount) {
-            Log.d(TAG, "Loaded whitelisted BSSID: " + bssidCursor.getString(0));
-            _whitelistedBssids.add(bssidCursor.getString(0));
+        for (bssidCount = 0; cursor.moveToNext(); ++bssidCount) {
+            String bssid = cursor.getString(bssidColumn);
+            Log.d(TAG, "Loaded whitelisted BSSID: " + bssid);
+            _whitelistedBssids.add(bssid);
         }
 
-        bssidCursor.close();
+        cursor.close();
 
         _whitelistCacheDirty = false;
 
