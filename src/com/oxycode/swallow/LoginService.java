@@ -1,6 +1,5 @@
 package com.oxycode.swallow;
 
-import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
@@ -15,6 +14,7 @@ import android.os.AsyncTask;
 import android.os.Handler;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
+import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.TaskStackBuilder;
 import android.text.TextUtils;
 import android.util.Log;
@@ -80,7 +80,7 @@ public class LoginService extends Service {
         private final String _password;
         private final int _retryCount;
         private final boolean _showProgressNotification;
-        private final Notification.Builder _notification;
+        private final NotificationCompat.Builder _notification;
         private int _tries;
 
         public PerformLoginTask() {
@@ -89,7 +89,7 @@ public class LoginService extends Service {
             _retryCount = PreferenceUtils.getInt(_preferences, PREF_KEY_LOGIN_RETRY_COUNT, 2);
             _showProgressNotification = _preferences.getBoolean(PREF_KEY_SHOW_PROGRESS_NOTIFICATION, true);
             if (_showProgressNotification) {
-                _notification = new Notification.Builder(LoginService.this)
+                _notification = new NotificationCompat.Builder(LoginService.this)
                     .setSmallIcon(R.drawable.icon)
                     .setOngoing(true)
                     .setContentTitle(getString(R.string.noti_logging_in))
@@ -115,7 +115,7 @@ public class LoginService extends Service {
         @Override
         protected void onPreExecute() {
             if (_showProgressNotification) {
-                _notificationManager.notify(NOTI_ID_LOGIN_PROGRESS, _notification.getNotification());
+                _notificationManager.notify(NOTI_ID_LOGIN_PROGRESS, _notification.build());
             }
         }
 
@@ -139,7 +139,7 @@ public class LoginService extends Service {
                         messageId = R.string.noti_logging_in_retrying_plural;
                     }
                     _notification.setContentText(String.format(getString(messageId), remainingTrialCount));
-                    _notificationManager.notify(NOTI_ID_LOGIN_PROGRESS, _notification.getNotification());
+                    _notificationManager.notify(NOTI_ID_LOGIN_PROGRESS, _notification.build());
                 }
             }
         }
@@ -415,14 +415,14 @@ public class LoginService extends Service {
         stackBuilder.addParentStack(MainActivity.class);
         stackBuilder.addNextIntent(configIntent);
         PendingIntent pendingIntent = stackBuilder.getPendingIntent(0, PendingIntent.FLAG_UPDATE_CURRENT);
-        Notification.Builder notification = new Notification.Builder(this)
+        NotificationCompat.Builder notification = new NotificationCompat.Builder(this)
             .setSmallIcon(R.drawable.icon)
             .setAutoCancel(true)
             .setContentTitle(getString(R.string.noti_setup_required_title))
             .setContentText(getString(R.string.noti_setup_required_message))
             .setContentIntent(pendingIntent);
 
-        _notificationManager.notify(NOTI_ID_SETUP, notification.getNotification());
+        _notificationManager.notify(NOTI_ID_SETUP, notification.build());
     }
 
     private void showLoginErrorNotification(LoginClient.LoginResult result) {
@@ -460,14 +460,14 @@ public class LoginService extends Service {
                 break;
         }
 
-        Notification.Builder notification = new Notification.Builder(this)
+        NotificationCompat.Builder notification = new NotificationCompat.Builder(this)
             .setSmallIcon(R.drawable.icon)
             .setAutoCancel(true)
             .setContentTitle(getString(R.string.noti_login_failed))
             .setContentText(getString(messageId))
             .setContentIntent(pendingIntent);
 
-        _notificationManager.notify(NOTI_ID_LOGIN_ERROR, notification.getNotification());
+        _notificationManager.notify(NOTI_ID_LOGIN_ERROR, notification.build());
     }
 
     private void showLoginPromptNotification() {
@@ -475,14 +475,14 @@ public class LoginService extends Service {
         loginIntent.putExtra(EXTRA_ACTION, EXTRA_ACTION_LOG_IN);
         PendingIntent pendingIntent = PendingIntent.getService(this, 0, loginIntent, 0);
 
-        Notification.Builder notification = new Notification.Builder(this)
+        NotificationCompat.Builder notification = new NotificationCompat.Builder(this)
             .setSmallIcon(R.drawable.icon)
             .setAutoCancel(true)
             .setContentTitle(getString(R.string.noti_touch_to_log_in_title))
             .setContentText(getString(R.string.noti_touch_to_log_in_content))
             .setContentIntent(pendingIntent);
 
-        _notificationManager.notify(NOTI_ID_LOGIN_PROMPT, notification.getNotification());
+        _notificationManager.notify(NOTI_ID_LOGIN_PROMPT, notification.build());
     }
 
     private void removeNotifications() {
