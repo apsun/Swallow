@@ -254,9 +254,8 @@ public class LoginService extends Service {
             }
         };
 
-        // Register content observer
-        ContentResolver contentResolver = getContentResolver();
-        contentResolver.registerContentObserver(NetworkProfileContract.Bssids.CONTENT_URI, true, _contentObserver);
+        Uri bssidsUri = NetworkProfileContract.Bssids.CONTENT_URI;
+        getContentResolver().registerContentObserver(bssidsUri, true, _contentObserver);
 
         _whitelistedBssids = new HashSet<String>();
         _whitelistCacheDirty = true;
@@ -296,8 +295,7 @@ public class LoginService extends Service {
         stopRunningTask();
         removeNotifications();
         unregisterReceiver(_broadcastReceiver);
-        ContentResolver contentResolver = getContentResolver();
-        contentResolver.unregisterContentObserver(_contentObserver);
+        getContentResolver().unregisterContentObserver(_contentObserver);
     }
 
     private void ensureCleanBssidCache() {
@@ -318,7 +316,7 @@ public class LoginService extends Service {
         // the result of the query should not have table qualifiers.
         // (Actually, .ProfileBssids.BSSID works too, but it shows an ugly error
         // in logcat, and we're trying to avoid that :p)
-        int bssidColumn = cursor.getColumnIndex(NetworkProfileContract.Bssids.BSSID);
+        int bssidColumn = cursor.getColumnIndexOrThrow(NetworkProfileContract.Bssids.BSSID);
 
         int bssidCount;
         for (bssidCount = 0; cursor.moveToNext(); ++bssidCount) {
@@ -331,7 +329,7 @@ public class LoginService extends Service {
 
         _whitelistCacheDirty = false;
 
-        Log.d(TAG, String.format("Loaded %d BSSIDs from database whitelist", bssidCount));
+        Log.d(TAG, "Loaded " + bssidCount + " BSSID(s) from database whitelist");
     }
 
     private boolean isBssidWhitelisted(String bssid) {
