@@ -2,6 +2,4 @@
 <resources>
     <dimen name="window_padding">16dp</dimen>
     <dimen name="dialog_padding">8dp</dimen>
-    <dimen name="action_bar_item_width">56dp</dimen>
-    <dimen name="refresh_action_size">32dp</dimen>
 </resources>

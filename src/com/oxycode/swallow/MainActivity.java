@@ -35,6 +35,7 @@ public class MainActivity extends Activity {
             dialog.setMessage(getString(R.string.checking_credentials_message));
             dialog.setIndeterminate(true);
             dialog.setCancelable(true);
+            dialog.setCanceledOnTouchOutside(false);
             dialog.setOnCancelListener(new DialogInterface.OnCancelListener() {
                 @Override
                 public void onCancel(DialogInterface dialog) {
@@ -166,7 +167,7 @@ public class MainActivity extends Activity {
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
-        inflater.inflate(R.menu.main_options_menu, menu);
+        inflater.inflate(R.menu.main_action_menu, menu);
 
         View switchView = menu.findItem(R.id.enable_switch_view).getActionView();
         Switch enabledSwitch = (Switch)switchView.findViewById(R.id.enable_auto_login_switch);
@@ -281,7 +282,6 @@ public class MainActivity extends Activity {
 
     private void showConfirmExitDialog() {
         DialogUtils.showConfirmationDialog(this,
-            R.drawable.ic_action_warning,
             getString(R.string.unsaved_credentials_title),
             getString(R.string.unsaved_credentials_message),
             getString(R.string.exit),
@@ -312,7 +312,6 @@ public class MainActivity extends Activity {
         }
 
         DialogUtils.showConfirmationDialog(this,
-            R.drawable.ic_action_warning,
             getString(R.string.confirm_save_title),
             getString(titleId) + "\n\n" + getString(R.string.confirm_save_message_footer),
             getString(R.string.save),

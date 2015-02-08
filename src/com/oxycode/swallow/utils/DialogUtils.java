@@ -30,12 +30,10 @@ public final class DialogUtils {
     private DialogUtils() { }
 
     public static void showMessageDialog(Activity activity,
-                                         int iconId,
                                          String title,
                                          String message) {
 
         AlertDialog.Builder builder = new AlertDialog.Builder(activity)
-            .setIcon(iconId)
             .setTitle(title)
             .setMessage(message)
             .setNeutralButton(R.string.ok, null);
@@ -45,14 +43,13 @@ public final class DialogUtils {
     }
 
     public static void showConfirmationDialog(Activity activity,
-                                              int iconId,
                                               String title,
                                               String message,
                                               String positiveText,
                                               final ConfirmationDialogHandler handler) {
 
         AlertDialog.Builder builder = new AlertDialog.Builder(activity)
-            .setIcon(iconId)
+            .setIconAttribute(android.R.attr.alertDialogIcon)
             .setTitle(title)
             .setMessage(message)
             .setPositiveButton(positiveText, new DialogInterface.OnClickListener() {
@@ -73,18 +70,16 @@ public final class DialogUtils {
     }
 
     public static void showTextEntryDialog(Activity activity,
-                                           int iconId,
                                            String title,
                                            String positiveText,
                                            final TextEntryDialogHandler handler) {
 
         LayoutInflater layoutInflater = activity.getLayoutInflater();
-        View promptView = layoutInflater.inflate(R.layout.textedit_dialog, null);
+        View promptView = layoutInflater.inflate(R.layout.text_entry_dialog, null);
         final EditText editText = (EditText)promptView.findViewById(R.id.textedit_dialog_edittext);
 
         AlertDialog.Builder builder = new AlertDialog.Builder(activity)
             .setView(promptView)
-            .setIcon(iconId)
             .setTitle(title)
             .setPositiveButton(positiveText, new DialogInterface.OnClickListener() {
                 @Override

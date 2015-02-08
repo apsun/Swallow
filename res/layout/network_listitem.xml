@@ -6,7 +6,7 @@
     android:layout_height="?android:attr/listPreferredItemHeight"
     android:padding="6dp">
     <CheckBox
-        android:id="@+id/profile_enabled_checkbox"
+        android:id="@+id/network_scan_enabled_checkbox"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_centerVertical="true"
@@ -19,22 +19,34 @@
         android:focusableInTouchMode="false"
         android:clickable="false"/>
     <TextView
-        android:id="@+id/profile_detail_textview"
+        android:id="@+id/network_scan_detail_textview"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
-        android:layout_toRightOf="@+id/profile_enabled_checkbox"
-        android:layout_toEndOf="@+id/profile_enabled_checkbox"
+        android:layout_toRightOf="@+id/network_scan_enabled_checkbox"
+        android:layout_toLeftOf="@+id/network_scan_level_textview"
+        android:layout_toEndOf="@+id/network_scan_enabled_checkbox"
+        android:layout_toStartOf="@+id/network_scan_level_textview"
         android:singleLine="true"
         android:textSize="18sp"/>
     <TextView
-        android:id="@+id/profile_name_textview"
+        android:id="@+id/network_scan_bssid_textview"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentTop="true"
-        android:layout_above="@+id/profile_detail_textview"
-        android:layout_toRightOf="@+id/profile_enabled_checkbox"
-        android:layout_toEndOf="@+id/profile_enabled_checkbox"
+        android:layout_above="@id/network_scan_detail_textview"
+        android:layout_toRightOf="@+id/network_scan_enabled_checkbox"
+        android:layout_toLeftOf="@+id/network_scan_level_textview"
+        android:layout_toEndOf="@+id/network_scan_enabled_checkbox"
+        android:layout_toStartOf="@+id/network_scan_level_textview"
         android:singleLine="true"
         android:textSize="20sp"/>
+    <TextView
+        android:id="@+id/network_scan_level_textview"
+        android:layout_width="32dp"
+        android:layout_height="fill_parent"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentEnd="true"
+        android:textAppearance="?android:attr/textAppearanceSmall"
+        android:gravity="center_vertical|center_horizontal"/>
 </RelativeLayout>

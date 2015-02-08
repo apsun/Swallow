@@ -110,7 +110,7 @@ public class ProfileManagerActivity extends ListActivity implements LoaderManage
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
-        inflater.inflate(R.menu.profile_manager_options_menu, menu);
+        inflater.inflate(R.menu.manager_action_menu, menu);
         return super.onCreateOptionsMenu(menu);
     }
 
@@ -188,7 +188,6 @@ public class ProfileManagerActivity extends ListActivity implements LoaderManage
 
     private void showRenameProfileDialog(final long rowId) {
         DialogUtils.showTextEntryDialog(this,
-            0,
             getString(R.string.profile_name),
             getString(R.string.save),
             new DialogUtils.TextEntryDialogHandler() {
@@ -205,7 +204,6 @@ public class ProfileManagerActivity extends ListActivity implements LoaderManage
 
     private void showCreateProfileDialog() {
         DialogUtils.showTextEntryDialog(this,
-            0,
             getString(R.string.profile_name),
             getString(R.string.save),
             new DialogUtils.TextEntryDialogHandler() {
@@ -230,7 +228,6 @@ public class ProfileManagerActivity extends ListActivity implements LoaderManage
 
     private void showDuplicateNameErrorDialog() {
         DialogUtils.showMessageDialog(this,
-            0,
             getString(R.string.duplicate_name_title),
             getString(R.string.duplicate_name_message)
         );
@@ -238,7 +235,6 @@ public class ProfileManagerActivity extends ListActivity implements LoaderManage
 
     private void showConfirmDeleteDialog(final long rowId) {
         DialogUtils.showConfirmationDialog(this,
-            R.drawable.ic_action_warning,
             getString(R.string.confirm_delete_profile_title),
             getString(R.string.confirm_delete_profile_message),
             getString(R.string.delete),

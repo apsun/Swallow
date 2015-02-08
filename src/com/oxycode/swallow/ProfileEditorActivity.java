@@ -29,7 +29,6 @@ public class ProfileEditorActivity extends ListActivity {
         CheckBox enabledCheckBox;
         TextView bssidTextView;
         TextView ssidTextView;
-        ImageView levelImageView;
         TextView levelTextView;
     }
 
@@ -78,6 +77,13 @@ public class ProfileEditorActivity extends ListActivity {
             notifyDataSetChanged();
         }
 
+        private int getNetworkLevelImageId(int level) {
+            if (level > -50) return R.drawable.ic_wifi_signal_4;
+            if (level > -60) return R.drawable.ic_wifi_signal_3;
+            if (level > -70) return R.drawable.ic_wifi_signal_2;
+            return R.drawable.ic_wifi_signal_1;
+        }
+
         @Override
         public int getCount() {
             return _results.size();
@@ -98,7 +104,7 @@ public class ProfileEditorActivity extends ListActivity {
             ScanResultViewHolder viewHolder;
             if (convertView == null) {
                 LayoutInflater layoutInflater = getLayoutInflater();
-                convertView = layoutInflater.inflate(R.layout.network_scanresult_listitem, null);
+                convertView = layoutInflater.inflate(R.layout.network_listitem, parent, false);
                 viewHolder = new ScanResultViewHolder();
                 viewHolder.enabledCheckBox = (CheckBox)convertView.findViewById(R.id.network_scan_enabled_checkbox);
                 viewHolder.enabledCheckBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
@@ -109,7 +115,6 @@ public class ProfileEditorActivity extends ListActivity {
                 });
                 viewHolder.bssidTextView = (TextView)convertView.findViewById(R.id.network_scan_bssid_textview);
                 viewHolder.ssidTextView = (TextView)convertView.findViewById(R.id.network_scan_detail_textview);
-                viewHolder.levelImageView = (ImageView)convertView.findViewById(R.id.network_scan_level_imageview);
                 viewHolder.levelTextView = (TextView)convertView.findViewById(R.id.network_scan_level_textview);
                 convertView.setTag(viewHolder);
             } else {
@@ -120,12 +125,13 @@ public class ProfileEditorActivity extends ListActivity {
             String ssid = scanResult.SSID;
             String bssid = scanResult.BSSID;
             int level = scanResult.level;
-            // boolean checked = ProfileEditorActivity.this._profile.contains(new Bssid(bssid));
+            int levelImageId = getNetworkLevelImageId(level);
 
             // TODO: Read checked value
             // viewHolder.enabledCheckBox.setChecked(checked);
             viewHolder.bssidTextView.setText(bssid);
             viewHolder.ssidTextView.setText(ssid);
+            viewHolder.levelTextView.setCompoundDrawablesWithIntrinsicBounds(0, levelImageId, 0, 0);
             viewHolder.levelTextView.setText(String.valueOf(level));
 
             return convertView;
@@ -158,7 +164,7 @@ public class ProfileEditorActivity extends ListActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.network_scanner_activity);
+        setContentView(R.layout.editor_activity);
 
         // Add back button to the action bar
         ActionBar actionBar = getActionBar();
@@ -195,6 +201,15 @@ public class ProfileEditorActivity extends ListActivity {
 
         _listAdapter = new ScanResultListAdapter();
         setListAdapter(_listAdapter);
+
+        ListView listView = getListView();
+        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                CheckBox enabledCheckBox = (CheckBox)view.findViewById(R.id.network_scan_enabled_checkbox);
+                enabledCheckBox.performClick();
+            }
+        });
 
         Button addManuallyButton = (Button)findViewById(R.id.add_manually_button);
         addManuallyButton.setOnClickListener(new View.OnClickListener() {
@@ -237,7 +252,7 @@ public class ProfileEditorActivity extends ListActivity {
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
-        inflater.inflate(R.menu.network_scanner_options_menu, menu);
+        inflater.inflate(R.menu.editor_action_menu, menu);
         return super.onCreateOptionsMenu(menu);
     }
 
@@ -303,7 +318,6 @@ public class ProfileEditorActivity extends ListActivity {
 
     private void showAddBssidDialog() {
         DialogUtils.showTextEntryDialog(this,
-            0,
             getString(R.string.network_bssid),
             getString(R.string.add),
             new DialogUtils.TextEntryDialogHandler() {
@@ -317,7 +331,6 @@ public class ProfileEditorActivity extends ListActivity {
 
     private void showInvalidBssidDialog() {
         DialogUtils.showMessageDialog(this,
-            0,
             getString(R.string.invalid_bssid_title),
             getString(R.string.invalid_bssid_message)
         );
