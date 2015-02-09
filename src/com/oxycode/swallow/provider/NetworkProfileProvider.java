@@ -2,6 +2,7 @@ package com.oxycode.swallow.provider;
 
 import android.content.*;
 import android.database.Cursor;
+import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteQueryBuilder;
 import android.net.Uri;
@@ -80,15 +81,25 @@ public class NetworkProfileProvider extends ContentProvider {
         int uriType = URI_MATCHER.match(uri);
         SQLiteDatabase db = _databaseHelper.getWritableDatabase();
         long row;
-        switch (uriType) {
-            case PROFILES_ID:
-                row = db.insert(NetworkProfileContract.Profiles.TABLE, null, values);
-                break;
-            case BSSIDS_ID:
-                row = db.insert(NetworkProfileContract.Bssids.TABLE, null, values);
-                break;
-            default:
-                throw new IllegalArgumentException("Invalid insert URI: " + uri);
+        try {
+            switch (uriType) {
+                case PROFILES_ID:
+                    row = db.insertWithOnConflict(
+                        NetworkProfileContract.Profiles.TABLE, null, values,
+                        SQLiteDatabase.CONFLICT_IGNORE
+                    );
+                    break;
+                case BSSIDS_ID:
+                    row = db.insertWithOnConflict(
+                        NetworkProfileContract.Bssids.TABLE, null, values,
+                        SQLiteDatabase.CONFLICT_IGNORE
+                    );
+                    break;
+                default:
+                    throw new IllegalArgumentException("Invalid insert URI: " + uri);
+            }
+        } catch (SQLException e) {
+            throw new IllegalArgumentException(e);
         }
 
         Uri newUri = ContentUris.withAppendedId(NetworkProfileContract.Bssids.CONTENT_URI, row);
@@ -127,13 +138,24 @@ public class NetworkProfileProvider extends ContentProvider {
         HashSet<Long> updatedProfileIds = new HashSet<Long>(1);
         int insertCount = 0;
 
-        for (ContentValues value : values) {
-            long row = db.insert(NetworkProfileContract.Bssids.TABLE, null, value);
-            if (row >= 0) {
-                long profileId = value.getAsLong(NetworkProfileContract.Bssids.PROFILE_ID);
-                updatedProfileIds.add(profileId);
-                ++insertCount;
+        db.beginTransaction();
+        try {
+            for (ContentValues value : values) {
+                long row = db.insertWithOnConflict(
+                    NetworkProfileContract.Bssids.TABLE, null, value,
+                    SQLiteDatabase.CONFLICT_IGNORE
+                );
+                if (row >= 0) {
+                    long profileId = value.getAsLong(NetworkProfileContract.Bssids.PROFILE_ID);
+                    updatedProfileIds.add(profileId);
+                    ++insertCount;
+                }
             }
+            db.setTransactionSuccessful();
+        } catch (SQLException e) {
+            throw new IllegalArgumentException(e);
+        } finally {
+            db.endTransaction();
         }
 
         if (insertCount > 0) {
@@ -167,14 +189,9 @@ public class NetworkProfileProvider extends ContentProvider {
             case BSSIDS_ID:
                 // We also need to get the ID of the profile containing
                 // this BSSID, since it needs to be notified too
-                db.beginTransaction();
-                try {
-                    updatedProfileIds = getProfileIds(db, selection, selectionArgs);
-                    deletedRows = db.delete(NetworkProfileContract.Bssids.TABLE, selection, selectionArgs);
-                    db.setTransactionSuccessful();
-                } finally {
-                    db.endTransaction();
-                }
+                // TODO: Do we need to care about synchronization here?
+                updatedProfileIds = getProfileIds(db, selection, selectionArgs);
+                deletedRows = db.delete(NetworkProfileContract.Bssids.TABLE, selection, selectionArgs);
                 break;
             default:
                 throw new IllegalArgumentException("Invalid delete URI: " + uri);
@@ -215,7 +232,10 @@ public class NetworkProfileProvider extends ContentProvider {
         switch (uriType) {
             case PROFILE_ID:
                 selection = getCombinedSelectionString(NetworkProfileContract.Profiles._ID, uri, selection);
-                updatedRows = db.update(NetworkProfileContract.Profiles.TABLE, values, selection, selectionArgs);
+                updatedRows = db.updateWithOnConflict(
+                    NetworkProfileContract.Profiles.TABLE, values, selection, selectionArgs,
+                    SQLiteDatabase.CONFLICT_IGNORE
+                );
                 break;
             default:
                 throw new IllegalArgumentException("Invalid update URI: " + uri);
@@ -270,10 +290,13 @@ public class NetworkProfileProvider extends ContentProvider {
 
         int profileIdCol = cursor.getColumnIndexOrThrow(NetworkProfileContract.Bssids.PROFILE_ID);
         HashSet<Long> profileIds = new HashSet<Long>(1);
+        
         while (cursor.moveToNext()) {
             long currProfileId = cursor.getLong(profileIdCol);
             profileIds.add(currProfileId);
         }
+
+        cursor.close();
 
         return profileIds;
     }

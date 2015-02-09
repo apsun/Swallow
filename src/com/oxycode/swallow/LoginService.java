@@ -182,10 +182,16 @@ public class LoginService extends Service {
     private static final int NOTI_ID_LOGIN_PROGRESS = 2;
     private static final int NOTI_ID_LOGIN_ERROR = 3;
 
-    private static final String EXTRA_ACTION = "action";
-    private static final int EXTRA_ACTION_DEFAULT = 0;
-    private static final int EXTRA_ACTION_CHECK = 1;
-    private static final int EXTRA_ACTION_LOG_IN = 2;
+    public static final String EXTRA_ACTION = "action";
+    public static final int EXTRA_ACTION_DEFAULT = 0;
+    public static final int EXTRA_ACTION_CHECK = 1;
+    public static final int EXTRA_ACTION_LOG_IN = 2;
+    public static final int EXTRA_ACTION_NONE = 3;
+
+    public static final String EXTRA_SHOW_SETUP = "setup";
+    public static final int EXTRA_SHOW_SETUP_DEFAULT = 0;
+    public static final int EXTRA_SHOW_SETUP_TRUE = 1;
+    public static final int EXTRA_SHOW_SETUP_FALSE = 2;
 
     private SharedPreferences _preferences;
     private SharedPreferences _credentials;
@@ -197,6 +203,8 @@ public class LoginService extends Service {
     private ContentObserver _contentObserver;
     private HashSet<String> _whitelistedBssids;
     private boolean _whitelistCacheDirty;
+    private boolean _showSetupNotification;
+    private boolean _isOnShsNetwork;
     private AsyncTask<?, ?, ?> _runningTask;
 
     @Override
@@ -219,9 +227,7 @@ public class LoginService extends Service {
         _checkLoginStatusAction = new Runnable() {
             @Override
             public void run() {
-                Log.d(TAG, "Timer -> checking login status");
-                startCheckLoginStatusTask();
-                enqueueDelayedLoginStatusCheck();
+                checkIfOnShsNetwork();
             }
         };
 
@@ -260,17 +266,38 @@ public class LoginService extends Service {
         _whitelistedBssids = new HashSet<String>();
         _whitelistCacheDirty = true;
 
+        _showSetupNotification = true;
+        _isOnShsNetwork = false;
+
         Log.d(TAG, "Started login service");
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         int action;
+        int showSetup;
         if (intent != null) {
             action = intent.getIntExtra(EXTRA_ACTION, EXTRA_ACTION_DEFAULT);
+            showSetup = intent.getIntExtra(EXTRA_SHOW_SETUP, EXTRA_SHOW_SETUP_DEFAULT);
         } else {
             // Intent can be null if the service was restarted by the system
             action = EXTRA_ACTION_DEFAULT;
+            showSetup = EXTRA_SHOW_SETUP_DEFAULT;
+        }
+
+        switch (showSetup) {
+            case EXTRA_SHOW_SETUP_DEFAULT:
+                break;
+            case EXTRA_SHOW_SETUP_TRUE:
+                _showSetupNotification = true;
+                if (_isOnShsNetwork && requiresSetup()) {
+                    showSetupRequiredNotification();
+                }
+                break;
+            case EXTRA_SHOW_SETUP_FALSE:
+                _showSetupNotification = false;
+                _notificationManager.cancel(NOTI_ID_SETUP);
+                break;
         }
 
         switch (action) {
@@ -282,6 +309,8 @@ public class LoginService extends Service {
                 break;
             case EXTRA_ACTION_LOG_IN:
                 startLoginTask();
+                break;
+            case EXTRA_ACTION_NONE:
                 break;
         }
 
@@ -383,11 +412,13 @@ public class LoginService extends Service {
     }
 
     private void onShsNetwork() {
+        _isOnShsNetwork = true;
         startCheckLoginStatusTask();
         enqueueDelayedLoginStatusCheck();
     }
 
     private void onNotShsNetwork() {
+        _isOnShsNetwork = false;
         cancelDelayedLoginStatusCheck();
         stopRunningTask();
         _notificationManager.cancel(NOTI_ID_LOGIN_PROMPT);
@@ -408,6 +439,15 @@ public class LoginService extends Service {
     }
 
     private void showSetupRequiredNotification() {
+        if (!_showSetupNotification) {
+            // This should happen when the main activity is visible
+            // in the foreground; there's no point in telling the user
+            // to set up their account when they're probably doing it
+            // anyways
+            Log.d(TAG, "Suppressed setup required notification");
+            return;
+        }
+
         Intent configIntent = new Intent(this, MainActivity.class);
         TaskStackBuilder stackBuilder = TaskStackBuilder.create(this);
         stackBuilder.addParentStack(MainActivity.class);
@@ -491,6 +531,9 @@ public class LoginService extends Service {
     }
 
     private void enqueueDelayedLoginStatusCheck() {
+        // Make sure not to check multiple times
+        cancelDelayedLoginStatusCheck();
+
         // We don't need to worry about running this while the screen is off:
         // Handler#postDelayed() will not run tasks while the device is in deep sleep
         int delay = PreferenceUtils.getInt(_preferences, PREF_KEY_LOGIN_STATUS_CHECK_INTERVAL, 60);

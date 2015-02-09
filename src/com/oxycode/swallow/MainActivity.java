@@ -145,12 +145,34 @@ public class MainActivity extends Activity {
                 startActivity(intent);
             }
         });
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
 
         // Start the login service when starting the activity
         // This is useful when the user has just installed the
         // app, in case WiFi events don't happen any time soon
+        // Also tell the service not to display setup notifications
+        // while the activity is alive, since that would be redundant
         if (getReceiverEnabled()) {
             Intent loginIntent = new Intent(this, LoginService.class);
+            loginIntent.putExtra(LoginService.EXTRA_SHOW_SETUP, LoginService.EXTRA_SHOW_SETUP_FALSE);
+            conditionalStartLoginService(loginIntent);
+        }
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+
+        // Tell the login service to start showing setup
+        // notifications again, since we're leaving the main activity
+        if (getReceiverEnabled()) {
+            Intent loginIntent = new Intent(this, LoginService.class);
+            loginIntent.putExtra(LoginService.EXTRA_ACTION, LoginService.EXTRA_ACTION_NONE);
+            loginIntent.putExtra(LoginService.EXTRA_SHOW_SETUP, LoginService.EXTRA_SHOW_SETUP_TRUE);
             conditionalStartLoginService(loginIntent);
         }
     }

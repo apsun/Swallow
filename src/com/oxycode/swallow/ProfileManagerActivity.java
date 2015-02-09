@@ -9,6 +9,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.NavUtils;
+import android.util.Log;
 import android.view.*;
 import android.widget.*;
 import com.oxycode.swallow.provider.NetworkProfileContract;
@@ -196,7 +197,10 @@ public class ProfileManagerActivity extends ListActivity implements LoaderManage
                     ContentValues values = new ContentValues();
                     values.put(NetworkProfileContract.Profiles.NAME, text);
                     Uri uri = ContentUris.withAppendedId(NetworkProfileContract.Profiles.CONTENT_URI, rowId);
-                    getContentResolver().update(uri, values, null, null);
+                    int updatedRows = getContentResolver().update(uri, values, null, null);
+                    if (updatedRows == 0) {
+                        showDuplicateNameErrorDialog();
+                    }
                 }
             }
         );
@@ -212,10 +216,15 @@ public class ProfileManagerActivity extends ListActivity implements LoaderManage
                     ContentValues values = new ContentValues();
                     values.put(NetworkProfileContract.Profiles.NAME, text);
                     values.put(NetworkProfileContract.Profiles.ENABLED, true);
-                    Uri uri = getContentResolver().insert(NetworkProfileContract.Profiles.CONTENT_URI, values);
+                    Uri uri;
+                    try {
+                        uri = getContentResolver().insert(NetworkProfileContract.Profiles.CONTENT_URI, values);
+                    } catch (IllegalArgumentException e) {
+                        // TODO: Handle error
+                        Log.e(TAG, "ERROR", e);
+                        return;
+                    }
                     long profileRowId = ContentUris.parseId(uri);
-                    // TODO: This is an ugly hack, rewrite this to use exceptions instead
-                    // TODO: Yes, we know an error occurred, but *which one*, exactly?
                     if (profileRowId < 0) {
                         showDuplicateNameErrorDialog();
                     } else {

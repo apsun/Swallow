@@ -346,7 +346,14 @@ public class ProfileEditorActivity extends ListActivity {
             ContentValues values = new ContentValues();
             values.put(NetworkProfileContract.Bssids.PROFILE_ID, _profileRowId);
             values.put(NetworkProfileContract.Bssids.BSSID, bssid);
-            Uri uri = getContentResolver().insert(NetworkProfileContract.Bssids.CONTENT_URI, values);
+            Uri uri;
+            try {
+                uri = getContentResolver().insert(NetworkProfileContract.Bssids.CONTENT_URI, values);
+            } catch (IllegalArgumentException e) {
+                // TODO: Handle error
+                Log.e(TAG, "ERROR", e);
+                return false;
+            }
             long bssidRowId = ContentUris.parseId(uri);
             if (bssidRowId < 0) {
                 Log.d(TAG, "BSSID database insert returned " + bssidRowId + ", probably duplicate");
@@ -374,7 +381,14 @@ public class ProfileEditorActivity extends ListActivity {
             }
         }
 
-        int insertedCount = getContentResolver().bulkInsert(NetworkProfileContract.Bssids.CONTENT_URI, values);
+        int insertedCount;
+        try {
+            insertedCount = getContentResolver().bulkInsert(NetworkProfileContract.Bssids.CONTENT_URI, values);
+        } catch (IllegalArgumentException e) {
+            // TODO: Handle error
+            Log.e(TAG, "ERROR", e);
+            return false;
+        }
         Log.d(TAG, "Tried to insert " + values.length + " BSSID(s), " + insertedCount + " succeeded");
         return true;
     }
