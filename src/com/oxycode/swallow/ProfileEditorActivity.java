@@ -12,6 +12,7 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.preference.PreferenceManager;
+import android.support.annotation.NonNull;
 import android.support.v4.app.NavUtils;
 import android.util.Log;
 import android.view.*;
@@ -34,8 +35,8 @@ public class ProfileEditorActivity extends ListActivity {
 
     private class ScanResultListAdapter extends BaseAdapter {
         private Comparator<ScanResult> _resultSorter;
-        private Set<String> _whitelist;
-        private List<ScanResult> _results;
+        private HashSet<String> _whitelist;
+        private ArrayList<ScanResult> _results;
 
         public ScanResultListAdapter() {
             this(new Comparator<ScanResult>() {
@@ -57,12 +58,12 @@ public class ProfileEditorActivity extends ListActivity {
             return _whitelist.contains(bssid);
         }
 
-        public void updateWhitelist(Set<String> whitelist) {
+        public void updateWhitelist(HashSet<String> whitelist) {
             _whitelist = whitelist;
             notifyDataSetChanged();
         }
 
-        public List<ScanResult> getAllNetworks() {
+        public ArrayList<ScanResult> getAllNetworks() {
             return _results;
         }
 
@@ -159,9 +160,9 @@ public class ProfileEditorActivity extends ListActivity {
         }
     }
 
-    private class RefreshBssidsTask extends AsyncTask<Long, Void, Set<String>> {
+    private class RefreshBssidsTask extends AsyncTask<Long, Void, HashSet<String>> {
         @Override
-        protected Set<String> doInBackground(Long... params) {
+        protected HashSet<String> doInBackground(Long... params) {
             Uri uri = NetworkProfileContract.Bssids.CONTENT_URI;
             String[] projection = {NetworkProfileContract.Bssids.BSSID};
             String where = NetworkProfileContract.Bssids.PROFILE_ID + "=?";
@@ -177,7 +178,7 @@ public class ProfileEditorActivity extends ListActivity {
         }
 
         @Override
-        protected void onPostExecute(Set<String> whitelist) {
+        protected void onPostExecute(HashSet<String> whitelist) {
             onWhitelistRefreshCompleted(whitelist);
         }
     }
@@ -189,6 +190,8 @@ public class ProfileEditorActivity extends ListActivity {
     private static final String PREF_KEY_SHOW_SHS_ONLY = "pref_show_shs_only";
     private static final String PREF_KEY_SCAN_RATE = "pref_scan_rate";
     private static final String PREF_KEY_MINIMUM_SIGNAL_STRENGTH = "pref_minimum_signal_strength";
+
+    private static final String INST_NETWORKS = "networks";
 
     private static final Pattern BSSID_PATTERN = Pattern.compile("^([0-9a-f]{2}:){5}([0-9a-f]{2})$");
 
@@ -253,8 +256,15 @@ public class ProfileEditorActivity extends ListActivity {
             }
         };
 
-        _listAdapter = new ScanResultListAdapter();
-        setListAdapter(_listAdapter);
+        ScanResultListAdapter listAdapter = new ScanResultListAdapter();
+        setListAdapter(listAdapter);
+
+        if (savedInstanceState != null) {
+            ArrayList<ScanResult> rawList = savedInstanceState.getParcelableArrayList(INST_NETWORKS);
+            listAdapter.updateNetworks(rawList);
+        }
+
+        _listAdapter = listAdapter;
 
         ListView listView = getListView();
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
@@ -316,6 +326,12 @@ public class ProfileEditorActivity extends ListActivity {
 
         // Unregister listener for whitelist database changes
         getContentResolver().unregisterContentObserver(_contentObserver);
+    }
+
+    @Override
+    protected void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putParcelableArrayList(INST_NETWORKS, _listAdapter.getAllNetworks());
     }
 
     @Override
@@ -406,7 +422,7 @@ public class ProfileEditorActivity extends ListActivity {
         _activeTask = new RefreshBssidsTask().execute(_profileRowId);
     }
 
-    private void onWhitelistRefreshCompleted(Set<String> whitelist) {
+    private void onWhitelistRefreshCompleted(HashSet<String> whitelist) {
         Log.d(TAG, "BSSID whitelist refreshed");
         _listAdapter.updateWhitelist(whitelist);
         _activeTask = null;
