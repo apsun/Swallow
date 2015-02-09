@@ -248,6 +248,7 @@ public class MainActivity extends Activity {
     private void exit() {
         if (_runningTask != null) {
             _runningTask.cancel(true);
+            _runningTask = null;
         }
         super.onBackPressed();
     }

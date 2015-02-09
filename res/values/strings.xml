@@ -50,8 +50,6 @@
     <string name="add_manually_button_text">Add manually</string>
     <string name="add_all_in_range_button_text">Add all in range</string>
     <string name="network_bssid">Network BSSID</string>
-    <string name="invalid_bssid_title">Invalid BSSID</string>
-    <string name="invalid_bssid_message">BSSID must be in the format xx:xx:xx:xx:xx:xx!</string>
 
     <!-- Notifications -->
     <string name="noti_logging_in">Logging in</string>

@@ -16,9 +16,6 @@ import com.oxycode.swallow.provider.NetworkProfileContract;
 import com.oxycode.swallow.utils.DialogUtils;
 
 public class ProfileManagerActivity extends ListActivity implements LoaderManager.LoaderCallbacks<Cursor> {
-    // This custom adapter adds support for our checkbox view.
-    // TODO: Change this to directly extend ResourceCursorAdapter,
-    // TODO: so that we can do things like cursor.getCount()
     private static class MyCursorAdapter extends SimpleCursorAdapter {
         private static final int LAYOUT = R.layout.profile_listitem;
         private static final String[] FROM = {
@@ -42,6 +39,11 @@ public class ProfileManagerActivity extends ListActivity implements LoaderManage
                         CheckBox checkBox = (CheckBox)view;
                         checkBox.setChecked(enabled);
                         return true;
+                    } else if (view.getId() == R.id.profile_detail_textview) {
+                        long id = cursor.getLong(columnIndex);
+                        TextView textView = (TextView)view;
+                        textView.setText("Profile #" + id);
+                        return true;
                     }
                     return false;
                 }
@@ -58,7 +60,8 @@ public class ProfileManagerActivity extends ListActivity implements LoaderManage
 
             super.bindView(view, context, cursor);
 
-            final long rowId = cursor.getLong(cursor.getColumnIndexOrThrow(NetworkProfileContract.Profiles._ID));
+            int idColumn = cursor.getColumnIndexOrThrow(NetworkProfileContract.Profiles._ID);
+            final long rowId = cursor.getLong(idColumn);
             enabledCheckBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
                 @Override
                 public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
@@ -73,7 +76,7 @@ public class ProfileManagerActivity extends ListActivity implements LoaderManage
 
     private static final String TAG = ProfileManagerActivity.class.getSimpleName();
 
-    private CursorAdapter _cursorAdapter;
+    private MyCursorAdapter _cursorAdapter;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -90,7 +93,7 @@ public class ProfileManagerActivity extends ListActivity implements LoaderManage
         loaderManager.initLoader(0, null, this);
 
         // Initialize content adapter
-        CursorAdapter cursorAdapter = new MyCursorAdapter(this);
+        MyCursorAdapter cursorAdapter = new MyCursorAdapter(this);
         setListAdapter(cursorAdapter);
         _cursorAdapter = cursorAdapter;
 
@@ -162,7 +165,7 @@ public class ProfileManagerActivity extends ListActivity implements LoaderManage
 
     @Override
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
-        String[] from = new String[] {
+        String[] from = {
             NetworkProfileContract.Profiles._ID,
             NetworkProfileContract.Profiles.NAME,
             NetworkProfileContract.Profiles.ENABLED
@@ -220,9 +223,8 @@ public class ProfileManagerActivity extends ListActivity implements LoaderManage
                     try {
                         uri = getContentResolver().insert(NetworkProfileContract.Profiles.CONTENT_URI, values);
                     } catch (IllegalArgumentException e) {
-                        // TODO: Handle error
-                        Log.e(TAG, "ERROR", e);
-                        return;
+                        Log.e(TAG, "Failed to create new profile", e);
+                        throw e;
                     }
                     long profileRowId = ContentUris.parseId(uri);
                     if (profileRowId < 0) {

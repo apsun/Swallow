@@ -50,7 +50,7 @@
             android:summary="@string/pref_scan_rate_summary"
             android:entries="@array/pref_scan_rate_entries"
             android:entryValues="@array/pref_scan_rate_values"
-            android:defaultValue="2"/>
+            android:defaultValue="5"/>
         <ListPreference
             android:key="pref_minimum_signal_strength"
             android:title="@string/pref_minimum_signal_strength_title"

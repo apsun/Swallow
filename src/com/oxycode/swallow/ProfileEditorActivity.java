@@ -42,7 +42,6 @@ public class ProfileEditorActivity extends ListActivity {
             this(new Comparator<ScanResult>() {
                 @Override
                 public int compare(ScanResult lhs, ScanResult rhs) {
-                    // Sort from strongest to weakest signal
                     return rhs.level - lhs.level;
                 }
             });
@@ -147,11 +146,10 @@ public class ProfileEditorActivity extends ListActivity {
             viewHolder.enabledCheckBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
                 @Override
                 public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                    // TODO: GTFO THE UI THREAD!
-                    if (isChecked && !addBssid(bssid)) {
-                        // TODO: Handle error
-                    } else if (!isChecked && !removeBssid(bssid)) {
-                        // TODO: Handle error
+                    if (isChecked) {
+                        addBssid(bssid);
+                    } else {
+                        removeBssid(bssid);
                     }
                 }
             });
@@ -160,13 +158,13 @@ public class ProfileEditorActivity extends ListActivity {
         }
     }
 
-    private class RefreshBssidsTask extends AsyncTask<Long, Void, HashSet<String>> {
+    private class RefreshBssidsTask extends AsyncTask<Void, Void, HashSet<String>> {
         @Override
-        protected HashSet<String> doInBackground(Long... params) {
+        protected HashSet<String> doInBackground(Void... params) {
             Uri uri = NetworkProfileContract.Bssids.CONTENT_URI;
             String[] projection = {NetworkProfileContract.Bssids.BSSID};
             String where = NetworkProfileContract.Bssids.PROFILE_ID + "=?";
-            String[] whereArgs = {params[0].toString()};
+            String[] whereArgs = {String.valueOf(_profileRowId)};
             Cursor cursor = getContentResolver().query(uri, projection, where, whereArgs, null);
             int bssidColumn = cursor.getColumnIndexOrThrow(NetworkProfileContract.Bssids.BSSID);
             HashSet<String> whitelist = new HashSet<String>(cursor.getCount());
@@ -178,8 +176,73 @@ public class ProfileEditorActivity extends ListActivity {
         }
 
         @Override
-        protected void onPostExecute(HashSet<String> whitelist) {
-            onWhitelistRefreshCompleted(whitelist);
+        protected void onPostExecute(HashSet<String> result) {
+            onWhitelistRefreshCompleted(result);
+        }
+    }
+
+    private class AddBssidTask extends AsyncTask<String, Void, Void> {
+        @Override
+        protected Void doInBackground(String... params) {
+            if (params.length == 1) {
+                addSingle(params[0]);
+            } else if (params.length > 1) {
+                addMulti(params);
+            }
+            return null;
+        }
+
+        private ContentValues createContentValues(long profileId, String bssid) {
+            ContentValues values = new ContentValues();
+            values.put(NetworkProfileContract.Bssids.PROFILE_ID, profileId);
+            values.put(NetworkProfileContract.Bssids.BSSID, bssid);
+            return values;
+        }
+
+        private void addSingle(String bssid) {
+            ContentValues values = createContentValues(_profileRowId, bssid);
+            Uri uri;
+            try {
+                uri = getContentResolver().insert(NetworkProfileContract.Bssids.CONTENT_URI, values);
+            } catch (IllegalArgumentException e) {
+                Log.e(TAG, "Failed to add BSSID to profile", e);
+                throw e;
+            }
+
+            long bssidRowId = ContentUris.parseId(uri);
+            if (bssidRowId < 0) {
+                Log.d(TAG, "BSSID database insert returned " + bssidRowId);
+            }
+        }
+
+        private void addMulti(String[] bssids) {
+            long profileId = _profileRowId;
+            ContentValues[] values = new ContentValues[bssids.length];
+            for (int i = 0; i < values.length; ++i) {
+                values[i] = createContentValues(profileId, bssids[i]);
+            }
+
+            int insertedCount;
+            try {
+                insertedCount = getContentResolver().bulkInsert(NetworkProfileContract.Bssids.CONTENT_URI, values);
+            } catch (IllegalArgumentException e) {
+                Log.e(TAG, "Failed to bulk add BSSIDs to profile", e);
+                throw e;
+            }
+
+            Log.d(TAG, "Tried to insert " + values.length + " BSSID(s), " + insertedCount + " succeeded");
+        }
+    }
+
+    private class DeleteBssidTask extends AsyncTask<String, Void, Void> {
+        @Override
+        protected Void doInBackground(String... params) {
+            String where = NetworkProfileContract.Bssids.BSSID + "=? AND " +
+                           NetworkProfileContract.Bssids.PROFILE_ID + "=?";
+            String[] whereArgs = {params[0], String.valueOf(_profileRowId)};
+            int deletedRows = getContentResolver().delete(NetworkProfileContract.Bssids.CONTENT_URI, where, whereArgs);
+            Log.d(TAG, "Tried to delete 1 BSSID, " + deletedRows + " succeeded");
+            return null;
         }
     }
 
@@ -203,7 +266,7 @@ public class ProfileEditorActivity extends ListActivity {
     private ContentObserver _contentObserver;
     private ScanResultListAdapter _listAdapter;
     private long _profileRowId;
-    private AsyncTask<?, ?, ?> _activeTask;
+    private AsyncTask<?, ?, ?> _refreshTask;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -243,28 +306,26 @@ public class ProfileEditorActivity extends ListActivity {
             }
         };
 
+        // Content observer is necessary just in case the database is updated
+        // outside of the activity (who knows why?)
         _contentObserver = new ContentObserver(_handler) {
             @Override
-            public boolean deliverSelfNotifications() {
-                // TODO: Do we need this to be true?
-                return true;
-            }
-
-            @Override
             public void onChange(boolean selfChange) {
+                Log.d(TAG, "Database modified, refreshing whitelist");
                 beginRefreshWhitelist();
             }
         };
 
+        // Initialize list adapter
         ScanResultListAdapter listAdapter = new ScanResultListAdapter();
         setListAdapter(listAdapter);
+        _listAdapter = listAdapter;
 
+        // Restore state if the device was rotated
         if (savedInstanceState != null) {
             ArrayList<ScanResult> rawList = savedInstanceState.getParcelableArrayList(INST_NETWORKS);
             listAdapter.updateNetworks(rawList);
         }
-
-        _listAdapter = listAdapter;
 
         ListView listView = getListView();
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
@@ -287,10 +348,7 @@ public class ProfileEditorActivity extends ListActivity {
         addAllInRangeButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                // TODO: GTFO THE UI THREAD!
-                if (!addAllNetworksInRange()) {
-                    // TODO: Handle error
-                }
+                addAllNetworksInRange();
             }
         });
     }
@@ -324,6 +382,9 @@ public class ProfileEditorActivity extends ListActivity {
         cancelEnqueuedWifiScan();
         unregisterReceiver(_scanReceiver);
 
+        // Cancel any whitelist refreshes in progress
+        cancelWhitelistRefresh();
+
         // Unregister listener for whitelist database changes
         getContentResolver().unregisterContentObserver(_contentObserver);
     }
@@ -355,77 +416,44 @@ public class ProfileEditorActivity extends ListActivity {
         }
     }
 
-    private boolean addBssid(String bssid) {
-        bssid = bssid.toLowerCase();
+    private boolean isValidBssid(String bssid) {
         Matcher matcher = BSSID_PATTERN.matcher(bssid);
-        if (matcher.matches()) {
-            ContentValues values = new ContentValues();
-            values.put(NetworkProfileContract.Bssids.PROFILE_ID, _profileRowId);
-            values.put(NetworkProfileContract.Bssids.BSSID, bssid);
-            Uri uri;
-            try {
-                uri = getContentResolver().insert(NetworkProfileContract.Bssids.CONTENT_URI, values);
-            } catch (IllegalArgumentException e) {
-                // TODO: Handle error
-                Log.e(TAG, "ERROR", e);
-                return false;
-            }
-            long bssidRowId = ContentUris.parseId(uri);
-            if (bssidRowId < 0) {
-                Log.d(TAG, "BSSID database insert returned " + bssidRowId + ", probably duplicate");
-            }
-            return true;
-        } else {
-            return false;
-        }
+        return matcher.matches();
     }
 
-    private boolean addAllNetworksInRange() {
+    private void addBssid(String bssid) {
+        new AddBssidTask().execute(bssid);
+    }
+
+    private void addAllNetworksInRange() {
         List<ScanResult> networks = _listAdapter.getAllNetworks();
-        ContentValues[] values = new ContentValues[networks.size()];
-        Matcher matcher = BSSID_PATTERN.matcher("");
-        for (int i = 0; i < networks.size(); ++i) {
-            String bssid = networks.get(i).BSSID.toLowerCase();
-            matcher.reset(bssid);
-            if (matcher.matches()) {
-                ContentValues value = new ContentValues();
-                value.put(NetworkProfileContract.Bssids.PROFILE_ID, _profileRowId);
-                value.put(NetworkProfileContract.Bssids.BSSID, bssid);
-                values[i] = value;
-            } else {
-                return false;
-            }
+        String[] bssids = new String[networks.size()];
+        for (int i = 0; i < bssids.length; ++i) {
+            bssids[i] = networks.get(i).BSSID;
         }
-
-        int insertedCount;
-        try {
-            insertedCount = getContentResolver().bulkInsert(NetworkProfileContract.Bssids.CONTENT_URI, values);
-        } catch (IllegalArgumentException e) {
-            // TODO: Handle error
-            Log.e(TAG, "ERROR", e);
-            return false;
-        }
-        Log.d(TAG, "Tried to insert " + values.length + " BSSID(s), " + insertedCount + " succeeded");
-        return true;
+        new AddBssidTask().execute(bssids);
     }
 
-    private boolean removeBssid(String bssid) {
-        String where = NetworkProfileContract.Bssids.BSSID + "=? AND " + NetworkProfileContract.Bssids.PROFILE_ID + "=?";
-        String[] whereArgs = {bssid, String.valueOf(_profileRowId)};
-        return getContentResolver().delete(NetworkProfileContract.Bssids.CONTENT_URI, where, whereArgs) == 1;
+    private void removeBssid(String bssid) {
+        new DeleteBssidTask().execute(bssid);
+    }
+
+    private void cancelWhitelistRefresh() {
+        if (_refreshTask != null) {
+            _refreshTask.cancel(true);
+            _refreshTask = null;
+        }
     }
 
     private void beginRefreshWhitelist() {
-        if (_activeTask != null) {
-            _activeTask.cancel(true);
-        }
-        _activeTask = new RefreshBssidsTask().execute(_profileRowId);
+        cancelWhitelistRefresh();
+        _refreshTask = new RefreshBssidsTask().execute();
     }
 
     private void onWhitelistRefreshCompleted(HashSet<String> whitelist) {
         Log.d(TAG, "BSSID whitelist refreshed");
         _listAdapter.updateWhitelist(whitelist);
-        _activeTask = null;
+        _refreshTask = null;
     }
 
     private void startWifiScan() {
@@ -442,9 +470,8 @@ public class ProfileEditorActivity extends ListActivity {
         // Make sure we don't try to scan multiple times
         cancelEnqueuedWifiScan();
 
-        int delay = PreferenceUtils.getInt(_preferences, PREF_KEY_SCAN_RATE, 2);
+        int delay = PreferenceUtils.getInt(_preferences, PREF_KEY_SCAN_RATE, 5);
         if (delay > 0) {
-            Log.d(TAG, "Enqueued WiFi scan with delay " + delay + " seconds");
             _handler.postDelayed(_scanWifiNetworksTask, delay * 1000);
         }
     }
@@ -459,20 +486,15 @@ public class ProfileEditorActivity extends ListActivity {
             getString(R.string.add),
             new DialogUtils.TextEntryDialogHandler() {
                 @Override
+                public boolean isValidInput(String text) {
+                    return isValidBssid(text.toLowerCase());
+                }
+
+                @Override
                 public void onSubmit(String text) {
-                    // TODO: GTFO THE UI THREAD!
-                    if (!addBssid(text)) {
-                        showInvalidBssidDialog();
-                    }
+                    addBssid(text.toLowerCase());
                 }
             }
-        );
-    }
-
-    private void showInvalidBssidDialog() {
-        DialogUtils.showMessageDialog(this,
-            getString(R.string.invalid_bssid_title),
-            getString(R.string.invalid_bssid_message)
         );
     }
 }

@@ -189,7 +189,6 @@ public class NetworkProfileProvider extends ContentProvider {
             case BSSIDS_ID:
                 // We also need to get the ID of the profile containing
                 // this BSSID, since it needs to be notified too
-                // TODO: Do we need to care about synchronization here?
                 updatedProfileIds = getProfileIds(db, selection, selectionArgs);
                 deletedRows = db.delete(NetworkProfileContract.Bssids.TABLE, selection, selectionArgs);
                 break;
@@ -290,7 +289,7 @@ public class NetworkProfileProvider extends ContentProvider {
 
         int profileIdCol = cursor.getColumnIndexOrThrow(NetworkProfileContract.Bssids.PROFILE_ID);
         HashSet<Long> profileIds = new HashSet<Long>(1);
-        
+
         while (cursor.moveToNext()) {
             long currProfileId = cursor.getLong(profileIdCol);
             profileIds.add(currProfileId);

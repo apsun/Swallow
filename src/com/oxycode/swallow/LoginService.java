@@ -198,11 +198,10 @@ public class LoginService extends Service {
     private WifiManager _wifiManager;
     private NotificationManager _notificationManager;
     private Handler _handler;
-    private Runnable _checkLoginStatusAction;
+    private Runnable _checkWifiStatusAction;
     private BroadcastReceiver _broadcastReceiver;
     private ContentObserver _contentObserver;
     private HashSet<String> _whitelistedBssids;
-    private boolean _whitelistCacheDirty;
     private boolean _showSetupNotification;
     private boolean _isOnShsNetwork;
     private AsyncTask<?, ?, ?> _runningTask;
@@ -222,9 +221,8 @@ public class LoginService extends Service {
         _wifiManager = (WifiManager)getSystemService(Context.WIFI_SERVICE);
         _notificationManager = (NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE);
 
-        // Set up timers
         _handler = new Handler();
-        _checkLoginStatusAction = new Runnable() {
+        _checkWifiStatusAction = new Runnable() {
             @Override
             public void run() {
                 checkIfOnShsNetwork();
@@ -247,29 +245,27 @@ public class LoginService extends Service {
             }
         };
 
-        // Register broadcast receiver
-        IntentFilter filter = new IntentFilter(WifiManager.SUPPLICANT_STATE_CHANGED_ACTION);
-        registerReceiver(_broadcastReceiver, filter);
-
         // Create content observer for database modified event
         _contentObserver = new ContentObserver(_handler) {
             @Override
             public void onChange(boolean selfChange) {
                 Log.d(TAG, "Database modified, marking whitelist as dirty");
-                _whitelistCacheDirty = true;
+                _whitelistedBssids = null;
             }
         };
 
-        Uri bssidsUri = NetworkProfileContract.Bssids.CONTENT_URI;
-        getContentResolver().registerContentObserver(bssidsUri, true, _contentObserver);
-
-        _whitelistedBssids = new HashSet<String>();
-        _whitelistCacheDirty = true;
-
+        _whitelistedBssids = null;
         _showSetupNotification = true;
         _isOnShsNetwork = false;
+        _runningTask = null;
 
-        Log.d(TAG, "Started login service");
+        // Register broadcast receiver
+        IntentFilter filter = new IntentFilter(WifiManager.SUPPLICANT_STATE_CHANGED_ACTION);
+        registerReceiver(_broadcastReceiver, filter);
+
+        // Register content observer
+        Uri bssidsUri = NetworkProfileContract.Bssids.CONTENT_URI;
+        getContentResolver().registerContentObserver(bssidsUri, true, _contentObserver);
     }
 
     @Override
@@ -319,7 +315,6 @@ public class LoginService extends Service {
 
     @Override
     public void onDestroy() {
-        Log.d(TAG, "Stopping login service");
         cancelDelayedLoginStatusCheck();
         stopRunningTask();
         removeNotifications();
@@ -327,12 +322,13 @@ public class LoginService extends Service {
         getContentResolver().unregisterContentObserver(_contentObserver);
     }
 
-    private void ensureCleanBssidCache() {
-        if (!_whitelistCacheDirty) {
-            return;
+    private HashSet<String> getBssidWhitelist() {
+        HashSet<String> whitelist = _whitelistedBssids;
+        if (whitelist != null) {
+            return whitelist;
         }
 
-        _whitelistedBssids.clear();
+        whitelist = new HashSet<String>();
 
         Uri uri = NetworkProfileContract.ProfileBssids.CONTENT_URI;
         String[] projection = {NetworkProfileContract.ProfileBssids.BSSID};
@@ -340,30 +336,25 @@ public class LoginService extends Service {
         ContentResolver resolver = getContentResolver();
         Cursor cursor = resolver.query(uri, projection, selection, null, null);
 
-        // This should be 0, since we specified only 1 item in projection
-        // Anyways, we use .Bssids.BSSID instead of .ProfileBssids.BSSID because
-        // the result of the query should not have table qualifiers.
-        // (Actually, .ProfileBssids.BSSID works too, but it shows an ugly error
-        // in logcat, and we're trying to avoid that :p)
+        // Use Bssids.BSSID instead of ProfileBssids.BSSID because
+        // the result of the query should not have table qualifiers
         int bssidColumn = cursor.getColumnIndexOrThrow(NetworkProfileContract.Bssids.BSSID);
-
         int bssidCount;
         for (bssidCount = 0; cursor.moveToNext(); ++bssidCount) {
             String bssid = cursor.getString(bssidColumn);
             Log.d(TAG, "Loaded whitelisted BSSID: " + bssid);
-            _whitelistedBssids.add(bssid);
+            whitelist.add(bssid);
         }
 
         cursor.close();
-
-        _whitelistCacheDirty = false;
-
+        _whitelistedBssids = whitelist;
         Log.d(TAG, "Loaded " + bssidCount + " BSSID(s) from database whitelist");
+        return whitelist;
     }
 
     private boolean isBssidWhitelisted(String bssid) {
-        ensureCleanBssidCache();
-        boolean whitelisted = _whitelistedBssids.contains(bssid);
+        HashSet<String> whitelist = getBssidWhitelist();
+        boolean whitelisted = whitelist.contains(bssid);
         Log.d(TAG, "Checking BSSID: " + bssid + " -> " + whitelisted);
         return whitelisted;
     }
@@ -381,8 +372,9 @@ public class LoginService extends Service {
     }
 
     private boolean requiresSetup() {
-        String username = _credentials.getString(PREF_KEY_USERNAME, "");
-        String password = _credentials.getString(PREF_KEY_PASSWORD, "");
+        SharedPreferences credentials = _credentials;
+        String username = credentials.getString(PREF_KEY_USERNAME, "");
+        String password = credentials.getString(PREF_KEY_PASSWORD, "");
         return TextUtils.isEmpty(username) || TextUtils.isEmpty(password);
     }
 
@@ -444,7 +436,6 @@ public class LoginService extends Service {
             // in the foreground; there's no point in telling the user
             // to set up their account when they're probably doing it
             // anyways
-            Log.d(TAG, "Suppressed setup required notification");
             return;
         }
 
@@ -535,15 +526,14 @@ public class LoginService extends Service {
         cancelDelayedLoginStatusCheck();
 
         // We don't need to worry about running this while the screen is off:
-        // Handler#postDelayed() will not run tasks while the device is in deep sleep
+        // Handler.postDelayed() will not run tasks while the device is in deep sleep
         int delay = PreferenceUtils.getInt(_preferences, PREF_KEY_LOGIN_STATUS_CHECK_INTERVAL, 60);
         if (delay > 0) {
-            Log.d(TAG, "Enqueued login status check with delay " + delay + " seconds");
-            _handler.postDelayed(_checkLoginStatusAction, delay * 1000);
+            _handler.postDelayed(_checkWifiStatusAction, delay * 1000);
         }
     }
 
     private void cancelDelayedLoginStatusCheck() {
-        _handler.removeCallbacks(_checkLoginStatusAction);
+        _handler.removeCallbacks(_checkWifiStatusAction);
     }
 }
