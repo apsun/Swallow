@@ -69,7 +69,7 @@ public class ProfileEditorActivity extends ListActivity {
         public void updateNetworks(List<ScanResult> networks) {
             _results.clear();
 
-            boolean showShsOnly = _preferences.getBoolean(PREF_KEY_SHOW_SHS_ONLY, true);
+            boolean showShsOnly = _preferences.getBoolean(PREF_KEY_SHOW_SHS_ONLY, false);
             int minSignalStrength = PreferenceUtils.getInt(_preferences, PREF_KEY_MINIMUM_SIGNAL_STRENGTH, -80);
 
             for (ScanResult network : networks) {
