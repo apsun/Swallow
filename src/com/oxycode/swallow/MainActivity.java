@@ -278,6 +278,7 @@ public class MainActivity extends Activity {
         // either way.
         Intent loginIntent = new Intent(this, LoginService.class);
         if (enabled) {
+            loginIntent.putExtra(LoginService.EXTRA_SHOW_SETUP, LoginService.EXTRA_SHOW_SETUP_FALSE);
             conditionalStartLoginService(loginIntent);
         } else {
             stopService(loginIntent);
