@@ -159,7 +159,7 @@ public class MainActivity extends Activity {
         if (getReceiverEnabled()) {
             Intent loginIntent = new Intent(this, LoginService.class);
             loginIntent.putExtra(LoginService.EXTRA_SHOW_SETUP, LoginService.EXTRA_SHOW_SETUP_FALSE);
-            conditionalStartLoginService(loginIntent);
+            startServiceIfWifiEnabled(loginIntent);
         }
     }
 
@@ -173,7 +173,7 @@ public class MainActivity extends Activity {
             Intent loginIntent = new Intent(this, LoginService.class);
             loginIntent.putExtra(LoginService.EXTRA_ACTION, LoginService.EXTRA_ACTION_NONE);
             loginIntent.putExtra(LoginService.EXTRA_SHOW_SETUP, LoginService.EXTRA_SHOW_SETUP_TRUE);
-            conditionalStartLoginService(loginIntent);
+            startServiceIfWifiEnabled(loginIntent);
         }
     }
 
@@ -253,10 +253,10 @@ public class MainActivity extends Activity {
         super.onBackPressed();
     }
 
-    private void conditionalStartLoginService(Intent loginIntent) {
+    private void startServiceIfWifiEnabled(Intent service) {
         WifiManager wifiManager = (WifiManager)getSystemService(WIFI_SERVICE);
         if (wifiManager.isWifiEnabled()) {
-            startService(loginIntent);
+            startService(service);
         }
     }
 
@@ -279,7 +279,7 @@ public class MainActivity extends Activity {
         Intent loginIntent = new Intent(this, LoginService.class);
         if (enabled) {
             loginIntent.putExtra(LoginService.EXTRA_SHOW_SETUP, LoginService.EXTRA_SHOW_SETUP_FALSE);
-            conditionalStartLoginService(loginIntent);
+            startServiceIfWifiEnabled(loginIntent);
         } else {
             stopService(loginIntent);
         }

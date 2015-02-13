@@ -25,6 +25,7 @@ public final class DialogUtils {
         public boolean isValidInput(String text) {
             return !TextUtils.isEmpty(text);
         }
+        public void customizeDialog(AlertDialog dialog, EditText editText) { }
     }
 
     private DialogUtils() { }
@@ -122,6 +123,10 @@ public final class DialogUtils {
 
         // Display the keyboard when the alert is shown
         alert.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE);
+
+        // Allow the caller to customize the dialog before displaying it
+        handler.customizeDialog(alert, editText);
+
         alert.show();
     }
 }

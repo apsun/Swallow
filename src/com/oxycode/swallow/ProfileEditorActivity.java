@@ -1,6 +1,7 @@
 package com.oxycode.swallow;
 
 import android.app.ActionBar;
+import android.app.AlertDialog;
 import android.app.ListActivity;
 import android.content.*;
 import android.database.ContentObserver;
@@ -14,6 +15,7 @@ import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.v4.app.NavUtils;
+import android.text.InputFilter;
 import android.util.Log;
 import android.view.*;
 import android.widget.*;
@@ -493,6 +495,12 @@ public class ProfileEditorActivity extends ListActivity {
                 @Override
                 public void onSubmit(String text) {
                     addBssid(text.toLowerCase());
+                }
+
+                @Override
+                public void customizeDialog(AlertDialog dialog, EditText editText) {
+                    editText.setHint(R.string.network_bssid_hint);
+                    editText.setFilters(new InputFilter[] {new InputFilter.LengthFilter(17)});
                 }
             }
         );

@@ -50,6 +50,7 @@
     <string name="add_manually_button_text">Add manually</string>
     <string name="add_all_in_range_button_text">Add all in range</string>
     <string name="network_bssid">Network BSSID</string>
+    <string name="network_bssid_hint">12:34:56:78:ab:cd</string>
 
     <!-- Notifications -->
     <string name="noti_logging_in">Logging in</string>
