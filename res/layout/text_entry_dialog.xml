@@ -10,7 +10,7 @@
     android:paddingTop="@dimen/dialog_padding_vertical"
     android:paddingBottom="@dimen/dialog_padding_vertical">
     <EditText
-        android:id="@+id/textedit_dialog_edittext"
+        android:id="@+id/text_entry_dialog_edittext"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:inputType="text">

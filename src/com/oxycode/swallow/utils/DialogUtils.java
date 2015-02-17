@@ -22,7 +22,7 @@ public final class DialogUtils {
     public static abstract class TextEntryDialogHandler {
         public abstract void onSubmit(String text);
         public void onCancel() { }
-        public boolean isValidInput(String text) {
+        public boolean validateInput(String text, EditText editText) {
             return !TextUtils.isEmpty(text);
         }
         public void customizeDialog(AlertDialog dialog, EditText editText) { }
@@ -77,7 +77,7 @@ public final class DialogUtils {
 
         LayoutInflater layoutInflater = activity.getLayoutInflater();
         View promptView = layoutInflater.inflate(R.layout.text_entry_dialog, null);
-        final EditText editText = (EditText)promptView.findViewById(R.id.textedit_dialog_edittext);
+        final EditText editText = (EditText)promptView.findViewById(R.id.text_entry_dialog_edittext);
 
         AlertDialog.Builder builder = new AlertDialog.Builder(activity)
             .setView(promptView)
@@ -101,7 +101,7 @@ public final class DialogUtils {
             @Override
             public void onShow(DialogInterface dialog) {
                 Button button = alert.getButton(DialogInterface.BUTTON_POSITIVE);
-                boolean isValid = handler.isValidInput(editText.getText().toString());
+                boolean isValid = handler.validateInput(editText.getText().toString(), editText);
                 button.setEnabled(isValid);
             }
         });
@@ -116,7 +116,7 @@ public final class DialogUtils {
             @Override
             public void afterTextChanged(Editable s) {
                 Button button = alert.getButton(DialogInterface.BUTTON_POSITIVE);
-                boolean isValid = handler.isValidInput(s.toString());
+                boolean isValid = handler.validateInput(s.toString(), editText);
                 button.setEnabled(isValid);
             }
         });

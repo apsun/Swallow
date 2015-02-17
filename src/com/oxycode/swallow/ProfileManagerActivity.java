@@ -176,12 +176,12 @@ public class ProfileManagerActivity extends ListActivity implements LoaderManage
 
     @Override
     public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
-        _cursorAdapter.swapCursor(data);
+        _cursorAdapter.changeCursor(data);
     }
 
     @Override
     public void onLoaderReset(Loader<Cursor> loader) {
-        _cursorAdapter.swapCursor(null);
+        _cursorAdapter.changeCursor(null);
     }
 
     private void showNetworkScanner(long profileRowId) {

@@ -16,6 +16,7 @@ import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.v4.app.NavUtils;
 import android.text.InputFilter;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.*;
 import android.widget.*;
@@ -523,8 +524,19 @@ public class ProfileEditorActivity extends ListActivity {
             getString(R.string.add),
             new DialogUtils.TextEntryDialogHandler() {
                 @Override
-                public boolean isValidInput(String text) {
-                    return isValidBssid(text.toLowerCase());
+                public boolean validateInput(String text, EditText editText) {
+                    if (TextUtils.isEmpty(text)) {
+                        editText.setError(null);
+                        return false;
+                    }
+
+                    if (isValidBssid(text.toLowerCase())) {
+                        editText.setError(null);
+                        return true;
+                    }
+
+                    editText.setError(getString(R.string.invalid_bssid_format));
+                    return false;
                 }
 
                 @Override
