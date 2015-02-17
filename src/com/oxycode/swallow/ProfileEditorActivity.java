@@ -68,20 +68,23 @@ public class ProfileEditorActivity extends ListActivity {
             return _results;
         }
 
-        public void updateNetworks(List<ScanResult> networks) {
+        public boolean updateNetworks(List<ScanResult> networks) {
             _results.clear();
 
             boolean showShsOnly = _preferences.getBoolean(PREF_KEY_SHOW_SHS_ONLY, false);
             int minSignalStrength = PreferenceUtils.getInt(_preferences, PREF_KEY_MINIMUM_SIGNAL_STRENGTH, -80);
 
+            boolean filtered = false;
             for (ScanResult network : networks) {
                 // Ignore non-shs networks?
                 if (showShsOnly && !"shs".equalsIgnoreCase(network.SSID)) {
+                    filtered = true;
                     continue;
                 }
 
                 // Is network signal strong enough?
                 if (minSignalStrength > network.level) {
+                    filtered = true;
                     continue;
                 }
 
@@ -92,6 +95,8 @@ public class ProfileEditorActivity extends ListActivity {
             Collections.sort(_results, _resultSorter);
 
             notifyDataSetChanged();
+
+            return filtered;
         }
 
         private int getNetworkLevelImageId(int level) {
@@ -304,6 +309,8 @@ public class ProfileEditorActivity extends ListActivity {
                 String action = intent.getAction();
                 if (action.equals(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION)) {
                     onWifiScanCompleted();
+                } else if (action.equals(WifiManager.WIFI_STATE_CHANGED_ACTION)) {
+                    onWifiStateChanged();
                 }
             }
         };
@@ -366,12 +373,15 @@ public class ProfileEditorActivity extends ListActivity {
         // Load the BSSID whitelist (async)
         beginRefreshWhitelist();
 
-        // Register receiver for WiFi scan completion event
-        IntentFilter filter = new IntentFilter(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION);
+        // Register receiver for WiFi events
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION);
+        filter.addAction(WifiManager.WIFI_STATE_CHANGED_ACTION);
         registerReceiver(_scanReceiver, filter);
 
-        // Begin scanning for WiFi networks
-        startWifiScan();
+        // In case WiFi state changed while the Activity was paused
+        // This also starts scanning for WiFi networks if appropriate
+        onWifiStateChanged();
     }
 
     @Override
@@ -382,6 +392,8 @@ public class ProfileEditorActivity extends ListActivity {
         // This saves battery, since we are not uselessly
         // refreshing the WiFi list in the background.
         cancelEnqueuedWifiScan();
+
+        // Stop listening for WiFi events
         unregisterReceiver(_scanReceiver);
 
         // Cancel any whitelist refreshes in progress
@@ -440,6 +452,11 @@ public class ProfileEditorActivity extends ListActivity {
         new DeleteBssidTask().execute(bssid);
     }
 
+    private void setEmptyText(int textId) {
+        TextView emptyView = (TextView)getListView().getEmptyView();
+        emptyView.setText(textId);
+    }
+
     private void cancelWhitelistRefresh() {
         if (_refreshTask != null) {
             _refreshTask.cancel(true);
@@ -463,9 +480,27 @@ public class ProfileEditorActivity extends ListActivity {
     }
 
     private void onWifiScanCompleted() {
-        List<ScanResult> results = _wifiManager.getScanResults();
-        _listAdapter.updateNetworks(results);
-        enqueueWifiScan();
+        if (_wifiManager.isWifiEnabled()) {
+            List<ScanResult> results = _wifiManager.getScanResults();
+            if (_listAdapter.updateNetworks(results)) {
+                setEmptyText(R.string.all_networks_filtered);
+            } else {
+                setEmptyText(R.string.no_networks_available);
+            }
+            enqueueWifiScan();
+        }
+    }
+
+    private void onWifiStateChanged() {
+        _listAdapter.updateNetworks(Collections.<ScanResult>emptyList());
+
+        if (_wifiManager.isWifiEnabled()) {
+            setEmptyText(R.string.no_networks_available);
+            startWifiScan();
+        } else {
+            setEmptyText(R.string.enable_wifi);
+            cancelEnqueuedWifiScan();
+        }
     }
 
     private void enqueueWifiScan() {

@@ -51,6 +51,9 @@
     <string name="add_all_in_range_button_text">Add all in range</string>
     <string name="network_bssid">Network BSSID</string>
     <string name="network_bssid_hint">12:34:56:78:ab:cd</string>
+    <string name="enable_wifi">Please enable WiFi</string>
+    <string name="no_networks_available">No networks available</string>
+    <string name="all_networks_filtered">All networks filtered\n\nCheck your network scanner settings</string>
 
     <!-- Notifications -->
     <string name="noti_logging_in">Logging in</string>
