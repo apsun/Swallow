@@ -198,12 +198,11 @@ public class LoginService extends Service {
     private WifiManager _wifiManager;
     private NotificationManager _notificationManager;
     private Handler _handler;
-    private Runnable _checkWifiStatusAction;
+    private Runnable _checkNetworkStatusAction;
     private BroadcastReceiver _broadcastReceiver;
     private ContentObserver _contentObserver;
     private HashSet<String> _whitelistedBssids;
-    private boolean _showSetupNotification;
-    private boolean _isOnShsNetwork;
+    private boolean _shouldShowSetupNotification;
     private AsyncTask<?, ?, ?> _runningTask;
 
     @Override
@@ -222,10 +221,10 @@ public class LoginService extends Service {
         _notificationManager = (NotificationManager)getSystemService(Context.NOTIFICATION_SERVICE);
 
         _handler = new Handler();
-        _checkWifiStatusAction = new Runnable() {
+        _checkNetworkStatusAction = new Runnable() {
             @Override
             public void run() {
-                checkIfOnShsNetwork();
+                checkNetworkStatus();
             }
         };
 
@@ -239,8 +238,12 @@ public class LoginService extends Service {
                 if (action.equals(WifiManager.SUPPLICANT_STATE_CHANGED_ACTION)) {
                     SupplicantState state = intent.getParcelableExtra(WifiManager.EXTRA_NEW_STATE);
                     if (state == SupplicantState.DISCONNECTED) {
-                        onNotShsNetwork();
+                        onNetworkStatusChanged(false);
                     }
+                } else if (action.equals(Intent.ACTION_SCREEN_ON)) {
+                    onScreenStatusChanged(true);
+                } else if (action.equals(Intent.ACTION_SCREEN_OFF)) {
+                    onScreenStatusChanged(false);
                 }
             }
         };
@@ -255,12 +258,14 @@ public class LoginService extends Service {
         };
 
         _whitelistedBssids = null;
-        _showSetupNotification = true;
-        _isOnShsNetwork = false;
+        _shouldShowSetupNotification = true;
         _runningTask = null;
 
         // Register broadcast receiver
-        IntentFilter filter = new IntentFilter(WifiManager.SUPPLICANT_STATE_CHANGED_ACTION);
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(WifiManager.SUPPLICANT_STATE_CHANGED_ACTION);
+        filter.addAction(Intent.ACTION_SCREEN_ON);
+        filter.addAction(Intent.ACTION_SCREEN_OFF);
         registerReceiver(_broadcastReceiver, filter);
 
         // Register content observer
@@ -285,20 +290,20 @@ public class LoginService extends Service {
             case EXTRA_SHOW_SETUP_DEFAULT:
                 break;
             case EXTRA_SHOW_SETUP_TRUE:
-                _showSetupNotification = true;
-                if (_isOnShsNetwork && requiresSetup()) {
-                    showSetupRequiredNotification();
+                _shouldShowSetupNotification = true;
+                if (isBssidWhitelisted(getNetworkBssid())) {
+                    showSetupNotification();
                 }
                 break;
             case EXTRA_SHOW_SETUP_FALSE:
-                _showSetupNotification = false;
+                _shouldShowSetupNotification = false;
                 _notificationManager.cancel(NOTI_ID_SETUP);
                 break;
         }
 
         switch (action) {
             case EXTRA_ACTION_DEFAULT:
-                checkIfOnShsNetwork();
+                checkNetworkStatus();
                 break;
             case EXTRA_ACTION_CHECK:
                 startCheckLoginStatusTask();
@@ -317,7 +322,7 @@ public class LoginService extends Service {
     public void onDestroy() {
         cancelDelayedLoginStatusCheck();
         stopRunningTask();
-        removeNotifications();
+        cancelAllNotifications();
         unregisterReceiver(_broadcastReceiver);
         getContentResolver().unregisterContentObserver(_contentObserver);
     }
@@ -352,6 +357,11 @@ public class LoginService extends Service {
         return whitelist;
     }
 
+    private String getNetworkBssid() {
+        WifiInfo wifiInfo = _wifiManager.getConnectionInfo();
+        return wifiInfo.getBSSID();
+    }
+
     private boolean isBssidWhitelisted(String bssid) {
         HashSet<String> whitelist = getBssidWhitelist();
         boolean whitelisted = whitelist.contains(bssid);
@@ -359,28 +369,21 @@ public class LoginService extends Service {
         return whitelisted;
     }
 
-    private void checkIfOnShsNetwork() {
-        WifiInfo wifiInfo = _wifiManager.getConnectionInfo();
-        String ssid = wifiInfo.getSSID();
-        Log.d(TAG, "Current SSID: " + ssid);
-        String bssid = wifiInfo.getBSSID();
-        if (bssid != null && isBssidWhitelisted(bssid)) {
-            onShsNetwork();
-        } else {
-            onNotShsNetwork();
-        }
+    private void checkNetworkStatus() {
+        String bssid = getNetworkBssid();
+        boolean networkWhitelisted = isBssidWhitelisted(bssid);
+        onNetworkStatusChanged(networkWhitelisted);
     }
 
     private boolean requiresSetup() {
-        SharedPreferences credentials = _credentials;
-        String username = credentials.getString(PREF_KEY_USERNAME, "");
-        String password = credentials.getString(PREF_KEY_PASSWORD, "");
+        String username = _credentials.getString(PREF_KEY_USERNAME, "");
+        String password = _credentials.getString(PREF_KEY_PASSWORD, "");
         return TextUtils.isEmpty(username) || TextUtils.isEmpty(password);
     }
 
     private void startCheckLoginStatusTask() {
         if (requiresSetup()) {
-            showSetupRequiredNotification();
+            showSetupNotification();
         } else {
             stopRunningTask();
             _runningTask = new CheckLoginStatusTask().execute();
@@ -389,7 +392,7 @@ public class LoginService extends Service {
 
     private void startLoginTask() {
         if (requiresSetup()) {
-            showSetupRequiredNotification();
+            showSetupNotification();
         } else {
             stopRunningTask();
             _runningTask = new PerformLoginTask().execute();
@@ -403,17 +406,27 @@ public class LoginService extends Service {
         }
     }
 
-    private void onShsNetwork() {
-        _isOnShsNetwork = true;
-        startCheckLoginStatusTask();
-        enqueueDelayedLoginStatusCheck();
+    private void onNetworkStatusChanged(boolean whitelisted) {
+        Log.d(TAG, "Network whitelisted status changed -> " + whitelisted);
+
+        if (whitelisted) {
+            startCheckLoginStatusTask();
+            enqueueDelayedLoginStatusCheck();
+        } else {
+            cancelDelayedLoginStatusCheck();
+            stopRunningTask();
+            _notificationManager.cancel(NOTI_ID_LOGIN_PROMPT);
+        }
     }
 
-    private void onNotShsNetwork() {
-        _isOnShsNetwork = false;
-        cancelDelayedLoginStatusCheck();
-        stopRunningTask();
-        _notificationManager.cancel(NOTI_ID_LOGIN_PROMPT);
+    private void onScreenStatusChanged(boolean screenOn) {
+        Log.d(TAG, "Screen status changed -> " + screenOn);
+
+        if (screenOn) {
+            checkNetworkStatus();
+        } else {
+            cancelDelayedLoginStatusCheck();
+        }
     }
 
     private void onLoginRequired() {
@@ -430,8 +443,8 @@ public class LoginService extends Service {
         }
     }
 
-    private void showSetupRequiredNotification() {
-        if (!_showSetupNotification) {
+    private void showSetupNotification() {
+        if (!_shouldShowSetupNotification) {
             // This should happen when the main activity is visible
             // in the foreground; there's no point in telling the user
             // to set up their account when they're probably doing it
@@ -514,7 +527,7 @@ public class LoginService extends Service {
         _notificationManager.notify(NOTI_ID_LOGIN_PROMPT, notification.build());
     }
 
-    private void removeNotifications() {
+    private void cancelAllNotifications() {
         _notificationManager.cancel(NOTI_ID_SETUP);
         _notificationManager.cancel(NOTI_ID_LOGIN_PROMPT);
         _notificationManager.cancel(NOTI_ID_LOGIN_ERROR);
@@ -525,15 +538,13 @@ public class LoginService extends Service {
         // Make sure not to check multiple times
         cancelDelayedLoginStatusCheck();
 
-        // We don't need to worry about running this while the screen is off:
-        // Handler.postDelayed() will not run tasks while the device is in deep sleep
         int delay = PreferenceUtils.getInt(_preferences, PREF_KEY_LOGIN_STATUS_CHECK_INTERVAL, 60);
         if (delay > 0) {
-            _handler.postDelayed(_checkWifiStatusAction, delay * 1000);
+            _handler.postDelayed(_checkNetworkStatusAction, delay * 1000);
         }
     }
 
     private void cancelDelayedLoginStatusCheck() {
-        _handler.removeCallbacks(_checkWifiStatusAction);
+        _handler.removeCallbacks(_checkNetworkStatusAction);
     }
 }
