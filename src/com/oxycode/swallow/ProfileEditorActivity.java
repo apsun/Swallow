@@ -334,7 +334,8 @@ public class ProfileEditorActivity extends ListActivity {
         // Restore state if the device was rotated
         if (savedInstanceState != null) {
             ArrayList<ScanResult> rawList = savedInstanceState.getParcelableArrayList(INST_NETWORKS);
-            listAdapter.updateNetworks(rawList);
+            updateNetworks(rawList);
+            Log.d(TAG, "Restored WiFi network list from saved instance state");
         }
 
         ListView listView = getListView();
@@ -480,25 +481,28 @@ public class ProfileEditorActivity extends ListActivity {
         _wifiManager.startScan();
     }
 
+    private void updateNetworks(List<ScanResult> results) {
+        if (_listAdapter.updateNetworks(results)) {
+            setEmptyText(R.string.all_networks_filtered);
+        } else {
+            setEmptyText(R.string.no_networks_available);
+        }
+    }
+
     private void onWifiScanCompleted() {
         if (_wifiManager.isWifiEnabled()) {
             List<ScanResult> results = _wifiManager.getScanResults();
-            if (_listAdapter.updateNetworks(results)) {
-                setEmptyText(R.string.all_networks_filtered);
-            } else {
-                setEmptyText(R.string.no_networks_available);
-            }
+            updateNetworks(results);
             enqueueWifiScan();
         }
     }
 
     private void onWifiStateChanged() {
-        _listAdapter.updateNetworks(Collections.<ScanResult>emptyList());
-
         if (_wifiManager.isWifiEnabled()) {
             setEmptyText(R.string.no_networks_available);
             startWifiScan();
         } else {
+            updateNetworks(Collections.<ScanResult>emptyList());
             setEmptyText(R.string.enable_wifi);
             cancelEnqueuedWifiScan();
         }

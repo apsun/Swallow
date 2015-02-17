@@ -252,14 +252,16 @@ public class LoginService extends Service {
         _contentObserver = new ContentObserver(_handler) {
             @Override
             public void onChange(boolean selfChange) {
-                Log.d(TAG, "Database modified, marking whitelist as dirty");
-                _whitelistedBssids = null;
+                onWhitelistModified();
             }
         };
 
-        _whitelistedBssids = null;
+        _whitelistedBssids = new HashSet<String>();
         _shouldShowSetupNotification = true;
         _runningTask = null;
+
+        // Load BSSID whitelist
+        refreshBssidWhitelist();
 
         // Register broadcast receiver
         IntentFilter filter = new IntentFilter();
@@ -288,16 +290,21 @@ public class LoginService extends Service {
 
         switch (showSetup) {
             case EXTRA_SHOW_SETUP_DEFAULT:
+                if (requiresSetup() && isBssidWhitelisted(getNetworkBssid())) {
+                    showSetupNotification();
+                } else {
+                    cancelSetupNotificiation();
+                }
                 break;
             case EXTRA_SHOW_SETUP_TRUE:
                 _shouldShowSetupNotification = true;
-                if (isBssidWhitelisted(getNetworkBssid())) {
+                if (requiresSetup() && isBssidWhitelisted(getNetworkBssid())) {
                     showSetupNotification();
                 }
                 break;
             case EXTRA_SHOW_SETUP_FALSE:
                 _shouldShowSetupNotification = false;
-                _notificationManager.cancel(NOTI_ID_SETUP);
+                cancelSetupNotificiation();
                 break;
         }
 
@@ -327,13 +334,9 @@ public class LoginService extends Service {
         getContentResolver().unregisterContentObserver(_contentObserver);
     }
 
-    private HashSet<String> getBssidWhitelist() {
+    private void refreshBssidWhitelist() {
         HashSet<String> whitelist = _whitelistedBssids;
-        if (whitelist != null) {
-            return whitelist;
-        }
-
-        whitelist = new HashSet<String>();
+        whitelist.clear();
 
         Uri uri = NetworkProfileContract.ProfileBssids.CONTENT_URI;
         String[] projection = {NetworkProfileContract.ProfileBssids.BSSID};
@@ -352,9 +355,7 @@ public class LoginService extends Service {
         }
 
         cursor.close();
-        _whitelistedBssids = whitelist;
         Log.d(TAG, "Loaded " + bssidCount + " BSSID(s) from database whitelist");
-        return whitelist;
     }
 
     private String getNetworkBssid() {
@@ -363,8 +364,7 @@ public class LoginService extends Service {
     }
 
     private boolean isBssidWhitelisted(String bssid) {
-        HashSet<String> whitelist = getBssidWhitelist();
-        boolean whitelisted = whitelist.contains(bssid);
+        boolean whitelisted = _whitelistedBssids.contains(bssid);
         Log.d(TAG, "Checking BSSID: " + bssid + " -> " + whitelisted);
         return whitelisted;
     }
@@ -406,6 +406,13 @@ public class LoginService extends Service {
         }
     }
 
+    private void onWhitelistModified() {
+        Log.d(TAG, "Whitelist modified");
+
+        refreshBssidWhitelist();
+        checkNetworkStatus();
+    }
+
     private void onNetworkStatusChanged(boolean whitelisted) {
         Log.d(TAG, "Network whitelisted status changed -> " + whitelisted);
 
@@ -415,7 +422,8 @@ public class LoginService extends Service {
         } else {
             cancelDelayedLoginStatusCheck();
             stopRunningTask();
-            _notificationManager.cancel(NOTI_ID_LOGIN_PROMPT);
+            cancelSetupNotificiation();
+            cancelLoginPromptNotification();
         }
     }
 
@@ -525,6 +533,14 @@ public class LoginService extends Service {
             .setContentIntent(pendingIntent);
 
         _notificationManager.notify(NOTI_ID_LOGIN_PROMPT, notification.build());
+    }
+
+    private void cancelSetupNotificiation() {
+        _notificationManager.cancel(NOTI_ID_SETUP);
+    }
+
+    private void cancelLoginPromptNotification() {
+        _notificationManager.cancel(NOTI_ID_LOGIN_PROMPT);
     }
 
     private void cancelAllNotifications() {
