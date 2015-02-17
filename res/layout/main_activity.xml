@@ -3,8 +3,8 @@
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:orientation="vertical"
-    android:layout_width="fill_parent"
-    android:layout_height="fill_parent"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
     android:weightSum="1"
     android:padding="@dimen/window_padding">
     <EditText
@@ -23,7 +23,7 @@
         android:inputType="textPassword"
         android:singleLine="true"/>
     <Button
-        android:layout_width="fill_parent"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="@string/save_login_credentials"
         android:id="@+id/save_credentials_button"/>
@@ -32,13 +32,13 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
         <Button
-            android:layout_width="fill_parent"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="@string/profile_manager"
             android:id="@+id/profile_manager_button"
             android:layout_weight="0.5"/>
         <Button
-            android:layout_width="fill_parent"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="@string/settings"
             android:id="@+id/settings_button"
