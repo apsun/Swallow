@@ -26,7 +26,9 @@
         </activity>
         <activity
             android:name="com.oxycode.swallow.ProfileManagerActivity"
-            android:label="@string/profile_manager">
+            android:label="@string/profile_manager"
+            android:launchMode="singleTop"
+            android:parentActivityName="com.oxycode.swallow.MainActivity">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="com.oxycode.swallow.MainActivity"/>
@@ -34,6 +36,7 @@
         <activity
             android:name="com.oxycode.swallow.ProfileEditorActivity"
             android:label="@string/profile_editor"
+            android:parentActivityName="com.oxycode.swallow.ProfileManagerActivity"
             android:windowSoftInputMode="adjustPan">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
@@ -41,7 +44,8 @@
         </activity>
         <activity
             android:name="com.oxycode.swallow.SettingsActivity"
-            android:label="@string/settings">
+            android:label="@string/settings"
+            android:parentActivityName="com.oxycode.swallow.MainActivity">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="com.oxycode.swallow.MainActivity"/>
@@ -55,11 +59,10 @@
             </intent-filter>
         </receiver>
         <service
-            android:name="com.oxycode.swallow.LoginService">
-        </service>
+            android:name="com.oxycode.swallow.LoginService"/>
         <provider
             android:authorities="com.oxycode.swallow.provider.NetworkProfileProvider"
-            android:name=".provider.NetworkProfileProvider"
+            android:name="com.oxycode.swallow.provider.NetworkProfileProvider"
             android:exported="false"/>
     </application>
 </manifest>

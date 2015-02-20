@@ -102,7 +102,7 @@ public class NetworkProfileProvider extends ContentProvider {
             throw new IllegalArgumentException(e);
         }
 
-        Uri newUri = ContentUris.withAppendedId(NetworkProfileContract.Bssids.CONTENT_URI, row);
+        Uri newUri = ContentUris.withAppendedId(uri, row);
 
         if (row >= 0) {
             ContentResolver contentResolver = getContext().getContentResolver();
