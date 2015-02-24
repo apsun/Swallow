@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<LinearLayout
+<RelativeLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:orientation="vertical"
     android:layout_width="match_parent"
@@ -8,41 +8,53 @@
     android:weightSum="1"
     android:padding="@dimen/window_padding">
     <EditText
+        android:id="@+id/username_edittext"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
         android:hint="@string/username"
-        android:id="@+id/username_edittext"
         android:singleLine="true"
         android:inputType="textVisiblePassword|textCapSentences"/>
     <EditText
+        android:id="@+id/password_edittext"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_below="@id/username_edittext"
         android:ems="10"
-        android:id="@+id/password_edittext"
         android:hint="@string/password"
         android:inputType="textPassword"
         android:singleLine="true"/>
     <Button
+        android:id="@+id/save_credentials_button"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@string/save_login_credentials"
-        android:id="@+id/save_credentials_button"/>
+        android:layout_below="@id/password_edittext"
+        android:text="@string/save_login_credentials"/>
     <LinearLayout
         android:orientation="horizontal"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:layout_below="@id/save_credentials_button">
         <Button
+            android:id="@+id/profile_manager_button"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="@string/profile_manager"
-            android:id="@+id/profile_manager_button"
             android:layout_weight="0.5"/>
         <Button
+            android:id="@+id/settings_button"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="@string/settings"
-            android:id="@+id/settings_button"
             android:layout_weight="0.5"/>
     </LinearLayout>
-</LinearLayout>
+    <TextView
+        android:id="@+id/about_textview"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_gravity="center_horizontal"
+        android:gravity="center_horizontal"
+        android:textAppearance="?android:attr/textAppearanceSmall"/>
+</RelativeLayout>
 

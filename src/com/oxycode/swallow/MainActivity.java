@@ -79,6 +79,9 @@ public class MainActivity extends Activity {
 
     private static final String TAG = MainActivity.class.getSimpleName();
 
+    private static final String VERSION_NUMBER = "0.1";
+    private static final String VERSION_CODENAME = "Banana";
+
     private static final String INST_USERNAME = "username";
     private static final String INST_PASSWORD = "password";
 
@@ -145,6 +148,10 @@ public class MainActivity extends Activity {
                 startActivity(intent);
             }
         });
+
+        TextView aboutTextView = (TextView)findViewById(R.id.about_textview);
+        String aboutText = String.format(getString(R.string.about_text), VERSION_NUMBER, VERSION_CODENAME);
+        aboutTextView.setText(aboutText);
     }
 
     @Override

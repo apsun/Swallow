@@ -23,10 +23,9 @@
     <string name="enter_credentials">Enter a username and password</string>
     <string name="enabled_autologin">Enabled auto-login</string>
     <string name="disabled_autologin">Disabled auto-login</string>
-
+    <string name="about_text">Version %1$s \"%2$s\"\nCopyright 2014–2015 Andrew Sun</string>
     <string name="unsaved_credentials_title">Unsaved credentials</string>
     <string name="unsaved_credentials_message">You have unsaved changes to your login credentials.\n\nExit without saving?</string>
-
     <string name="checking_credentials_message">Checking login credentials…</string>
 
     <string name="confirm_save_title">Confirm save</string>
