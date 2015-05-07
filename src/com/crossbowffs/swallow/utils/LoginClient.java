@@ -1,4 +1,4 @@
-package com.oxycode.swallow;
+package com.crossbowffs.swallow.utils;
 
 import android.text.TextUtils;
 import android.util.Log;
@@ -34,7 +34,7 @@ public final class LoginClient {
         UNKNOWN
     }
 
-    public static interface Handler {
+    public interface Handler {
         boolean onException(IOException e);
     }
 

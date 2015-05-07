@@ -1,11 +1,11 @@
-package com.oxycode.swallow.provider;
+package com.crossbowffs.swallow.provider;
 
 import android.content.ContentResolver;
 import android.net.Uri;
 import android.provider.BaseColumns;
 
 public final class NetworkProfileContract {
-    public static final String AUTHORITY = "com.oxycode.swallow.provider.NetworkProfileProvider";
+    public static final String AUTHORITY = "com.crossbowffs.swallow.provider.NetworkProfileProvider";
     public static final Uri CONTENT_URI = Uri.parse("content://" + AUTHORITY);
 
     public static final class Profiles implements BaseColumns {

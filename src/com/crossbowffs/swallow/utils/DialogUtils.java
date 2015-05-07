@@ -1,4 +1,4 @@
-package com.oxycode.swallow.utils;
+package com.crossbowffs.swallow.utils;
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -11,7 +11,7 @@ import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.EditText;
-import com.oxycode.swallow.R;
+import com.crossbowffs.swallow.R;
 
 public final class DialogUtils {
     public static abstract class ConfirmationDialogHandler {

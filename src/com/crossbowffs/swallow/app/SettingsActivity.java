@@ -1,4 +1,4 @@
-package com.oxycode.swallow;
+package com.crossbowffs.swallow.app;
 
 import android.app.ActionBar;
 import android.os.Bundle;
@@ -6,6 +6,7 @@ import android.preference.PreferenceActivity;
 import android.preference.PreferenceFragment;
 import android.support.v4.app.NavUtils;
 import android.view.MenuItem;
+import com.crossbowffs.swallow.R;
 
 public class SettingsActivity extends PreferenceActivity {
     public static class SettingsFragment extends PreferenceFragment {

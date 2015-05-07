@@ -1,4 +1,4 @@
-package com.oxycode.swallow;
+package com.crossbowffs.swallow.app;
 
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -18,8 +18,10 @@ import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.TaskStackBuilder;
 import android.text.TextUtils;
 import android.util.Log;
-import com.oxycode.swallow.provider.NetworkProfileContract;
-import com.oxycode.swallow.utils.PreferenceUtils;
+import com.crossbowffs.swallow.utils.LoginClient;
+import com.crossbowffs.swallow.R;
+import com.crossbowffs.swallow.provider.NetworkProfileContract;
+import com.crossbowffs.swallow.utils.PreferenceUtils;
 
 import java.io.IOException;
 import java.util.HashSet;

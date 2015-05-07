@@ -1,4 +1,4 @@
-package com.oxycode.swallow;
+package com.crossbowffs.swallow.app;
 
 import android.app.ActionBar;
 import android.app.AlertDialog;
@@ -19,9 +19,10 @@ import android.text.TextUtils;
 import android.util.Log;
 import android.view.*;
 import android.widget.*;
-import com.oxycode.swallow.provider.NetworkProfileContract;
-import com.oxycode.swallow.utils.DialogUtils;
-import com.oxycode.swallow.utils.PreferenceUtils;
+import com.crossbowffs.swallow.R;
+import com.crossbowffs.swallow.provider.NetworkProfileContract;
+import com.crossbowffs.swallow.utils.DialogUtils;
+import com.crossbowffs.swallow.utils.PreferenceUtils;
 
 import java.util.*;
 import java.util.regex.Matcher;

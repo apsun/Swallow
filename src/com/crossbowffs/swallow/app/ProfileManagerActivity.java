@@ -1,4 +1,4 @@
-package com.oxycode.swallow;
+package com.crossbowffs.swallow.app;
 
 import android.app.ActionBar;
 import android.app.ListActivity;
@@ -11,8 +11,9 @@ import android.support.v4.app.NavUtils;
 import android.util.Log;
 import android.view.*;
 import android.widget.*;
-import com.oxycode.swallow.provider.NetworkProfileContract;
-import com.oxycode.swallow.utils.DialogUtils;
+import com.crossbowffs.swallow.R;
+import com.crossbowffs.swallow.provider.NetworkProfileContract;
+import com.crossbowffs.swallow.utils.DialogUtils;
 
 public class ProfileManagerActivity extends ListActivity implements LoaderManager.LoaderCallbacks<Cursor> {
     private static class MyCursorAdapter extends SimpleCursorAdapter {

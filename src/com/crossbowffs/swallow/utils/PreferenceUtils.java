@@ -1,4 +1,4 @@
-package com.oxycode.swallow.utils;
+package com.crossbowffs.swallow.utils;
 
 import android.content.SharedPreferences;
 

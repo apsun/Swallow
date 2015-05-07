@@ -1,4 +1,4 @@
-package com.oxycode.swallow;
+package com.crossbowffs.swallow.app;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;

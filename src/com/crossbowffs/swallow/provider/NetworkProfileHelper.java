@@ -1,4 +1,4 @@
-package com.oxycode.swallow.provider;
+package com.crossbowffs.swallow.provider;
 
 import android.content.ContentValues;
 import android.content.Context;

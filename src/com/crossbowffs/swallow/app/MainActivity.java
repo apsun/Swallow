@@ -1,4 +1,4 @@
-package com.oxycode.swallow;
+package com.crossbowffs.swallow.app;
 
 import android.app.Activity;
 import android.app.ProgressDialog;
@@ -17,7 +17,9 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.View;
 import android.widget.*;
-import com.oxycode.swallow.utils.DialogUtils;
+import com.crossbowffs.swallow.utils.LoginClient;
+import com.crossbowffs.swallow.R;
+import com.crossbowffs.swallow.utils.DialogUtils;
 
 import java.io.IOException;
 
