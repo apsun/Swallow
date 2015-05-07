@@ -17,6 +17,7 @@
         android:checked="true"
         android:focusable="false"
         android:focusableInTouchMode="false"
+        android:background="@null"
         android:clickable="false"/>
     <TextView
         android:id="@+id/profile_detail_textview"
