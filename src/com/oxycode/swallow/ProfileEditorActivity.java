@@ -13,7 +13,6 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.preference.PreferenceManager;
-import android.support.annotation.NonNull;
 import android.support.v4.app.NavUtils;
 import android.text.InputFilter;
 import android.text.TextUtils;
@@ -406,7 +405,7 @@ public class ProfileEditorActivity extends ListActivity {
     }
 
     @Override
-    protected void onSaveInstanceState(@NonNull Bundle outState) {
+    protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
         outState.putParcelableArrayList(INST_NETWORKS, _listAdapter.getAllNetworks());
     }

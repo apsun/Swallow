@@ -6,7 +6,6 @@ import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteQueryBuilder;
 import android.net.Uri;
-import android.support.annotation.NonNull;
 import android.text.TextUtils;
 
 import java.util.HashSet;
@@ -127,7 +126,7 @@ public class NetworkProfileProvider extends ContentProvider {
     }
 
     @Override
-    public int bulkInsert(Uri uri, @NonNull ContentValues[] values) {
+    public int bulkInsert(Uri uri, ContentValues[] values) {
         int uriType = URI_MATCHER.match(uri);
         if (uriType != BSSIDS_ID) {
             throw new IllegalArgumentException("Invalid insert URI: " + uri);

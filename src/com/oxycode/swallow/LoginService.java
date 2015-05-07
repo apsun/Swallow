@@ -150,15 +150,17 @@ public class LoginService extends Service {
                 _notificationManager.cancel(NOTI_ID_LOGIN_PROGRESS);
             }
 
+            Log.d(TAG, "Login returned result: " + result);
+
             switch (result) {
                 case SUCCESS:
                     break;
                 case INCORRECT_CREDENTIALS:
                 case ACCOUNT_BANNED:
                     showLoginErrorNotification(result);
+                    break;
                 case EXCEEDED_MAX_RETRIES:
                 case UNKNOWN:
-                    Log.w(TAG, "Login returned result: " + result);
                     onLoginFailedTimeout(result);
                     break;
             }
